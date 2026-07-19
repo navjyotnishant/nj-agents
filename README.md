@@ -46,7 +46,8 @@ invented — and prints a banner before it starts.
 |---|---|---|
 | `/changelog` | Generates/updates `CHANGELOG.md` in **Keep a Changelog** format + SemVer, from your commit history (Conventional Commits as the signal). Suggests the version bump, merges into `[Unreleased]` without clobbering, proposes the commit (+ optional release-only tag). | `changelog-writer` |
 | `/arch-diagram` | Reads your README/docs/ADRs, then generates a system/solution/sequence/data-flow/deployment/ER diagram. Default **Excalidraw + exported SVG** (mermaid / inline SVG / Figma-via-MCP on request); places it in `docs/architecture/` and proposes the commit. | `diagram-architect` |
-| `/tech-blog` | **Multi-agent** pipeline (writer → fact-checker → reviewer → editor → optional poster) that writes an expert technical post about the project. The **fact-checker BLOCKS** on any claim it can't verify against the repo. Embeds arch diagrams, writes to `docs/blog/` + publish-ready MD/HTML, posts only via a connected MCP you opt into. | `blog-writer`, `blog-fact-checker`, `blog-reviewer`, `blog-editor`, `blog-poster` |
+| `/capture-screenshots` | **Multi-agent** capture + **redaction** pipeline. Captures from a running web app (Playwright), terminal/CLI output, a static HTML/component, or existing images; then detects PII/secrets (emails, tokens, keys, phone, cards, names), blurs/masks them (full for high-risk, partial for illustrative), and **verifies coverage before writing** (blocks if unsure). Only the redacted image is committed — the raw stays gitignored. | `screenshot-capturer`, `sensitive-data-reviewer`, `screenshot-redactor` |
+| `/tech-blog` | **Multi-agent** pipeline (writer → fact-checker → reviewer → editor → optional poster) that writes an expert technical post about the project. The **fact-checker BLOCKS** on any claim it can't verify against the repo. Embeds arch diagrams (`/arch-diagram`) and screenshots (`/capture-screenshots`), writes to `docs/blog/` + publish-ready MD/HTML, posts only via a connected MCP you opt into. | `blog-writer`, `blog-fact-checker`, `blog-reviewer`, `blog-editor`, `blog-poster` |
 
 Shared authoring behavior (repo-context ingest, placement, propose-commit,
 MCP-detection, grounding/safety) lives once in
@@ -69,7 +70,10 @@ location. They then **propose** the commit — showing you the diff and the exac
 `git add`/`commit`/`push` commands — but **never run git themselves**. Posting a blog
 externally happens only through an MCP connector you've explicitly opted into, as a
 draft, never an auto-publish. Nothing is invented: every fact traces to your repo (the
-blog fact-checker blocks on anything it can't verify).
+blog fact-checker blocks on anything it can't verify). Screenshots are **redacted by
+default** — PII/secrets are detected and blurred, coverage is verified before the
+image is written, and only the redacted version is committed (the raw capture stays in
+a gitignored dir).
 
 ## Prerequisites
 
