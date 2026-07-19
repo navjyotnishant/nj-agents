@@ -802,7 +802,9 @@ OVERALL: <span style="color:var(--block)">BLOCK</span> — fix the correctness b
       a.title = 'Copy link to this section'; a.setAttribute('aria-label', 'Copy link to ' + id);
       a.addEventListener('click', function (e) {
         e.preventDefault();
-        history.replaceState(null, '', '#' + id);
+        // Set the hash so the address bar reflects the section (native, visible in
+        // normal browsing). Guarded because a sandboxed iframe may disallow it.
+        try { if (location.hash !== '#' + id) location.hash = id; } catch (err) {}
         copy(urlFor(id)).then(function () { showToast('Link copied'); },
                              function () { showToast('#' + id); });
       });
@@ -825,12 +827,9 @@ OVERALL: <span style="color:var(--block)">BLOCK</span> — fix the correctness b
       }
       if (h.id) attach(h, h.id);
     });
-    // Sidebar clicks: reflect the target in the URL bar (works even for file://).
-    document.querySelectorAll('.sidebar a[href^="#"]').forEach(function (link) {
-      link.addEventListener('click', function () {
-        history.replaceState(null, '', link.getAttribute('href'));
-      });
-    });
+    // Sidebar links are native <a href="#id">, so the browser sets the hash on click
+    // automatically — no JS needed. (In a sandboxed Artifact iframe the parent address
+    // bar can't change; use the copy-link button on any heading to grab the URL.)
   })();
 </script>
 </body>
