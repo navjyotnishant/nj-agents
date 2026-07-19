@@ -1,7 +1,7 @@
 ---
 name: review-secrets
-description: Use this skill when the user asks to "scan my changes for secrets", "check the diff for leaked keys/credentials", "run the security review on this change", or wants a security-focused review of the current commit or uncommitted work before pushing. Runs a dedicated secret scanner (gitleaks/trufflehog/detect-secrets) over the diff first as a HARD GATE — falling back to a model-reasoned scan if none is installed — then a deeper semantic security pass. Works in any git repo; nothing here is project-specific.
-version: 0.2.0
+description: Use this skill when the user asks to "scan my changes for secrets", "check the diff for leaked keys/credentials", "run the security review on this change", or wants a security-focused review of the current commit or uncommitted work before pushing. REQUIRES a dedicated secret scanner (gitleaks/trufflehog/detect-secrets) on PATH — runs it over the diff first as a HARD GATE (BLOCKs with install instructions if none is installed) — then a deeper semantic security pass. Works in any git repo; nothing here is project-specific.
+version: 0.3.0
 ---
 
 # Review: Secrets & Security
@@ -9,9 +9,11 @@ version: 0.2.0
 Security-focused review of the **current commit or uncommitted changes**, in two
 layers:
 
-1. **Secret gate** — detect leaked credentials in the diff. Prefer a real,
-   dedicated scanner; fall back to a model-reasoned scan if none is installed.
-   This is a **hard gate**: nothing is shared with any subagent until it clears.
+1. **Secret gate** — detect leaked credentials in the diff with a **required**
+   dedicated scanner (`gitleaks` / `trufflehog` / `detect-secrets` — any one). This
+   is a **hard gate**: nothing is shared with any subagent until it clears, and if
+   no scanner is installed the dimension BLOCKs with install instructions (no
+   heuristic-only fallback).
 2. **Semantic security pass** — via the `secrets-reviewer` agent, once the diff is
    cleared: injection, authz gaps, unsafe patterns.
 
@@ -25,11 +27,11 @@ handling §3, CI mode §5, report §6, safety §7).
 ╔══════════════════════════════════════════════════════════════════╗
 ║  SECRETS & SECURITY REVIEW                                        ║
 ╠══════════════════════════════════════════════════════════════════╣
-║  A secret scan runs over your diff BEFORE anything is shared with ║
-║  AI. Preferred: a dedicated scanner (gitleaks / trufflehog /      ║
-║  detect-secrets) if installed; otherwise a model-reasoned scan.   ║
-║  If a credential/key/token is detected, this STOPS and shares     ║
-║  nothing until you remove it.                                     ║
+║  A dedicated secret scanner (gitleaks / trufflehog /              ║
+║  detect-secrets) runs over your diff BEFORE anything is shared     ║
+║  with AI. One of these is REQUIRED — if none is installed, this    ║
+║  BLOCKs with install instructions. If a credential/key/token is    ║
+║  detected, this STOPS and shares nothing until you remove it.      ║
 ║                                                                   ║
 ║  Only after the scan clears is the diff shared with AI (this      ║
 ║  Claude session + subagent) for a deeper security pass. No        ║
@@ -43,9 +45,9 @@ handling §3, CI mode §5, report §6, safety §7).
 - **A git repository** (`git rev-parse --git-dir`); else stop and say so.
 - **A diff to review** (staged + unstaged + unpushed); if empty, report and stop.
 - **No external API key** — uses the current Claude session.
-- **Recommended (not required):** a dedicated secret scanner on PATH — `gitleaks`,
-  `trufflehog`, or `detect-secrets`. Without one, the scan still runs (model
-  fallback) but coverage is weaker; the report states which ran.
+- **REQUIRED:** a dedicated secret scanner on PATH — `gitleaks`, `trufflehog`, or
+  `detect-secrets` (any one). If none is installed, this dimension BLOCKs with
+  install instructions (Step 3); there is no heuristic-only fallback gate.
 
 ## Step 1 — Build the snapshot (local, NOT yet shared)
 
@@ -54,56 +56,84 @@ note: the secret scan runs over **all** added lines, including generated/lockfil
 excluded-from-review files, because a secret can hide anywhere. (Hygiene exclusions
 apply to the *semantic* review in Step 4, not to the secret scan in Steps 2–3.)
 
-## Step 2 — Detect a real scanner, prefer it
+## Step 2 — Detect a dedicated scanner (all three supported equally)
 
-Check, in order, for a dedicated scanner on PATH:
+The suite supports the three industry-standard secret scanners as first-class
+equals. Detect which, if any, are on PATH:
 
 ```bash
-command -v gitleaks       # preferred
+command -v gitleaks
 command -v trufflehog
 command -v detect-secrets
 ```
 
-If one is found, run it over the changes and treat its output as authoritative:
+If **more than one** is present, prefer them in this order — `gitleaks`, then
+`trufflehog`, then `detect-secrets` (order is a tie-break only; any of the three is
+authoritative). If **exactly one** is present, use it. Run it over the changes and
+treat its output as authoritative:
 
-- **gitleaks:** `gitleaks protect --staged --redact -v` for staged, and
-  `gitleaks detect --no-git --redact` over the working tree / a written-out patch of
-  the unpushed range. Use `--redact` so values are masked in output.
-- **trufflehog:** `trufflehog git file://. --since-commit <range-base> --only-verified`
-  (prefer verified findings to cut noise; still surface unverified as WARN).
-- **detect-secrets:** `detect-secrets scan` over the changed files, diffed against a
-  baseline if the repo has one.
+- **gitleaks** (Go binary, MIT): `gitleaks protect --staged --redact -v` for staged,
+  and `gitleaks detect --no-git --redact` over the working tree / a written-out
+  patch of the unpushed range. `--redact` masks values in output.
+- **trufflehog** (Go binary, Apache-2.0):
+  `trufflehog git file://. --since-commit <range-base> --only-verified` — prefer
+  verified findings to cut noise; still surface unverified as WARN.
+- **detect-secrets** (Python, Apache-2.0): `detect-secrets scan` over the changed
+  files, diffed against the repo's `.secrets.baseline` if one exists.
 
 Record the tool name and version for the report (`CONVENTIONS.md §6`).
 
-## Step 3 — Fallback: model-reasoned scan (only if no scanner is installed)
+If a scanner **is** present, run it (Step 2 above) and go to Step 4.
 
-If no dedicated scanner is on PATH, perform the scan by reasoning over the added
-lines yourself, and **state in the report that the model fallback was used and that
-installing gitleaks is recommended for stronger guarantees.** Look for:
+## Step 3 — No scanner installed → BLOCK (a scanner is mandatory)
 
-- **Known token shapes** — AWS `AKIA[0-9A-Z]{16}`, GCP `AIza[0-9A-Za-z_\-]{35}`,
-  GitHub `ghp_`/`gho_`/`ghs_`, Slack `xox[baprs]-`, Stripe `sk_live_`/`rk_live_`,
-  Google OAuth, private-key headers (`-----BEGIN ... PRIVATE KEY-----`), JWTs
-  (`eyJ...` three base64 segments), npm/PyPI tokens, Azure connection strings,
-  database URLs with inline credentials (`scheme://user:pass@host`).
-- **Keyworded assignments** — `password`, `passwd`, `secret`, `api[_-]?key`,
-  `token`, `access[_-]?key`, `client[_-]?secret` assigned a non-placeholder value.
-- **High-entropy strings** — long random base64/hex assigned to a variable, even
-  without a keyword.
-- **Exclusions / likely false positives** — obvious placeholders
-  (`your-key-here`, `xxxx`, `example`, `changeme`, `<...>`, `REDACTED`), values that
-  already exist in a committed `.env.example`, and test fixtures clearly marked as
-  fake. Note them, don't hard-stop on them.
+A dedicated scanner is **required** — the secret gate does not run on model
+heuristics alone. If **none** of the three is on PATH, the secrets dimension
+returns **BLOCK** and the review does **not** proceed (no agent is spawned, nothing
+is shared). Print the install instructions and stop:
+
+```
+BLOCK — no secret scanner installed.
+
+This review requires one of these industry-standard, free/open-source secret
+scanners on your PATH. Install any ONE, then re-run:
+
+  • gitleaks (MIT)            — recommended, fast Go binary
+      macOS:   brew install gitleaks
+      Linux:   see https://github.com/gitleaks/gitleaks#installing
+      Go:      go install github.com/gitleaks/gitleaks/v8@latest
+      Docker:  docker run -v "$PWD:/repo" zricethezav/gitleaks:latest detect -s /repo
+
+  • trufflehog (Apache-2.0)   — verified-secret detection
+      macOS:   brew install trufflehog
+      Linux:   curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh
+      Go:      go install github.com/trufflesecurity/trufflehog/v3@latest
+
+  • detect-secrets (Apache-2.0, Yelp) — Python, baseline-friendly
+      pipx:    pipx install detect-secrets
+      pip:     pip install detect-secrets
+
+Verify with: gitleaks version  (or trufflehog --version / detect-secrets --version)
+```
+
+Do **not** install anything yourself — only the user installs tooling
+(`CONVENTIONS.md §7`). In CI/non-interactive mode this is a hard failure: BLOCK,
+exit code 1. The umbrella treats a missing scanner as an overall **BLOCK** — a
+push must not proceed without an authoritative secret scan.
 
 ## Step 4 — Gate decision
 
-- **Any credible hit (from scanner or fallback) → HARD STOP.** Print `file:line`,
-  the pattern class, and the value **masked**. Do **not** spawn the agent, do
-  **not** share the diff. In interactive mode, tell the user to remove/rotate it
-  (or confirm a false positive) and re-run. In CI mode (`CONVENTIONS.md §5`), do not
-  prompt — BLOCK with exit code 1.
+- **Any scanner hit → HARD STOP.** Print `file:line`, the rule/pattern class, and
+  the value **masked**. Do **not** spawn the agent, do **not** share the diff. In
+  interactive mode, tell the user to remove/rotate it (or add a scanner-native
+  allowlist entry for a confirmed false positive) and re-run. In CI mode
+  (`CONVENTIONS.md §5`), do not prompt — BLOCK with exit code 1.
 - **Clean → proceed to Step 5.**
+
+The Step 5 semantic pass additionally reasons over added lines for token shapes the
+scanner might not key on (AWS `AKIA…`, GitHub `ghp_…`, private-key headers, JWTs,
+DB URLs with inline credentials, high-entropy assignments), as a **supplement** to —
+never a replacement for — the mandatory scanner gate.
 
 ## Step 5 — Deeper semantic security pass
 
@@ -115,8 +145,8 @@ CORS, secrets that should come from a secret store but are structurally hardcode
 
 ## Step 6 — Report
 
-Per `CONVENTIONS.md §4` and §6: which scanner ran (name+version or "model
-fallback"), the gate result, the agent's findings (≥80 confidence, masked values),
-and a dimension verdict — **BLOCK** for any secret or exploitable issue, **WARN**
-for hardening nits, **PASS** if clean. Write the report artifact (§6). Advises
-only; clean up scratch files.
+Per `CONVENTIONS.md §4` and §6: which scanner ran (tool name + version), the gate
+result, the agent's findings (≥80 confidence, masked values), and a dimension
+verdict — **BLOCK** for any secret, exploitable issue, or a missing scanner; **WARN**
+for hardening nits; **PASS** if clean. Write the report artifact (§6). Advises only;
+clean up scratch files.
