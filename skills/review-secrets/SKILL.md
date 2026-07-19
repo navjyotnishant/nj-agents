@@ -1,88 +1,122 @@
 ---
 name: review-secrets
-description: Use this skill when the user asks to "scan my changes for secrets", "check the diff for leaked keys/credentials", "run the security review on this change", or wants a security-focused review of the current commit or uncommitted work before pushing. Runs a LOCAL secret scan over the diff first (as a hard gate), then a deeper semantic security pass. Works in any git repo; nothing here is project-specific.
-version: 0.1.0
+description: Use this skill when the user asks to "scan my changes for secrets", "check the diff for leaked keys/credentials", "run the security review on this change", or wants a security-focused review of the current commit or uncommitted work before pushing. Runs a dedicated secret scanner (gitleaks/trufflehog/detect-secrets) over the diff first as a HARD GATE — falling back to a model-reasoned scan if none is installed — then a deeper semantic security pass. Works in any git repo; nothing here is project-specific.
+version: 0.2.0
 ---
 
 # Review: Secrets & Security
 
-Security-focused review of the **current commit or uncommitted changes**. Runs
-in two layers: (1) a **local** scan for leaked credentials — this is a hard gate
-that must clear before any diff is shared with AI — then (2) a deeper semantic
-pass (injection, authz, unsafe patterns) via the `secrets-reviewer` agent.
+Security-focused review of the **current commit or uncommitted changes**, in two
+layers:
 
-This is the dimension the umbrella `pre-push-review` runs **first**, before any
-other reviewer sees the diff.
+1. **Secret gate** — detect leaked credentials in the diff. Prefer a real,
+   dedicated scanner; fall back to a model-reasoned scan if none is installed.
+   This is a **hard gate**: nothing is shared with any subagent until it clears.
+2. **Semantic security pass** — via the `secrets-reviewer` agent, once the diff is
+   cleared: injection, authz gaps, unsafe patterns.
+
+This is the dimension the umbrella `pre-push-review` runs **first**. Follow the
+shared rules in `CONVENTIONS.md` (snapshot scope §1, diff hygiene §2, secret
+handling §3, CI mode §5, report §6, safety §7).
 
 ## Step 0 — Print the warning banner FIRST
 
 ```
 ╔══════════════════════════════════════════════════════════════════╗
-║  SECRETS & SECURITY REVIEW — AI-ASSISTED                         ║
+║  SECRETS & SECURITY REVIEW                                        ║
 ╠══════════════════════════════════════════════════════════════════╣
-║  A LOCAL secret scan runs over your diff BEFORE anything is       ║
-║  shared with AI. If a credential/key/token is detected, this      ║
-║  STOPS and shares nothing until you remove it.                    ║
+║  A secret scan runs over your diff BEFORE anything is shared with ║
+║  AI. Preferred: a dedicated scanner (gitleaks / trufflehog /      ║
+║  detect-secrets) if installed; otherwise a model-reasoned scan.   ║
+║  If a credential/key/token is detected, this STOPS and shares     ║
+║  nothing until you remove it.                                     ║
 ║                                                                   ║
-║  Only after the local scan clears is the diff shared with AI      ║
-║  (this Claude session + subagent) for a deeper security pass.     ║
-║  No external API is called. This tool ADVISES only.               ║
+║  Only after the scan clears is the diff shared with AI (this      ║
+║  Claude session + subagent) for a deeper security pass. No        ║
+║  external API is called. Nothing leaves this machine. ADVISES     ║
+║  only.                                                            ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
 ## Prerequisites
 
-- **A git repository** (`git rev-parse --git-dir`); else stop.
-- **A diff to review** (staged + unstaged + unpushed); if empty, report and exit.
+- **A git repository** (`git rev-parse --git-dir`); else stop and say so.
+- **A diff to review** (staged + unstaged + unpushed); if empty, report and stop.
 - **No external API key** — uses the current Claude session.
+- **Recommended (not required):** a dedicated secret scanner on PATH — `gitleaks`,
+  `trufflehog`, or `detect-secrets`. Without one, the scan still runs (model
+  fallback) but coverage is weaker; the report states which ran.
 
 ## Step 1 — Build the snapshot (local, NOT yet shared)
 
-Same scope as the umbrella: `git diff --cached` + `git diff` + the unpushed
-range (`@{upstream}..HEAD`, falling back to the default branch, then `HEAD`).
-Focus the scan on **added lines** (`+` lines in the unified diff) — that's what
-this change introduces. Keep it in memory / scratchpad only; never write to the
-repo.
+Assemble the snapshot per `CONVENTIONS.md §1`. Apply diff hygiene per §2 — but
+note: the secret scan runs over **all** added lines, including generated/lockfile/
+excluded-from-review files, because a secret can hide anywhere. (Hygiene exclusions
+apply to the *semantic* review in Step 4, not to the secret scan in Steps 2–3.)
 
-## Step 2 — Local secret scan (the hard gate)
+## Step 2 — Detect a real scanner, prefer it
 
-Scan the added lines for likely secrets — do this **locally**, without sharing
-the diff with any subagent:
+Check, in order, for a dedicated scanner on PATH:
 
-- **Pattern shapes** (non-exhaustive; extend per ecosystem): cloud keys
-  (`AKIA[0-9A-Z]{16}`, GCP `AIza...`, Azure connection strings), generic
-  `api[_-]?key`, `secret`, `token`, `password`, `passwd`, `Bearer ...`, private
-  key headers (`-----BEGIN ... PRIVATE KEY-----`), `.pem`/`.p12` contents,
-  database URLs with embedded credentials (`://user:pass@host`), JWTs
-  (`eyJ...` three dot-separated base64 segments), Slack/GitHub/Stripe tokens
-  (`xox...`, `ghp_...`, `sk_live_...`).
-- **High-entropy strings** — long random-looking base64/hex assigned to a
-  variable are suspect even without a keyword.
-- **Exclusions** — obvious placeholders (`your-key-here`, `xxxx`, `example`,
-  `changeme`, `<...>`) and values already present in a committed `.env.example`
-  are likely false positives; note them but don't hard-stop on them.
+```bash
+command -v gitleaks       # preferred
+command -v trufflehog
+command -v detect-secrets
+```
 
-**On a likely hit → HARD STOP:**
-- Print the `file:line`, the pattern class, and the matched value **masked**
-  (e.g. `AKIA****************`).
-- Do **not** spawn the agent. Do **not** share the diff. Tell the user to
-  remove/rotate the secret and re-run, or confirm it's a false positive.
-- End the skill here.
+If one is found, run it over the changes and treat its output as authoritative:
 
-**If clean → proceed to Step 3.**
+- **gitleaks:** `gitleaks protect --staged --redact -v` for staged, and
+  `gitleaks detect --no-git --redact` over the working tree / a written-out patch of
+  the unpushed range. Use `--redact` so values are masked in output.
+- **trufflehog:** `trufflehog git file://. --since-commit <range-base> --only-verified`
+  (prefer verified findings to cut noise; still surface unverified as WARN).
+- **detect-secrets:** `detect-secrets scan` over the changed files, diffed against a
+  baseline if the repo has one.
 
-## Step 3 — Deeper semantic security pass
+Record the tool name and version for the report (`CONVENTIONS.md §6`).
 
-Only reached if Step 2 is clean. Spawn the `secrets-reviewer` agent with the
-now-cleared snapshot. It reviews for security issues that aren't literal secrets:
-injection (SQL/command/template), missing authz checks on new endpoints/handlers,
-unsafe deserialization, path traversal, SSRF, weakened crypto, permissive CORS,
-disabled TLS verification, and secrets that should be read from env/secret-store
-but are being hardcoded structurally.
+## Step 3 — Fallback: model-reasoned scan (only if no scanner is installed)
 
-## Step 4 — Report
+If no dedicated scanner is on PATH, perform the scan by reasoning over the added
+lines yourself, and **state in the report that the model fallback was used and that
+installing gitleaks is recommended for stronger guarantees.** Look for:
 
-Print the local-scan result + the agent's findings (confidence ≥80 only), each
-tagged `BLOCKER` / `WARNING` / `NIT` with file:line and a fix, and a dimension
-verdict: **BLOCK** if any secret or exploitable issue, **WARN** for hardening
-nits, **PASS** if clean. Advises only — never pushes. Clean up any scratch files.
+- **Known token shapes** — AWS `AKIA[0-9A-Z]{16}`, GCP `AIza[0-9A-Za-z_\-]{35}`,
+  GitHub `ghp_`/`gho_`/`ghs_`, Slack `xox[baprs]-`, Stripe `sk_live_`/`rk_live_`,
+  Google OAuth, private-key headers (`-----BEGIN ... PRIVATE KEY-----`), JWTs
+  (`eyJ...` three base64 segments), npm/PyPI tokens, Azure connection strings,
+  database URLs with inline credentials (`scheme://user:pass@host`).
+- **Keyworded assignments** — `password`, `passwd`, `secret`, `api[_-]?key`,
+  `token`, `access[_-]?key`, `client[_-]?secret` assigned a non-placeholder value.
+- **High-entropy strings** — long random base64/hex assigned to a variable, even
+  without a keyword.
+- **Exclusions / likely false positives** — obvious placeholders
+  (`your-key-here`, `xxxx`, `example`, `changeme`, `<...>`, `REDACTED`), values that
+  already exist in a committed `.env.example`, and test fixtures clearly marked as
+  fake. Note them, don't hard-stop on them.
+
+## Step 4 — Gate decision
+
+- **Any credible hit (from scanner or fallback) → HARD STOP.** Print `file:line`,
+  the pattern class, and the value **masked**. Do **not** spawn the agent, do
+  **not** share the diff. In interactive mode, tell the user to remove/rotate it
+  (or confirm a false positive) and re-run. In CI mode (`CONVENTIONS.md §5`), do not
+  prompt — BLOCK with exit code 1.
+- **Clean → proceed to Step 5.**
+
+## Step 5 — Deeper semantic security pass
+
+Spawn the `secrets-reviewer` agent with the cleared, hygiene-filtered snapshot. It
+reviews for security issues that aren't literal secrets: injection (SQL/command/
+template), missing authz on new endpoints/handlers, IDOR, unsafe deserialization,
+path traversal, SSRF, weak/absent crypto, disabled TLS verification, permissive
+CORS, secrets that should come from a secret store but are structurally hardcoded.
+
+## Step 6 — Report
+
+Per `CONVENTIONS.md §4` and §6: which scanner ran (name+version or "model
+fallback"), the gate result, the agent's findings (≥80 confidence, masked values),
+and a dimension verdict — **BLOCK** for any secret or exploitable issue, **WARN**
+for hardening nits, **PASS** if clean. Write the report artifact (§6). Advises
+only; clean up scratch files.

@@ -8,19 +8,22 @@ project (or globally) via symlink. Designed to grow — new skills/agents drop i
 ## What's in here today
 
 A **pre-push review suite**: a thorough, AI-assisted review of your *current commit
-or uncommitted changes* before you push (or any time, on demand). Four review
-dimensions, each a dedicated skill + agent pair, plus one umbrella that runs them
-all.
+or uncommitted changes* before you push (or any time, on demand, or from CI). Five
+review dimensions, each a dedicated skill + agent pair, plus one umbrella that runs
+them all.
 
 | Skill | What it does | Agent it uses |
 |---|---|---|
-| `/pre-push-review` | **Umbrella.** Prints the warning banner, runs the secret scan as a gate, then spawns the other three dimensions in parallel and aggregates one PASS / WARN / BLOCK verdict. | (orchestrates the below) |
-| `/review-secrets` | Local secret scan over the diff **first** (hard gate — shares nothing if a key is found), then a semantic security pass. | `secrets-reviewer` |
+| `/pre-push-review` | **Umbrella.** Prints the warning banner, runs the secret scan as a gate, then spawns the other dimensions in parallel and aggregates one PASS / WARN / BLOCK verdict + a report artifact. | (orchestrates the below) |
+| `/review-secrets` | Secret scan over the diff **first** (hard gate — shares nothing if a key is found): a dedicated scanner (gitleaks/trufflehog/detect-secrets) if installed, else a model-reasoned fallback. Then a semantic security pass. | `secrets-reviewer` |
 | `/review-correctness` | Bugs, regressions, edge cases, missing validation in the changed lines and their blast radius. | `correctness-reviewer` |
 | `/review-tests-build` | Auto-detects and runs the repo's own test/lint/build commands as a gate. Never installs tooling. | `tests-build-runner` |
+| `/review-dependencies` | Added/removed/upgraded packages, version-pinning risk, license changes, supply-chain signals (typosquatting). Diff-only; no network, no install. | `dependency-reviewer` |
 | `/review-style` | Consistency with surrounding code, commit-message hygiene, leftover debug/TODO output. | `style-reviewer` |
 
-Each dimension runs standalone; the umbrella runs them together.
+Each dimension runs standalone; the umbrella runs them together. Shared behavior
+(snapshot scope, diff hygiene, findings format, CI mode, report artifact, safety
+rails) lives once in [`CONVENTIONS.md`](CONVENTIONS.md).
 
 ## ⚠️ What it does with your code — read this
 
@@ -41,12 +44,42 @@ hooks, and leaves no files in your repo.
 
 - **Claude Code**, and a **git repository** to review (`git` on PATH).
 - **A diff to review** — if there's nothing staged/unstaged/unpushed, the skills
-  exit cleanly.
-- **No API key required** — the review uses your current Claude session.
+  stop cleanly.
+- **No API key required, no network** — the review uses your current Claude session.
+- **Recommended:** a dedicated secret scanner on PATH — [`gitleaks`](https://github.com/gitleaks/gitleaks),
+  `trufflehog`, or `detect-secrets`. `review-secrets` prefers it for authoritative
+  detection and falls back to a model-reasoned scan if none is installed (and tells
+  you which ran). For enterprise use, install one.
 - **Optional:** a test/lint/build command. `review-tests-build` auto-detects it
   (Node/Python/Go/Rust/JVM/Make/just, or a command documented in
   `CLAUDE.md`/`AGENTS.md`). If none exists, that dimension reports SKIP — it never
   invents or installs one.
+
+## Data handling / privacy
+
+Nothing leaves your machine. The suite reads your git diff and analyzes it with the
+**Claude session already running** — no external API is called, no third-party
+service receives your code. Before any diff is shared even with a subagent, the
+secret scan runs; on a hit it stops and shares nothing. Report artifacts are written
+outside the repo tree (or under a gitignored dir) and contain **no unmasked
+credentials**. See [`CONVENTIONS.md`](CONVENTIONS.md) §3/§6/§7.
+
+## CI / non-interactive use
+
+Set `NJ_AGENTS_CI=1` (or pass `--ci`) to run without prompts, suitable for a
+pipeline or git hook. In CI mode the review never waits for confirmation — any
+ambiguity resolves to the safe (BLOCK) outcome — and honors an **exit-code
+contract**: `0` for PASS/WARN, non-zero for BLOCK. A wired hook or CI step keys off
+that code. The suite itself still only advises — it never runs `git push` and never
+bypasses a hook.
+
+## Report artifact
+
+Each umbrella run writes a timestamped record — repo, branch, scope reviewed, which
+secret scanner ran, files excluded, per-dimension verdicts + findings, and the
+aggregate verdict — to `${NJ_AGENTS_REPORT_DIR:-<repo>/.nj-agents-reports}/` (or the
+temp dir). It is **never committed**; the umbrella offers to add
+`.nj-agents-reports/` to your `.gitignore`.
 
 ## Install
 
@@ -92,6 +125,7 @@ Run `/pre-push-review` and it will offer to set one up.
 nj-agents/
 ├── skills/<name>/SKILL.md   # each skill is a directory + SKILL.md
 ├── agents/<name>.md         # each agent is a flat .md
+├── CONVENTIONS.md           # shared review rules referenced by every skill
 ├── install.sh               # symlinks skills/ + agents/ into a .claude/ dir
 └── README.md
 ```

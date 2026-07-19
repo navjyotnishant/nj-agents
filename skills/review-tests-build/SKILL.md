@@ -1,7 +1,7 @@
 ---
 name: review-tests-build
 description: Use this skill when the user asks to "run the tests before I push", "check the build", "run lint on my changes", or wants the project's test/lint/build commands run as a gate over the current changes. Auto-detects the right commands for whatever stack the repo uses (Node, Python, Go, Rust, JVM, Make/just, or commands documented in CLAUDE.md/AGENTS.md) — never hardcodes one project's stack. Works in any git repo.
-version: 0.1.0
+version: 0.2.0
 ---
 
 # Review: Tests & Build
@@ -10,6 +10,8 @@ Runs the project's own **test / lint / build** commands as a gate over the
 current changes, then reports pass/fail. The commands are **discovered per repo**
 — this skill mirrors the "discover per repo, don't assume a prior repo's answers"
 philosophy and never hardcodes a stack, port, or command.
+
+Follow the shared rules in `CONVENTIONS.md` (CI mode §5, report §6, safety §7).
 
 ## Step 0 — Print the warning banner FIRST
 
@@ -67,8 +69,10 @@ Run the detected test / lint / build commands as-is. Rules:
 For each command: PASS (exit 0) / FAIL (non-zero, with the failing summary) /
 SKIP (not detected or tool absent). Dimension verdict: **BLOCK** if any detected
 command fails, **PASS** if all detected commands pass, **SKIP** if nothing was
-detected at all. For deeper failure triage, `tests-build-runner` (agent) can
-analyze the output. Advises only — never pushes.
+detected at all (never a false PASS). For deeper failure triage, spawn the
+`tests-build-runner` agent to analyze the output. Honor the CI-mode exit-code
+contract (`CONVENTIONS.md §5`) and write the report artifact (§6) if run
+standalone. Advises only — never pushes, never installs, never modifies code.
 
 ## Remembering what you learned (optional)
 
