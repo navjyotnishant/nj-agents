@@ -785,7 +785,21 @@ OVERALL: <span style="color:var(--block)">BLOCK</span> — fix the correctness b
       toast.textContent = msg; toast.classList.add('show');
       clearTimeout(toastT); toastT = setTimeout(function () { toast.classList.remove('show'); }, 1600);
     }
-    function urlFor(id) { return location.origin + location.pathname + location.search + '#' + id; }
+    // Build the most useful copyable reference for this section.
+    // A full http(s) URL is only shareable when the page is served from a real,
+    // non-local origin AND not embedded in an iframe (e.g. a sandboxed Artifact,
+    // where location is an internal URL). Otherwise copy just the "#fragment".
+    function refFor(id) {
+      var frag = '#' + id, embedded = false;
+      try { embedded = window.top !== window.self; } catch (e) { embedded = true; }
+      var host = location.hostname || '';
+      var local = host === 'localhost' || host === '127.0.0.1' || host === '' || location.protocol === 'file:';
+      var httpish = location.protocol === 'http:' || location.protocol === 'https:';
+      if (httpish && !embedded && !local) {
+        return { text: location.origin + location.pathname + location.search + frag, full: true };
+      }
+      return { text: frag, full: false };
+    }
     function copy(text) {
       if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text);
       return new Promise(function (res, rej) {
@@ -805,8 +819,11 @@ OVERALL: <span style="color:var(--block)">BLOCK</span> — fix the correctness b
         // Set the hash so the address bar reflects the section (native, visible in
         // normal browsing). Guarded because a sandboxed iframe may disallow it.
         try { if (location.hash !== '#' + id) location.hash = id; } catch (err) {}
-        copy(urlFor(id)).then(function () { showToast('Link copied'); },
-                             function () { showToast('#' + id); });
+        var ref = refFor(id);
+        copy(ref.text).then(
+          function () { showToast(ref.full ? 'Link copied' : 'Copied ' + ref.text); },
+          function () { showToast(ref.text); }
+        );
       });
       headingEl.appendChild(a);
     }
