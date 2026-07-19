@@ -5,12 +5,23 @@ software-development workflows. Maintained independently and installed into any
 project (or globally) via symlink. Designed to grow — new skills/agents drop into
 `skills/` and `agents/` and are picked up on the next install.
 
-## What's in here today
+## Two classes of skill
 
-A **pre-push review suite**: a thorough, AI-assisted review of your *current commit
-or uncommitted changes* before you push (or any time, on demand, or from CI). Five
-review dimensions, each a dedicated skill + agent pair, plus one umbrella that runs
-them all.
+nj-agents has two kinds of skill, with opposite stances on touching your repo:
+
+- **Review class** — *advise only, leave no files, never commit.* Reads your changes
+  and reports. Shared rules: [`CONVENTIONS.md`](CONVENTIONS.md).
+- **Authoring class** — *writes an artifact into the repo* (changelog, diagram, blog),
+  then **proposes** the commit (never runs `git add`/`commit`/`push`/`tag`). Shared
+  rules: [`CONVENTIONS-authoring.md`](CONVENTIONS-authoring.md).
+
+Both share one rule: **the human decides what gets committed.**
+
+## Review suite (review class)
+
+A thorough, AI-assisted review of your *current commit or uncommitted changes* before
+you push (or any time, on demand, or from CI). Five dimensions, each a dedicated
+skill + agent pair, plus one umbrella that runs them all.
 
 | Skill | What it does | Agent it uses |
 |---|---|---|
@@ -25,20 +36,40 @@ Each dimension runs standalone; the umbrella runs them together. Shared behavior
 (snapshot scope, diff hygiene, findings format, CI mode, report artifact, safety
 rails) lives once in [`CONVENTIONS.md`](CONVENTIONS.md).
 
+## Authoring suite (authoring class)
+
+Generates documentation artifacts from your project and places them in the repo, then
+proposes the commit. Every skill reads the repo to ground its output — nothing is
+invented — and prints a banner before it starts.
+
+| Skill | What it does | Agent(s) it uses |
+|---|---|---|
+| `/changelog` | Generates/updates `CHANGELOG.md` in **Keep a Changelog** format + SemVer, from your commit history (Conventional Commits as the signal). Suggests the version bump, merges into `[Unreleased]` without clobbering, proposes the commit (+ optional release-only tag). | `changelog-writer` |
+| `/arch-diagram` | Reads your README/docs/ADRs, then generates a system/solution/sequence/data-flow/deployment/ER diagram. Default **Excalidraw + exported SVG** (mermaid / inline SVG / Figma-via-MCP on request); places it in `docs/architecture/` and proposes the commit. | `diagram-architect` |
+| `/tech-blog` | **Multi-agent** pipeline (writer → fact-checker → reviewer → editor → optional poster) that writes an expert technical post about the project. The **fact-checker BLOCKS** on any claim it can't verify against the repo. Embeds arch diagrams, writes to `docs/blog/` + publish-ready MD/HTML, posts only via a connected MCP you opt into. | `blog-writer`, `blog-fact-checker`, `blog-reviewer`, `blog-editor`, `blog-poster` |
+
+Shared authoring behavior (repo-context ingest, placement, propose-commit,
+MCP-detection, grounding/safety) lives once in
+[`CONVENTIONS-authoring.md`](CONVENTIONS-authoring.md).
+
 ## ⚠️ What it does with your code — read this
 
-These review skills **generate a snapshot of your changes** (the `git diff` of your
-staged, unstaged, and committed-but-unpushed work) and **share it with AI** — the
-Claude session running the skill, plus the subagents it spawns — to review it. **No
-external API is called**; the current session does the analysis. Every skill prints
-a banner saying so before it reads anything.
+**Review suite:** these skills **generate a snapshot of your changes** (the `git diff`
+of your staged, unstaged, and committed-but-unpushed work) and **share it with AI** —
+the Claude session running the skill, plus the subagents it spawns — to review it.
+**No external API is called**; the current session does the analysis. Every skill
+prints a banner saying so before it reads anything. **A local secret scan runs before
+any snapshot is shared** — on a hit the review **stops and shares nothing** until you
+remove it. The review suite **advises only**: it never pushes, commits, bypasses git
+hooks, or leaves files in your repo.
 
-**A local secret scan runs before any snapshot is shared.** If a credential, key,
-or token is detected in the diff, the review **stops and shares nothing** until you
-remove it.
-
-The suite **advises only**. It never pushes, never commits, never bypasses git
-hooks, and leaves no files in your repo.
+**Authoring suite:** these skills read your repo to ground their output and **do write
+one artifact into it** (a changelog, diagram, or blog post) at a standard docs
+location. They then **propose** the commit — showing you the diff and the exact
+`git add`/`commit`/`push` commands — but **never run git themselves**. Posting a blog
+externally happens only through an MCP connector you've explicitly opted into, as a
+draft, never an auto-publish. Nothing is invented: every fact traces to your repo (the
+blog fact-checker blocks on anything it can't verify).
 
 ## Prerequisites
 
@@ -125,10 +156,11 @@ Run `/pre-push-review` and it will offer to set one up.
 
 ```
 nj-agents/
-├── skills/<name>/SKILL.md   # each skill is a directory + SKILL.md
-├── agents/<name>.md         # each agent is a flat .md
-├── CONVENTIONS.md           # shared review rules referenced by every skill
-├── install.sh               # symlinks skills/ + agents/ into a .claude/ dir
+├── skills/<name>/SKILL.md      # each skill is a directory + SKILL.md
+├── agents/<name>.md            # each agent is a flat .md
+├── CONVENTIONS.md              # shared rules for the review class
+├── CONVENTIONS-authoring.md    # shared rules for the authoring class
+├── install.sh                  # symlinks skills/ + agents/ into a .claude/ dir
 └── README.md
 ```
 
@@ -137,4 +169,5 @@ nj-agents/
 Drop a new skill directory under `skills/` (with a `SKILL.md`) or a new agent `.md`
 under `agents/`, then re-run `./install.sh`. Keep everything **project-agnostic** —
 discover per-repo details at runtime rather than hardcoding a stack, path, port, or
-tool.
+tool. Point each new skill at the right class contract: `CONVENTIONS.md` if it only
+reads and advises, `CONVENTIONS-authoring.md` if it writes an artifact into the repo.
