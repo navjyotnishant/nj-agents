@@ -1,15 +1,18 @@
 ---
 name: review-style
 description: Use this skill when the user asks to "review my changes for style", "check conventions before I push", "review my commit messages", or wants a consistency/hygiene review of the current commit or uncommitted work. Checks the diff against surrounding code conventions, commit-message hygiene, and leftover debug/TODO/console output. Works in any git repo; nothing here is project-specific.
-version: 0.1.0
+version: 0.2.0
 ---
 
 # Review: Style & Conventions
 
 Consistency and hygiene review of the **current commit or uncommitted changes** —
 does the new code read like the code around it, are commit messages clean, and is
-there leftover debug output. It infers conventions from the **surrounding code**,
-not from a hardcoded style guide, so it works in any repo.
+there leftover debug output. Conventions are inferred from the **surrounding code**,
+not a hardcoded style guide, so it works in any repo.
+
+Follow the shared rules in `CONVENTIONS.md` (snapshot scope §1, diff hygiene §2,
+secret gate §3, findings format §4, CI mode §5, report §6, safety §7).
 
 ## Step 0 — Print the warning banner FIRST
 
@@ -19,48 +22,38 @@ not from a hardcoded style guide, so it works in any repo.
 ╠══════════════════════════════════════════════════════════════════╣
 ║  This shares a SNAPSHOT of your diff (and unpushed commit         ║
 ║  messages) with AI (this Claude session + subagent) to review     ║
-║  style and hygiene. No external API is called. A local secret     ║
-║  scan runs before sharing. This tool ADVISES only.                ║
+║  style and hygiene. No external API is called; nothing leaves     ║
+║  this machine. A secret scan runs before sharing. ADVISES only.   ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
 ## Prerequisites
 
-- **A git repository** (`git rev-parse --git-dir`); else stop.
-- **A diff to review** (staged + unstaged + unpushed); if empty, report and exit.
+- **A git repository** (`git rev-parse --git-dir`); else stop and say so.
+- **A diff to review** (staged + unstaged + unpushed); if empty, report and stop.
 - **No external API key** — uses the current Claude session.
 
-## Step 1 — Build the snapshot (local, NOT yet shared)
+## Step 1 — Snapshot + hygiene + secret gate
 
-Same scope as the umbrella: `git diff --cached` + `git diff` + the unpushed range,
-**plus the unpushed commit messages** (`git log <range> --format='%h %s%n%b'`) for
-the commit-hygiene check. Keep it in memory / scratchpad only; never write to the
-repo.
+Build the snapshot (`CONVENTIONS.md §1`), including the **unpushed commit messages**
+for the commit-hygiene check. Apply diff hygiene (§2), then run the secret-scan gate
+(§3) before sharing anything — a credible hit is a hard stop. Only a clean scan
+proceeds.
 
-## Step 2 — Secret-scan gate before sharing
+## Step 2 — Spawn the style agent
 
-Before handing the diff to the agent, run the local secret scan from
-`review-secrets`. If a likely secret is found, **hard stop** — share nothing and
-tell the user to resolve it first. Only a clean scan proceeds.
+Spawn `style-reviewer` with the cleared snapshot. It checks: consistency with
+surrounding code (naming, formatting, idioms, error handling, comment density, reuse
+of existing helpers), commit-message hygiene (imperative mood, meaningful subject,
+no `wip`/`fix`/`asdf`, matches the repo's existing convention e.g. Conventional
+Commits), and leftover artifacts (`console.log`/`print`/`dbg!` debug output,
+`TODO`/`FIXME`/`XXX` added in the diff, commented-out code, test-focus flags like
+`.only`/`fdescribe`, and — as a hard flag — committed merge-conflict markers).
 
-## Step 3 — Spawn the style agent
+## Step 3 — Report
 
-Spawn `style-reviewer` with the cleared snapshot. It checks:
-
-- **Consistency with surrounding code** — naming, formatting, idioms, error
-  handling, and comment density that match the neighbouring lines (inferred from
-  the diff context, not an external style guide).
-- **Commit-message hygiene** — imperative mood, meaningful subject, no "wip"/"fix
-  stuff"/"asdf", reasonable scope per commit, matches any convention the other
-  unpushed messages already follow (e.g. Conventional Commits if in use).
-- **Leftover artifacts** — `console.log` / `print` / `dbg!` debug output, `TODO`/
-  `FIXME`/`XXX` added in the diff, commented-out code blocks, stray focus flags in
-  tests (`.only`, `fdescribe`), and merge-conflict markers.
-
-## Step 4 — Report
-
-Print the agent's findings (confidence ≥80 only), each tagged `WARNING` / `NIT`
-with file:line and a fix. Style issues are rarely BLOCKERs — dimension verdict is
-usually **WARN** or **PASS**; reserve BLOCK for things that shouldn't ship (a
-committed merge-conflict marker, a `.only` that disables the test suite). Advises
-only — never pushes. Clean up any scratch files.
+Per `CONVENTIONS.md §4`: findings ≥80 confidence, tagged `WARNING`/`NIT` (rarely
+`BLOCKER`) with `file:line` (or commit hash) and a fix, plus a dimension verdict —
+usually **WARN** or **PASS**; reserve **BLOCK** for things that shouldn't ship (a
+committed conflict marker, a `.only` that disables the suite). Write the report
+artifact (§6) if run standalone. Advises only; clean up scratch files.

@@ -1,15 +1,18 @@
 ---
 name: review-correctness
 description: Use this skill when the user asks to "review my changes for bugs", "check this diff for correctness", "did I introduce a regression", or wants a correctness-focused review of the current commit or uncommitted work before pushing. Reviews the changed lines and their blast radius for logic errors, regressions, unhandled edge cases, and missing validation. Works in any git repo; nothing here is project-specific.
-version: 0.1.0
+version: 0.2.0
 ---
 
 # Review: Correctness & Bugs
 
-Correctness-focused review of the **current commit or uncommitted changes** —
-logic errors, regressions, unhandled edge cases, and missing validation
-introduced by the diff. Scope is the **changed lines and their blast radius**
-(callers of changed functions, changed contracts), not the whole repo.
+Correctness-focused review of the **current commit or uncommitted changes** — logic
+errors, regressions, unhandled edge cases, and missing validation introduced by the
+diff. Scope is the **changed lines and their blast radius** (callers of changed
+code, changed contracts), not the whole repo.
+
+Follow the shared rules in `CONVENTIONS.md` (snapshot scope §1, diff hygiene §2,
+secret gate §3, findings format §4, CI mode §5, report §6, safety §7).
 
 ## Step 0 — Print the warning banner FIRST
 
@@ -18,42 +21,36 @@ introduced by the diff. Scope is the **changed lines and their blast radius**
 ║  CORRECTNESS REVIEW — AI-ASSISTED                                ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║  This shares a SNAPSHOT of your diff with AI (this Claude session ║
-║  + subagent) to review it for bugs. No external API is called.    ║
-║  A local secret scan runs before the snapshot is shared. This     ║
-║  tool ADVISES only — it never pushes or commits.                  ║
+║  + subagent) to review it for bugs. No external API is called;    ║
+║  nothing leaves this machine. A secret scan runs before the       ║
+║  snapshot is shared. This tool ADVISES only.                      ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
 ## Prerequisites
 
-- **A git repository** (`git rev-parse --git-dir`); else stop.
-- **A diff to review** (staged + unstaged + unpushed); if empty, report and exit.
+- **A git repository** (`git rev-parse --git-dir`); else stop and say so.
+- **A diff to review** (staged + unstaged + unpushed); if empty, report and stop.
 - **No external API key** — uses the current Claude session.
 
-## Step 1 — Build the snapshot (local, NOT yet shared)
+## Step 1 — Snapshot + hygiene + secret gate
 
-Same scope as the umbrella: `git diff --cached` + `git diff` + the unpushed range
-(`@{upstream}..HEAD`, falling back to the default branch, then `HEAD`). Keep it in
-memory / scratchpad only; never write to the repo.
+Build the snapshot (`CONVENTIONS.md §1`), apply diff hygiene (§2), then run the
+secret-scan gate (§3 / `review-secrets`) **before sharing anything**. A credible
+secret hit is a hard stop — share nothing, tell the user (interactive) or BLOCK with
+exit 1 (CI). Only a clean scan proceeds.
 
-## Step 2 — Secret-scan gate before sharing
+## Step 2 — Spawn the correctness agent
 
-Before handing the diff to the agent, run the local secret scan from
-`review-secrets` (Step 2 there). If a likely secret is found, **hard stop** —
-print the masked hit, share nothing, and tell the user to resolve it first. Only
-a clean scan proceeds.
+Spawn `correctness-reviewer` with the cleared, hygiene-filtered snapshot. It traces
+each hunk for: off-by-one/boundary errors, null/undefined/None dereferences,
+inverted or wrong conditionals, changed signatures/return contracts that break
+existing callers, unhandled error/edge cases, missing validation on new inputs,
+resource leaks, and concurrency hazards in changed code.
 
-## Step 3 — Spawn the correctness agent
+## Step 3 — Report
 
-Spawn `correctness-reviewer` with the cleared snapshot. It traces each hunk for:
-off-by-one and boundary errors, null/undefined/None dereferences, incorrect
-conditionals and inverted logic, changed function signatures/return contracts
-that break existing callers, unhandled error/edge cases, missing validation on
-newly-introduced inputs, resource leaks, and concurrency hazards in changed code.
-
-## Step 4 — Report
-
-Print the agent's findings (confidence ≥80 only), each tagged `BLOCKER` /
-`WARNING` / `NIT` with file:line and a concrete fix, and a dimension verdict:
-**BLOCK** if a real bug, **WARN** for risky-but-not-broken, **PASS** if clean.
-Advises only — never pushes. Clean up any scratch files.
+Per `CONVENTIONS.md §4`: findings ≥80 confidence, tagged `BLOCKER`/`WARNING`/`NIT`
+with `file:line` and a concrete fix, plus a dimension verdict — **BLOCK** for a real
+bug, **WARN** for risky-but-not-broken, **PASS** if clean. Write the report artifact
+(§6) if run standalone. Advises only; clean up scratch files.
