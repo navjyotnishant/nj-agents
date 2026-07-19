@@ -15,7 +15,7 @@ them all.
 | Skill | What it does | Agent it uses |
 |---|---|---|
 | `/pre-push-review` | **Umbrella.** Prints the warning banner, runs the secret scan as a gate, then spawns the other dimensions in parallel and aggregates one PASS / WARN / BLOCK verdict + a report artifact. | (orchestrates the below) |
-| `/review-secrets` | Secret scan over the diff **first** (hard gate — shares nothing if a key is found): a dedicated scanner (gitleaks/trufflehog/detect-secrets) if installed, else a model-reasoned fallback. Then a semantic security pass. | `secrets-reviewer` |
+| `/review-secrets` | Secret scan over the diff **first** (hard gate — shares nothing if a key is found), using a **required** dedicated scanner (gitleaks/trufflehog/detect-secrets — BLOCKs with install steps if none is present). Then a semantic security pass. | `secrets-reviewer` |
 | `/review-correctness` | Bugs, regressions, edge cases, missing validation in the changed lines and their blast radius. | `correctness-reviewer` |
 | `/review-tests-build` | Auto-detects and runs the repo's own test/lint/build commands as a gate. Never installs tooling. | `tests-build-runner` |
 | `/review-dependencies` | Added/removed/upgraded packages, version-pinning risk, license changes, supply-chain signals (typosquatting). Diff-only; no network, no install. | `dependency-reviewer` |
@@ -46,10 +46,12 @@ hooks, and leaves no files in your repo.
 - **A diff to review** — if there's nothing staged/unstaged/unpushed, the skills
   stop cleanly.
 - **No API key required, no network** — the review uses your current Claude session.
-- **Recommended:** a dedicated secret scanner on PATH — [`gitleaks`](https://github.com/gitleaks/gitleaks),
-  `trufflehog`, or `detect-secrets`. `review-secrets` prefers it for authoritative
-  detection and falls back to a model-reasoned scan if none is installed (and tells
-  you which ran). For enterprise use, install one.
+- **Required:** a dedicated secret scanner on PATH — [`gitleaks`](https://github.com/gitleaks/gitleaks)
+  (MIT), [`trufflehog`](https://github.com/trufflesecurity/trufflehog) (Apache-2.0),
+  or [`detect-secrets`](https://github.com/Yelp/detect-secrets) (Apache-2.0) — any
+  one. `review-secrets` and the umbrella **BLOCK with install instructions** if none
+  is present; there is no heuristic-only fallback. All three are free/open source:
+  `brew install gitleaks` (or `trufflehog`), or `pipx install detect-secrets`.
 - **Optional:** a test/lint/build command. `review-tests-build` auto-detects it
   (Node/Python/Go/Rust/JVM/Make/just, or a command documented in
   `CLAUDE.md`/`AGENTS.md`). If none exists, that dimension reports SKIP — it never

@@ -1,7 +1,7 @@
 ---
 name: pre-push-review
 description: Use this skill when the user asks to "review my changes before I push", "run the pre-push review", "check this diff before committing/pushing", "do a thorough review of the current changes", or wants an AI-assisted quality gate over the current commit or uncommitted work. Runs five review dimensions (secrets, correctness, tests/build, dependencies, style) — the secret scan first as a gate, then the rest in parallel — and aggregates one PASS / WARN / BLOCK verdict with a report artifact. Supports a non-interactive CI mode with an exit-code contract. Works in any git repo; nothing here is specific to one project, stack, or tool.
-version: 0.2.0
+version: 0.3.0
 ---
 
 # Pre-Push Review (umbrella)
@@ -36,8 +36,9 @@ Before running any git command or reading any diff, print this banner verbatim:
 ║  API is called and nothing leaves this machine — the current      ║
 ║  session does the analysis.                                       ║
 ║                                                                   ║
-║  BEFORE any snapshot is shared, a secret scan runs (a dedicated   ║
-║  scanner if installed, else a model-reasoned fallback). If a      ║
+║  BEFORE any snapshot is shared, a REQUIRED secret scanner         ║
+║  (gitleaks / trufflehog / detect-secrets) runs. If none is        ║
+║  installed the review BLOCKs with install steps. If a             ║
 ║  credential/key/token is detected, the review STOPS and shares    ║
 ║  nothing until you remove it.                                     ║
 ║                                                                   ║
@@ -53,8 +54,9 @@ Before running any git command or reading any diff, print this banner verbatim:
   "nothing to review" and stop.
 - **No external API key / no network.** Uses the current Claude session; never asks
   for or requires any credential.
-- **Recommended:** a dedicated secret scanner on PATH (`gitleaks` / `trufflehog` /
-  `detect-secrets`) for authoritative secret detection. Absent → model fallback.
+- **REQUIRED:** a dedicated secret scanner on PATH (`gitleaks` / `trufflehog` /
+  `detect-secrets` — any one). If none is installed, the review BLOCKs with install
+  instructions; there is no heuristic-only fallback gate.
 - **Optional, auto-detected:** a test/lint/build command (tests/build dimension).
 - **Optional:** a configured upstream (`@{upstream}`); else the unpushed scope falls
   back to the default branch (`CONVENTIONS.md §1`).
@@ -82,12 +84,16 @@ write into the repo. Do **not** hand anything to a subagent yet.
 
 ## Step 3 — Secret-scan GATE (inline, first, before anything is shared)
 
-Run the `review-secrets` gate (scanner-first, model fallback) over the added lines,
-per `skills/review-secrets/SKILL.md` and `CONVENTIONS.md §3`:
+Run the `review-secrets` gate (a **required** dedicated scanner) over the added
+lines, per `skills/review-secrets/SKILL.md` and `CONVENTIONS.md §3`:
 
-- **Any credible hit → STOP.** Print `file:line` + pattern class + **masked** value.
-  Do **not** spawn any agent; share nothing. Interactive: tell the user to
-  remove/rotate (or confirm a false positive) and re-run. CI: BLOCK, exit 1.
+- **No scanner installed → BLOCK.** Print the install instructions and stop — do
+  not spawn any agent, share nothing. The overall verdict is BLOCK; a push must not
+  proceed without an authoritative secret scan.
+- **Any scanner hit → STOP.** Print `file:line` + rule/pattern class + **masked**
+  value. Do **not** spawn any agent; share nothing. Interactive: tell the user to
+  remove/rotate (or allowlist a confirmed false positive) and re-run. CI: BLOCK,
+  exit 1.
 - **Clean → proceed to Step 4.**
 
 Non-negotiable ordering: handing the diff to any subagent counts as "sharing with

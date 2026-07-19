@@ -67,9 +67,14 @@ at once:
 ## 3. Secret handling (applies before any AI sharing)
 
 The secret scan is always the **first gate**. The diff is not handed to any
-subagent until it clears. Prefer a real scanner; fall back to the model. See
-`skills/review-secrets/SKILL.md` for the full procedure. Two universal rules:
+subagent until it clears. A dedicated scanner (`gitleaks` / `trufflehog` /
+`detect-secrets` — any one) is **required**: if none is installed the secrets
+dimension BLOCKs with install instructions and the review does not proceed (there
+is no heuristic-only fallback gate). See `skills/review-secrets/SKILL.md` for the
+full procedure. Universal rules:
 
+- **A scanner is mandatory** — a missing scanner is a BLOCK, never a silent skip or
+  a model-only pass.
 - **Never echo a raw secret** — always mask (`AKIA****************`).
 - **Newly-added vs. pre-existing**: focus on secrets **added by this change**
   (`+` lines). A secret already committed upstream is still worth flagging, but the
@@ -131,7 +136,7 @@ what was reviewed and the outcome — **never into the repo tree**:
   `.nj-agents-reports/` to `.gitignore` — propose, don't silently add).
 - **Filename:** `review-<UTC-timestamp>-<short-sha-or-dirty>.md`.
 - **Contents:** timestamp, repo + branch, the exact scope reviewed, which secret
-  scanner ran (real tool name + version, or "model-reasoned fallback"), files
+  scanner ran (tool name + version), files
   excluded per §2, whether the review was partial, per-dimension verdict + findings,
   and the aggregate verdict + exit code.
 
