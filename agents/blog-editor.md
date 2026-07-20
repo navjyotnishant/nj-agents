@@ -12,8 +12,10 @@ stage before it's written to the repo.
 ## Core Mission
 
 Produce the final Markdown post: apply every fact-checker correction/cut and the
-reviewer's must-fix notes, embed diagrams, add front-matter, and tighten the prose —
-without introducing new unverified claims.
+reviewer's must-fix notes, embed diagrams, add front-matter, tighten the prose, and
+apply the editorial passes in Phase 2 (terminology consistency, a sparing emphasis
+pass, author style/punctuation prefs, front-matter↔body consistency) — without
+introducing new unverified claims.
 
 ## Phase 1 — Apply required changes
 
@@ -26,9 +28,29 @@ without introducing new unverified claims.
 ## Phase 2 — Polish
 
 Tighten prose: strong first paragraph, active voice, cut filler and redundancy,
-consistent terminology, correct code-fence languages, meaningful headings. Remove the
-writer's `[src: ...]` citation markers (they were scaffolding). Keep the author's
-voice; don't blandify it.
+correct code-fence languages, meaningful headings. Remove the writer's `[src: ...]`
+citation markers (they were scaffolding). Keep the author's voice; don't blandify it.
+
+Also own these editorial passes (each caught real, repeated hand-fixing in practice):
+
+- **Terminology consistency.** Pick one canonical term per concept and use it
+  everywhere — title, front-matter `description`, body, and image alt-text. Don't let
+  a concept drift between synonyms (e.g. "coding subscription" vs "AI subscription",
+  "coding agent" vs "AI coding agent"). If the author states a preferred term, that one
+  wins; otherwise choose the clearest and apply it uniformly.
+- **Emphasis pass (skimmability).** Bold the single load-bearing claim in each major
+  section so a skimmer gets the argument from the bold alone. **Be sparing** — roughly
+  one bold phrase per section; over-bolding destroys emphasis. Don't bold whole
+  paragraphs or things already carried by a heading.
+- **Author style/punctuation preferences.** Honor any `style_prefs` the skill passes
+  (e.g. "no em-dashes" → rewrite `—` to a comma/colon/parenthetical/hyphen as fits;
+  "sentence case headings"; a house spelling). Apply the preference consistently across
+  the whole post, front-matter included. If no prefs are given, keep the author's
+  existing style.
+- **Front-matter ↔ body consistency.** The `title` and `description` must use the same
+  terminology and framing as the body — external platforms surface `description` in
+  feed/social cards, so a stale or off-message description misrepresents the post. Make
+  them agree.
 
 ## Phase 3 — Present
 

@@ -85,6 +85,11 @@ a cluttered one of everything.
     in SVG/Excalidraw text is unreliable and often renders as tofu (□); if it doesn't
     show, replace it with a drawn shape or plain text. Fix and re-render until clean.
     Source that looks fine routinely renders with overlaps and clipping.
+  - **The same render-and-verify rule extends to any raster/social image derived from
+    a diagram** — a PNG rasterization for an external platform, or a cover/banner that
+    embeds the diagram as a motif (the tech-blog skill's `rasterize-svg` / `make-cover`
+    scripts). View the final PNG and check the usual overlaps/clipping **plus** that no
+    *stale or now-incorrect label* survived from an out-of-date source into the raster.
 - **mermaid** — the appropriate diagram (`graph TD`/`flowchart`, `sequenceDiagram`,
   `erDiagram`, `C4Context` if apt). Valid mermaid that renders on GitHub.
 - **figma** — if the skill says the Figma MCP is available, produce the structured

@@ -6,12 +6,19 @@ version: 0.1.0
 
 # Technical Blog (authoring, multi-agent)
 
-Produces an expert-level technical blog post explaining the project, via a
-**sequential multi-agent pipeline**: `blog-writer` → `blog-fact-checker` →
-`blog-reviewer` → `blog-editor` → optional `blog-poster`. Every claim is grounded in
-the real repo — the fact-checker **blocks** finalization on anything it can't verify.
-It writes the final post to the repo and **proposes** the commit; it posts to an
-external platform only if an MCP is connected and you opt in.
+Produces an expert-level technical blog post explaining the project via a
+**multi-agent pipeline**. The content chain is **sequential** —
+`blog-writer` → `blog-fact-checker` → `blog-reviewer` → `blog-editor` (each transforms
+the prior; the fact-checker **blocks** finalization on anything it can't verify).
+Alongside the writer it **generates the visual assets** the post needs — architecture
+diagrams via the `arch-diagram` skill and redacted product screenshots via
+`capture-screenshots` — so the editor has real figures to embed. After the editor, the
+independent finalize checks — `blog-final-polish`, `blog-platform-lint`, and cover
+generation — **run in parallel** (they only need the finished post), then converge
+before the optional `blog-poster` and, once published, optional `social-post` promo
+copy. Every claim is grounded in the real repo. It writes the final post to the repo and
+**proposes** the commit; it posts to an external platform only if an MCP is connected
+(or the Dev.to REST fallback is configured) and you opt in.
 
 This is an **authoring-class** skill — follow `CONVENTIONS-authoring.md` (repo
 ingest §A1, scoped output §A2, propose-commit §A3, placement §A4, MCP-detect §A5,
@@ -23,7 +30,10 @@ grounding/safety §A6, non-clobber §A7).
 ╔══════════════════════════════════════════════════════════════════╗
 ║  TECHNICAL BLOG — AUTHORING (multi-agent)                        ║
 ╠══════════════════════════════════════════════════════════════════╣
-║  Pipeline: writer → fact-checker → reviewer → editor → (poster).  ║
+║  Sequential: writer → fact-checker → reviewer → editor.          ║
+║  Alongside the writer: arch-diagram + capture-screenshots.       ║
+║  Then in PARALLEL: final-polish + platform-lint + cover-gen.      ║
+║  Converge → (poster) → (social-post promo).                      ║
 ║  Every claim is grounded in your actual repo; the fact-checker    ║
 ║  BLOCKS the post from finalizing on any claim it can't verify.    ║
 ║  Writes the post to docs/blog/ + a publish-ready MD/HTML copy,    ║
@@ -50,8 +60,10 @@ reference in the post. Build the repo model the whole pipeline will be grounded 
 
 Ask (or accept as parameters): the **topic/angle** (e.g. "how we built X", "our
 architecture", "lessons from Y"), the **audience** (e.g. senior engineers, general
-dev), the **voice**, and confirm the **landing path** (default `docs/blog/<slug>.md`,
-§A4). Derive a URL-safe `<slug>` from the title.
+dev), the **voice**, any **style prefs** (`style_prefs` — e.g. "no em-dashes", house
+spelling, sentence-case headings; passed through to the editor and final-polish), and
+confirm the **landing path** (default `docs/blog/<slug>.md`, §A4). Derive a URL-safe
+`<slug>` from the title.
 
 **Voice** — default to a real practitioner writing, not a neutral explainer: first
 person where natural, contractions, varied sentence length, an actual point of view,
@@ -73,6 +85,34 @@ from zero. Revise in place:
 3. Editor (Step 6) finalizes; re-emit outputs (Step 7) and **re-publish the same
    artifact/HTML** so the review link stays current.
 Keep the same `<slug>`/filename so links don't break (§A7).
+
+## Step 2.5 — Prepare visual assets (generate, don't only embed)
+
+Now that the topic/angle is known, decide what **figures** the post needs — an
+architecture/data-flow/sequence diagram, and product screenshots — and whether they
+already exist. Step 1 only *discovered* existing diagrams; this stage **generates the
+missing ones** by invoking the sibling skills:
+
+- **Diagrams** → invoke the `arch-diagram` skill (`diagram-architect`) for any figure
+  the post needs that isn't already in `docs/architecture/`. Pick the right **type**
+  (system/sequence/data-flow/…) and **mode** (`structural` for a component map,
+  `conceptual` for a trust-boundary / "where data is encrypted" figure — the blog's
+  security section needed conceptual). It renders **and self-verifies** the diagram.
+- **Screenshots** → invoke the `capture-screenshots` skill for any product UI the post
+  shows (playground, admin console, etc.). It captures **and runs the redaction
+  pipeline** (PII/secret detection → blur/mask → verify) so nothing sensitive ships;
+  only the redacted image is written.
+
+**Timing — the skill decides.** These only need the repo model + topic, so they can run
+**in parallel with the writer** (Step 3) to save time. Run them **before** the writer
+instead when the prose needs to reference *specific* figures by name/number. Either
+way, assets must exist before the editor embeds them (Step 6).
+
+**Degrade gracefully (§A8).** If capture is blocked (a classifier denial, or an
+auth-gated page the skill shouldn't log into) or diagram export tooling is unavailable,
+fall back to the documented manual path — ask the user to supply the image, or hand off
+the exact command — rather than stalling. Don't invent a screenshot or a diagram that
+wasn't produced.
 
 ## Step 3 — Writer
 
@@ -99,10 +139,42 @@ rewrite).
 
 ## Step 6 — Editor
 
-Spawn `blog-editor` with the draft + fact-checker cuts + reviewer notes. It produces
-the **final** polished post: applies the notes, ensures every fact-checker correction
-landed, embeds the architecture diagrams (Step 1) at the right points, and adds
-front-matter (title, date, tags, summary).
+Spawn `blog-editor` with the draft + fact-checker cuts + reviewer notes + any
+`style_prefs` (Step 2). It produces the **final** polished post: applies the notes,
+ensures every fact-checker correction landed, embeds the architecture diagrams (Step 1)
+at the right points, adds front-matter (title, date, tags, summary), and runs its
+editorial passes — terminology consistency, a **sparing emphasis pass** (bold the
+load-bearing claim per section), the style prefs (e.g. no em-dashes), and
+front-matter↔body consistency.
+
+## Step 6.5 — Finalize checks (parallel analysis, serialized apply)
+
+Once the editor's post exists, the remaining pre-publish work is **independent** and
+fans out — spawn these **in a single message (parallel)**, the same way
+`pre-push-review` fans out its dimensions. They only need the finished post; none
+depends on another's output:
+
+- `blog-final-polish` — the mechanical gate the editor's prose-eye misses: **single-H1 /
+  accessibility** (a body `# ` duplicates the front-matter title's H1), **ending is a
+  takeaway + CTA** (not a bare link list), **no duplicated/leftover artifacts** (doubled
+  CTA lines, stray `[src:]` markers), **emphasis sanity** (neither zero nor over-bolded).
+- `blog-platform-lint` (only if the target is external) — platform mechanics: **>4 tags**
+  (Dev.to hard-caps at 4), **SVG/relative images** that won't render, **missing/stale
+  cover**, the draft→publish flow.
+- **Cover generation** (only if `cover_image` is empty) — `scripts/make-cover.py` (a
+  script, not an agent) can run concurrently; **view the rendered PNG** to verify.
+
+**Converge, then apply serially.** Because both `blog-final-polish` and
+`blog-platform-lint` may *edit the same post file*, collect all their findings first,
+then apply the edits **one at a time** (never let two agents write the file
+concurrently — that races). Act on anything marked needs-author before publishing.
+
+> **Dependency graph (what's sequential vs. parallel):** the content chain
+> writer → fact-checker → reviewer → editor is strictly **sequential** (each transforms
+> the prior, and the fact-checker is a hard gate). Everything after the editor —
+> final-polish, platform-lint, cover-gen — is **independent and runs in parallel**, then
+> results converge before Step 8. Publish (Step 8) and promo (Step 10) are sequential
+> again: platform-lint must clear before posting, and promo needs a published URL.
 
 ## Step 7 — Write outputs
 
@@ -124,7 +196,18 @@ front-matter (title, date, tags, summary).
 
 ## Step 8 — Optional poster
 
-Detect a publishing MCP (§A5) — a CMS / Dev.to / Medium / Notion connector, etc. If
+The Step 6.5 checks have already run: `blog-platform-lint`'s findings are in hand and a
+cover was generated if one was missing. **Apply the remaining asset prep** the lint
+called for before posting:
+- **Rasterize any SVG diagrams** the post references (Dev.to won't render SVG inline):
+  `scripts/rasterize-svg.py IN.svg OUT.png --width 1200` (the ~1200px width matters —
+  larger can silently fail the platform's image proxy). Repoint the post at the PNGs and
+  host them where the platform can fetch them (absolute URLs).
+- **Cover:** on a re-publish, remember Dev.to caches the cover by URL — a changed cover
+  needs a **new filename** to bust the cache (`cover-v2.png`).
+- Resolve every platform-lint **must-fix** before posting.
+
+Then detect a publishing MCP (§A5) — a CMS / Dev.to / Medium / Notion connector, etc. If
 one is connected **and the user opts in**, spawn `blog-poster` to create a **draft**
 on that platform (never auto-publish without explicit confirmation).
 
@@ -160,3 +243,12 @@ git commit -m "docs: add technical blog — <title>"
 Summarize: the post's angle, where it landed (files + artifact URL if published), the
 publish-ready files, how many fact-check iterations it took, and any claim that was
 cut for being unverifiable.
+
+## Step 10 — Optional promo copy (social-post)
+
+Once the post is **published** and you have a live URL, offer to draft promotional copy
+via the `social-post` skill/agent. Pass the published URL + the same `style_prefs`. It
+returns ready-to-paste LinkedIn/X variants (short / medium / builder-story), gets the
+hook and link-preview ordering right, keeps hashtags clean, and provides a first-comment
+block for secondary links. It drafts only — the user posts. Skip if the user doesn't want
+promo copy.
