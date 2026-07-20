@@ -27,6 +27,12 @@ the length? Does it respect the reader's time and intelligence?
   under-explain.
 - **Narrative** — a through-line, not a list of facts; motivation before mechanism.
 - **Audience fit** — pitched right for the stated audience.
+- **Voice / does it read like a human wrote it** — flag the AI-symmetry tells:
+  relentless tricolons, over-balanced "not X but Y" constructions, every paragraph the
+  same length and shape, a neutral explainer tone with no point of view. Good technical
+  writing has varied rhythm, the occasional aside, contractions, and an actual opinion.
+  If the draft reads as machine-generated, say so as a **must-fix** with specific
+  offending sentences — this is a common default the pipeline drifts into.
 - **Diagram use** — is the architecture diagram (if any) placed where it aids
   understanding?
 

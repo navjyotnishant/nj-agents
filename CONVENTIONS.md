@@ -24,8 +24,23 @@ git diff "$RANGE"                          # committed-but-unpushed
 git log "$RANGE" --format='%h %s%n%b'      # unpushed commit messages (for style)
 ```
 
-If the user passes an explicit scope (e.g. "just the staged changes", "only
-`HEAD`", "compare against `main`"), honor it instead of the default.
+**Already-pushed feature branch — don't return "nothing to review."** If the branch
+is up-to-date with its upstream, `$UPSTREAM..HEAD` is **empty** even though the branch
+carries real work not yet on the base branch. When staged + unstaged + `$RANGE` are all
+empty, fall back to reviewing the branch against its **merge-base with the default
+branch** (what a PR would show), and say that's the scope you used:
+
+```bash
+BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
+BASE="${BASE:-main}"
+MB=$(git merge-base "origin/$BASE" HEAD 2>/dev/null)
+git diff "$MB..HEAD"                        # the branch's whole delta vs base (PR view)
+git log "$MB..HEAD" --format='%h %s%n%b'    # its commit messages
+```
+
+Only do this when the unpushed scope is empty — it's the "review this pushed branch
+before merging" case, not the default. If the user passes an explicit scope (e.g.
+"just the staged changes", "only `HEAD`", "compare against `main`"), honor it instead.
 
 Keep the snapshot **in memory or in the scratchpad/temp dir only** — never write it
 into the repo tree.

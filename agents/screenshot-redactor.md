@@ -30,6 +30,12 @@ the image. Apply by the reviewer's `blur_style`, with these defaults:
   shape is recognizable but the data isn't exposed (e.g. blur the local-part of an
   email but leave the domain; blur a surname but leave the first initial). Only for
   `low` risk — **never** partially mask a high-risk secret.
+- **`placeholder` (low risk — for polished blog/marketing shots):** cover the region
+  and overlay a realistic fake in the same style (a real email → `demo-admin@example.com`,
+  a real name → `Alex Rivera`). Reads far more naturally than a blur box in a shot meant
+  to look clean, and the real value is gone. Only for `low` risk, and only when the
+  region can be fully covered — **never** substitute over a high-risk secret, and make
+  sure no pixel of the original bleeds past the overlay (verify below).
 
 Add a small margin around each region so anti-aliased edges of text are covered too.
 Keep the rest of the image untouched and sharp.
