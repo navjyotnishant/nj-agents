@@ -127,3 +127,27 @@ Re-running an authoring skill must **merge, not destroy**:
   confirm, don't silently overwrite.
 
 Always show a diff of what changed; never silently replace an existing artifact.
+
+---
+
+## §A8 — Degrade gracefully when a tool is denied or unavailable (shared)
+
+Skills run in varied environments. A tool call you depend on may be **denied by a
+sandbox/permission classifier**, not just missing — this happened in practice with SSH
+to a host, a browser subagent loading a live URL, and writes outside an allowed root.
+Treat a denial the same as a missing tool: **detect it, degrade, and keep going** —
+never fail silently or stall.
+
+- **Detect the denial** (a permission error, a blocked-by-classifier message, a
+  refused write path) rather than retrying the identical call in a loop.
+- **Degrade to a documented manual path.** If you can't run it, hand the user the
+  exact commands to run themselves, or ask them to supply the artifact the step would
+  have produced (an image, a file), then continue the pipeline from there.
+- **Try a narrower equivalent first.** A denied subagent spawn may still work as a
+  direct tool call; a refused write outside the repo may succeed inside it (then move
+  the file). Prefer the reasonable in-bounds path over abandoning the step.
+- **Never work around the intent of a denial** — don't fabricate credentials, bypass
+  auth, or route around a security control to accomplish the task. A denial about
+  *safety* is a stop; a denial about *capability* is a detour.
+- **Say what you did.** Note in the summary that a step was degraded/manual so the
+  result isn't mistaken for a full automated pass.
