@@ -275,11 +275,17 @@
       <a href="#arch-diagram"><span class="dot authoring"></span> <code>/arch-diagram</code></a>
       <a href="#capture-screenshots"><span class="dot authoring"></span> <code>/capture-screenshots</code></a>
       <a href="#tech-blog"><span class="dot authoring"></span> <code>/tech-blog</code></a>
+      <a href="#docs-site"><span class="dot authoring"></span> <code>/docs-site</code></a>
+    </nav>
+
+    <nav class="navgroup">
+      <div class="label">Social</div>
+      <a href="#social-post"><span class="dot" style="background:#0a66c2"></span> <code>/social-post</code></a>
     </nav>
 
     <nav class="navgroup">
       <div class="label">Agents</div>
-      <a href="#agents"><span class="dot" style="background:var(--ink-faint)"></span> All 15 agents</a>
+      <a href="#agents"><span class="dot" style="background:var(--ink-faint)"></span> All 20 agents</a>
     </nav>
   </aside>
 
@@ -296,7 +302,7 @@
       <!-- OVERVIEW -->
       <section id="overview">
         <h1>nj-agents</h1>
-        <p class="lede">A personal, project-agnostic collection of Claude Code <strong>skills and agents</strong> for software-development workflows — installed into any project (or globally) via symlink. <strong>10 skills, 15 agents</strong> across two classes.</p>
+        <p class="lede">A personal, project-agnostic collection of Claude Code <strong>skills and agents</strong> for software-development workflows — installed into any project (or globally) via symlink. <strong>12 skills, 20 agents</strong> across review, authoring, and social work.</p>
         <div class="callout">
           <span class="ic">🔒</span>
           <span>Everything runs in your current Claude session — <strong>no external API is called, nothing leaves your machine.</strong> Every skill prints a banner describing what it does before it touches anything.</span>
@@ -628,12 +634,12 @@ OVERALL: <span style="color:var(--block)">BLOCK</span> — fix the correctness b
       <article class="card" id="tech-blog">
         <div class="card-head">
           <div class="card-title"><code>/tech-blog</code> <span class="badge multi">multi-agent</span> <span class="badge ver">v0.1.0</span></div>
-          <p class="card-purpose">A pipeline (writer → fact-checker → reviewer → editor → optional poster) that writes an expert technical post about the project. The <strong>fact-checker BLOCKS</strong> on any claim it can't verify against the repo.</p>
+          <p class="card-purpose">A pipeline (writer → fact-checker → reviewer → editor → final-polish → platform-lint → optional poster) that writes an expert technical post about the project. The <strong>fact-checker BLOCKS</strong> on any claim it can't verify against the repo.</p>
           <dl class="meta-grid">
             <dt>Invoke</dt><dd><code>/tech-blog</code> — give a topic/angle &amp; audience</dd>
             <dt>Writes</dt><dd><code>docs/blog/&lt;slug&gt;.md</code> + publish-ready MD/HTML (HTML via <code>pandoc</code> if present)</dd>
-            <dt>Uses agents</dt><dd><span class="agent-pills"><code>blog-writer</code><code>blog-fact-checker</code><code>blog-reviewer</code><code>blog-editor</code><code>blog-poster</code></span></dd>
-            <dt>Expect</dt><dd>a grounded post; a proposed commit; posting only via a connected MCP you opt into</dd>
+            <dt>Uses agents</dt><dd><span class="agent-pills"><code>blog-writer</code><code>blog-fact-checker</code><code>blog-reviewer</code><code>blog-editor</code><code>blog-final-polish</code><code>blog-platform-lint</code><code>blog-poster</code></span></dd>
+            <dt>Expect</dt><dd>a grounded post; a proposed commit; posting only via a connected MCP (or Dev.to REST fallback) you opt into</dd>
           </dl>
         </div>
         <details class="more">
@@ -645,9 +651,72 @@ OVERALL: <span style="color:var(--block)">BLOCK</span> — fix the correctness b
               <li><code>blog-writer</code> drafts to the scratchpad, citing each claim's source.</li>
               <li><code>blog-fact-checker</code> verifies <strong>every</strong> claim against the repo — <strong>hard-blocks</strong> on anything <em>wrong</em> or <em>unverifiable</em> until it's fixed or cut.</li>
               <li><code>blog-reviewer</code> critiques structure/clarity/depth → <code>blog-editor</code> finalizes, embeds diagrams, adds front-matter.</li>
-              <li>Writes to <code>docs/blog/</code> + publish-ready copies; <code>blog-poster</code> creates a <strong>draft</strong> only if a publishing MCP is connected and you opt in (never auto-publishes).</li>
+              <li><code>blog-final-polish</code> runs a pre-publish mechanical checklist; <code>blog-platform-lint</code> checks the target platform's rules (Dev.to first) before posting.</li>
+              <li>Writes to <code>docs/blog/</code> + publish-ready copies; <code>blog-poster</code> creates a <strong>draft</strong> only if you opt in — via a publishing MCP or a Dev.to REST fallback (never auto-publishes).</li>
             </ol>
             <div class="callout"><span class="ic">✅</span><span>Nothing is invented: every fact traces to your repo, or it doesn't ship.</span></div>
+          </div>
+        </details>
+      </article>
+
+      <!-- docs-site -->
+      <article class="card" id="docs-site">
+        <div class="card-head">
+          <div class="card-title"><code>/docs-site</code> <span class="badge multi">multi-agent</span> <span class="badge ver">v0.1.0</span></div>
+          <p class="card-purpose">Universal documentation generator. Builds a self-contained, theme-aware <code>docs.html</code> from existing docs, the codebase, an outline, or structured definition files (SKILL.md/OpenAPI/JSON-Schema). Auto-derives the menu from the content, grounds everything in the source (flags gaps rather than inventing), and embeds auto-redacted screenshots via <code>/capture-screenshots</code>.</p>
+          <dl class="meta-grid">
+            <dt>Invoke</dt><dd><code>/docs-site</code></dd>
+            <dt>Inputs</dt><dd>docs/markdown · the codebase · a topic/outline · definition files (any/all)</dd>
+            <dt>Uses agents</dt><dd><span class="agent-pills"><code>docs-architect</code><code>docs-designer</code></span></dd>
+            <dt>Expect</dt><dd>a browsable <code>docs.html</code> with sidebar nav; gaps flagged; a proposed commit</dd>
+          </dl>
+        </div>
+        <details class="more">
+          <summary><span class="chev">›</span> Full flow &amp; what to expect</summary>
+          <div class="more-body">
+            <h4>What happens</h4>
+            <ol>
+              <li>Resolves inputs + scope (docs, code, outline, definition files) and the audience.</li>
+              <li>Ingests the sources into a content model (parses structured definition files exactly).</li>
+              <li><code>docs-architect</code> <strong>auto-derives the menu/sections</strong> from the content, writes grounded copy, and <strong>flags gaps</strong> ("not documented") instead of inventing.</li>
+              <li>If a page needs UI/terminal images, it <strong>delegates to <code>/capture-screenshots</code></strong> — so embedded shots are PII/secret-redacted and the raw never lands in the repo.</li>
+              <li><code>docs-designer</code> builds the self-contained page (sidebar nav, tiered content, light/dark, zero external deps; reuses an existing design system if present).</li>
+              <li>Writes <code>docs.html</code> (or <code>docs/index.html</code>), proposes the commit.</li>
+            </ol>
+            <div class="callout"><span class="ic">🧩</span><span>Composes with the suite: run it inside <code>nj-agents</code> and it regenerates this very reference.</span></div>
+          </div>
+        </details>
+      </article>
+
+      <!-- ============================================================= -->
+      <!-- SOCIAL                                                        -->
+      <!-- ============================================================= -->
+      <h2 class="section-title">Social</h2>
+      <p class="section-blurb">Promotional copy for a published thing — grounded in the real content, handed to you to post. Not review, not authoring-into-the-repo; it produces paste-ready copy and never auto-posts.</p>
+
+      <!-- social-post -->
+      <article class="card" id="social-post">
+        <div class="card-head">
+          <div class="card-title"><code>/social-post</code> <span class="badge">social</span> <span class="badge ver">v0.1.0</span></div>
+          <p class="card-purpose">Drafts LinkedIn / X promo copy for a <strong>published</strong> URL (blog, repo, demo) — hook-first opener, correct link + preview-card strategy, clean hashtags, in short / medium / builder-story variants. Grounded in the actual linked content; never invents claims. Hands you copy to paste — never auto-posts.</p>
+          <dl class="meta-grid">
+            <dt>Invoke</dt><dd><code>/social-post</code> — give a published URL</dd>
+            <dt>Platform</dt><dd>LinkedIn (default) or X/Twitter</dd>
+            <dt>Uses agent</dt><dd><span class="agent-pills"><code>social-post</code></span></dd>
+            <dt>Expect</dt><dd>short / medium / builder-story variants + hashtag line + first-comment block</dd>
+          </dl>
+        </div>
+        <details class="more">
+          <summary><span class="chev">›</span> Full flow &amp; what to expect</summary>
+          <div class="more-body">
+            <h4>What happens</h4>
+            <ol>
+              <li>Fetches the URL and grounds the copy in what the piece actually says (no invented metrics/claims).</li>
+              <li>Confirms angle (builder story / problem hook / announce), primary CTA, and style prefs.</li>
+              <li>Applies feed-algorithm mechanics: hook in the first ~2 lines; the link whose preview card you want goes <strong>first</strong>; secondary links move to a ready-to-paste <strong>first comment</strong> (multiple body links suppress reach); platform-appropriate hashtag count &amp; form.</li>
+              <li>Delivers paste-ready variants — you post them yourself.</li>
+            </ol>
+            <div class="callout"><span class="ic">📢</span><span>Deliverable is copy you paste. It never posts, and won't call a publishing MCP unless you explicitly opt in (draft-first even then).</span></div>
           </div>
         </details>
       </article>
@@ -657,7 +726,7 @@ OVERALL: <span style="color:var(--block)">BLOCK</span> — fix the correctness b
       <!-- ============================================================= -->
       <section id="agents">
         <h2 class="section-title">Agents</h2>
-        <p class="section-blurb">The 15 sub-agents that do the actual work. Skills orchestrate them — you don't invoke agents directly; the skill spawns the ones it needs (some in parallel, some as a pipeline). Each is read-only unless its skill writes the artifact.</p>
+        <p class="section-blurb">The 20 sub-agents that do the actual work. Skills orchestrate them — you don't invoke agents directly; the skill spawns the ones it needs (some in parallel, some as a pipeline). Each is read-only unless its skill writes the artifact.</p>
         <div class="agent-table-wrap">
           <table class="agents">
             <thead>
@@ -738,13 +807,42 @@ OVERALL: <span style="color:var(--block)">BLOCK</span> — fix the correctness b
               </tr>
               <tr>
                 <td class="name"><span class="agent-dot" style="background:var(--pass)"></span><code>blog-editor</code></td>
-                <td class="role">Produces the final post — applies fact-checker cuts + reviewer notes, embeds diagrams, adds front-matter. Won't finalize over an open block.</td>
+                <td class="role">Produces the final post — applies fact-checker cuts + reviewer notes, embeds diagrams, adds front-matter, terminology/emphasis/style passes. Won't finalize over an open block.</td>
+                <td class="via"><code>/tech-blog</code></td>
+              </tr>
+              <tr>
+                <td class="name"><span class="agent-dot" style="background:#14b8a6"></span><code>blog-final-polish</code></td>
+                <td class="role">Pre-publish checklist gate for mechanical issues the editor doesn't catch — duplicate H1, weak ending, leftover/duplicated artifacts, over/under-done bold. Applies trivial fixes.</td>
+                <td class="via"><code>/tech-blog</code></td>
+              </tr>
+              <tr>
+                <td class="name"><span class="agent-dot" style="background:#e08a1e"></span><code>blog-platform-lint</code></td>
+                <td class="role">Checks a post against a target platform's publish rules (Dev.to first) — too many tags, SVG/relative images, missing/stale cover, draft→publish flow. Reports go/no-go; doesn't publish.</td>
                 <td class="via"><code>/tech-blog</code></td>
               </tr>
               <tr>
                 <td class="name"><span class="agent-dot" style="background:#c264c2"></span><code>blog-poster</code></td>
-                <td class="role">Creates a <strong>draft</strong> on a connected publishing MCP (opt-in only) — never auto-publishes. No-op if no connector.</td>
+                <td class="role">Creates a <strong>draft</strong> — via a connected publishing MCP (preferred), or a bundled Dev.to REST fallback when <code>DEVTO_API_KEY</code> is set. Opt-in only; never auto-publishes.</td>
                 <td class="via"><code>/tech-blog</code></td>
+              </tr>
+
+              <tr class="grp-row"><td colspan="3">Authoring — docs-site</td></tr>
+              <tr>
+                <td class="name"><span class="agent-dot" style="background:var(--accent)"></span><code>docs-architect</code></td>
+                <td class="role">Ingests sources → auto-derives the section structure + grounded copy + a gap list + screenshot requests. Read-only.</td>
+                <td class="via"><code>/docs-site</code></td>
+              </tr>
+              <tr>
+                <td class="name"><span class="agent-dot" style="background:#c264c2"></span><code>docs-designer</code></td>
+                <td class="role">Turns the doc model into a single self-contained <code>docs.html</code> — sidebar nav, tiered content, light/dark, zero external deps; reuses an existing design system if present.</td>
+                <td class="via"><code>/docs-site</code></td>
+              </tr>
+
+              <tr class="grp-row"><td colspan="3">Social</td></tr>
+              <tr>
+                <td class="name"><span class="agent-dot" style="background:#0a66c2"></span><code>social-post</code></td>
+                <td class="role">Drafts grounded LinkedIn / X promo copy from a published URL — hook-first, correct link/preview strategy, clean hashtags, short/medium/builder-story variants. Never auto-posts.</td>
+                <td class="via"><code>/social-post</code></td>
               </tr>
             </tbody>
           </table>
