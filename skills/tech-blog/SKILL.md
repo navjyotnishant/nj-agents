@@ -95,9 +95,15 @@ front-matter (title, date, tags, summary).
 
 Detect a publishing MCP (§A5) — a CMS / Dev.to / Medium / Notion connector, etc. If
 one is connected **and the user opts in**, spawn `blog-poster` to create a **draft**
-on that platform (never auto-publish without explicit confirmation). If none is
-connected, stop here and hand the user the publish-ready MD/HTML files with manual
-posting instructions.
+on that platform (never auto-publish without explicit confirmation).
+
+If no MCP is connected but the target is **Dev.to** and the user opts in, `blog-poster`
+has a direct-REST fallback: `scripts/publish-devto.py <post.md>` creates a draft via
+the Dev.to API (uploads local images to Dev.to's CDN, forces `published: false`,
+idempotent re-runs). It needs a `DEVTO_API_KEY` — exported or in `~/.claude/.env`
+(Dev.to → Settings → Extensions → "DEV Community API Keys"). If neither path applies,
+stop here and hand the user the publish-ready MD/HTML files with manual posting
+instructions.
 
 ## Step 9 — Propose the commit
 
