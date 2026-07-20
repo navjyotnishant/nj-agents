@@ -38,6 +38,9 @@ API_BASE = "https://dev.to/api"
 ARTICLES_URL = f"{API_BASE}/articles"
 IMAGES_URL = f"{API_BASE}/images"
 ACCEPT = "application/vnd.forem.api-v1+json"
+# Dev.to's edge (Cloudflare/Heroku) rejects the default python-urllib
+# User-Agent with a 403; any conventional UA is accepted.
+USER_AGENT = "publish-devto/1.0 (+nj-agents)"
 
 STATE_PATH = Path.home() / ".claude" / "devto-state.json"
 ENV_PATH = Path.home() / ".claude" / ".env"
@@ -105,6 +108,7 @@ def api_request(url, api_key, method="GET", json_body=None):
     req = urllib.request.Request(url, data=data, method=method)
     req.add_header("api-key", api_key)
     req.add_header("Accept", ACCEPT)
+    req.add_header("User-Agent", USER_AGENT)
     if data is not None:
         req.add_header("Content-Type", "application/json")
     try:
@@ -136,6 +140,7 @@ def upload_image(path, api_key):
     req = urllib.request.Request(IMAGES_URL, data=body, method="POST")
     req.add_header("api-key", api_key)
     req.add_header("Content-Type", f"multipart/form-data; boundary={boundary}")
+    req.add_header("User-Agent", USER_AGENT)
     try:
         with urllib.request.urlopen(req) as resp:
             payload = json.loads(resp.read().decode("utf-8"))
@@ -211,7 +216,7 @@ def rewrite_images(text, base_dir, api_key, cache):
         if end != -1:
             head, body = text[: end + 4], text[end + 4 :]
             head = re.sub(
-                r"(?m)^(cover_image:\s*)(.*)$",
+                r"(?m)^(cover_image:[^\S\n]*)(.*)$",
                 repl_cover,
                 head,
             )
@@ -229,7 +234,7 @@ def force_published(text, published):
         return text
     head, body = text[: end + 4], text[end + 4 :]
     if re.search(r"(?m)^published:", head):
-        head = re.sub(r"(?m)^published:\s*.*$", f"published: {value}", head, count=1)
+        head = re.sub(r"(?m)^published:[^\S\n]*.*$", f"published: {value}", head, count=1)
     else:
         # insert right after the opening '---'
         head = re.sub(r"^---\n", f"---\npublished: {value}\n", head, count=1)
