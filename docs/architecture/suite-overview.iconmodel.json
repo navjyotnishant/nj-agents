@@ -16,7 +16,7 @@
     },
     {
       "id": "authoring", "label": "AUTHORING · writes an artifact", "role": "authoring",
-      "note": "12 pipeline agents",
+      "note": "13 pipeline agents",
       "items": [
         {"id": "cl", "label": "changelog", "icon": "doclist"},
         {"id": "ad", "label": "arch-diagram", "icon": "diagram"},
