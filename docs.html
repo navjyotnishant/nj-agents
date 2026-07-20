@@ -6,855 +6,713 @@
 <title>nj-agents — reference</title>
 <style>
   :root {
-    --bg: #f7f8fa;
-    --surface: #ffffff;
-    --surface-2: #f0f2f5;
-    --border: #e2e5ea;
-    --border-strong: #d0d4dc;
-    --ink: #1b1e24;
-    --ink-soft: #4a4f5a;
-    --ink-faint: #7b818d;
-    --accent: #5b53d6;
-    --accent-soft: #ecebfb;
-    --accent-ink: #4038b0;
-    --mono-bg: #f3f2fb;
-    --pass: #1f8a4c;
-    --pass-bg: #e6f4ec;
-    --warn: #b5730d;
-    --warn-bg: #fbf1de;
-    --block: #c23434;
-    --block-bg: #fbe9e9;
+    --bg: #f6f7f9; --surface: #ffffff; --surface-2: #eef0f4; --border: #e2e5ea; --border-strong: #d0d4dc;
+    --ink: #191c22; --ink-soft: #4a4f5a; --ink-faint: #7b818d;
+    --accent: #5b53d6; --accent-2: #7c73ee; --accent-soft: #ecebfb; --accent-ink: #4038b0; --mono-bg: #f2f1fb;
+    --pass: #1f8a4c; --pass-bg: #e6f4ec; --warn: #b5730d; --warn-bg: #fbf1de; --block: #c23434; --block-bg: #fbe9e9;
+    --social: #0a66c2; --social-bg: #e7f0fa;
     --shadow: 0 1px 2px rgba(20,22,28,.04), 0 4px 16px rgba(20,22,28,.05);
+    --shadow-lg: 0 8px 40px rgba(20,22,28,.10);
     --mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
     --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
-  /* dark theme via OS preference — token overrides only */
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #0f1116; --surface: #171a21; --surface-2: #1d212a; --border: #262b35; --border-strong: #333a46;
-      --ink: #e9ebef; --ink-soft: #b3b8c2; --ink-faint: #808793;
-      --accent: #9d97f0; --accent-soft: #232145; --accent-ink: #b8b3f5; --mono-bg: #1e1c2e;
+      --bg: #0e1015; --surface: #171a21; --surface-2: #1e222b; --border: #262b35; --border-strong: #363d49;
+      --ink: #e9ebef; --ink-soft: #b4b9c3; --ink-faint: #838a96;
+      --accent: #9d97f0; --accent-2: #b3aef6; --accent-soft: #232145; --accent-ink: #bcb7f6; --mono-bg: #1e1c2e;
       --pass: #5cc98a; --pass-bg: #13291d; --warn: #e2ac57; --warn-bg: #2c2413; --block: #e77070; --block-bg: #2e1717;
+      --social: #4d96e0; --social-bg: #12233a;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.3);
+      --shadow-lg: 0 8px 40px rgba(0,0,0,.45);
     }
   }
   :root[data-theme="dark"] {
-    --bg: #0f1116; --surface: #171a21; --surface-2: #1d212a; --border: #262b35; --border-strong: #333a46;
-    --ink: #e9ebef; --ink-soft: #b3b8c2; --ink-faint: #808793;
-    --accent: #9d97f0; --accent-soft: #232145; --accent-ink: #b8b3f5; --mono-bg: #1e1c2e;
+    --bg: #0e1015; --surface: #171a21; --surface-2: #1e222b; --border: #262b35; --border-strong: #363d49;
+    --ink: #e9ebef; --ink-soft: #b4b9c3; --ink-faint: #838a96;
+    --accent: #9d97f0; --accent-2: #b3aef6; --accent-soft: #232145; --accent-ink: #bcb7f6; --mono-bg: #1e1c2e;
     --pass: #5cc98a; --pass-bg: #13291d; --warn: #e2ac57; --warn-bg: #2c2413; --block: #e77070; --block-bg: #2e1717;
+    --social: #4d96e0; --social-bg: #12233a;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.3); --shadow-lg: 0 8px 40px rgba(0,0,0,.45);
   }
   :root[data-theme="light"] {
-    --bg: #f7f8fa; --surface: #ffffff; --surface-2: #f0f2f5; --border: #e2e5ea; --border-strong: #d0d4dc;
-    --ink: #1b1e24; --ink-soft: #4a4f5a; --ink-faint: #7b818d;
-    --accent: #5b53d6; --accent-soft: #ecebfb; --accent-ink: #4038b0; --mono-bg: #f3f2fb;
+    --bg: #f6f7f9; --surface: #ffffff; --surface-2: #eef0f4; --border: #e2e5ea; --border-strong: #d0d4dc;
+    --ink: #191c22; --ink-soft: #4a4f5a; --ink-faint: #7b818d;
+    --accent: #5b53d6; --accent-2: #7c73ee; --accent-soft: #ecebfb; --accent-ink: #4038b0; --mono-bg: #f2f1fb;
     --pass: #1f8a4c; --pass-bg: #e6f4ec; --warn: #b5730d; --warn-bg: #fbf1de; --block: #c23434; --block-bg: #fbe9e9;
+    --social: #0a66c2; --social-bg: #e7f0fa;
+    --shadow: 0 1px 2px rgba(20,22,28,.04), 0 4px 16px rgba(20,22,28,.05); --shadow-lg: 0 8px 40px rgba(20,22,28,.10);
   }
 
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
-  body {
-    margin: 0; background: var(--bg); color: var(--ink);
-    font-family: var(--sans); font-size: 15px; line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-  }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
   a { color: var(--accent-ink); text-decoration: none; }
   a:hover { text-decoration: underline; }
   code, kbd { font-family: var(--mono); font-size: .88em; }
+  h1, h2, h3 { text-wrap: balance; }
 
-  .layout { display: grid; grid-template-columns: 264px 1fr; min-height: 100vh; }
-
-  /* ---- Sidebar ---- */
-  .sidebar {
-    position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
-    background: var(--surface); border-right: 1px solid var(--border);
-    padding: 22px 16px 40px;
+  /* ---- Top bar / tab nav ---- */
+  .topnav {
+    position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 18px;
+    padding: 0 22px; height: 58px; background: color-mix(in srgb, var(--surface) 85%, transparent);
+    backdrop-filter: saturate(140%) blur(10px); border-bottom: 1px solid var(--border);
   }
-  .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px; }
-  .brand .mark {
-    width: 30px; height: 30px; border-radius: 8px; flex: none;
-    background: var(--accent); color: #fff; display: grid; place-items: center;
-    font-family: var(--mono); font-weight: 700; font-size: 15px;
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 650; letter-spacing: -.01em; margin-right: 4px; }
+  .brand .mark { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; display: grid; place-items: center; font-family: var(--mono); font-weight: 700; font-size: 14px; }
+  .tabs { display: flex; gap: 2px; margin-left: auto; }
+  .tab {
+    font: inherit; font-size: 14px; font-weight: 500; color: var(--ink-soft); cursor: pointer;
+    background: none; border: 0; padding: 8px 14px; border-radius: 8px; position: relative;
   }
-  .brand .name { font-weight: 650; letter-spacing: -.01em; }
-  .brand .name small { display: block; font-weight: 400; font-size: 11px; color: var(--ink-faint); letter-spacing: .02em; }
-
-  .navgroup { margin-top: 18px; }
-  .navgroup > .label {
-    font-size: 11px; font-weight: 650; text-transform: uppercase; letter-spacing: .07em;
-    color: var(--ink-faint); padding: 0 8px 6px;
-  }
-  .navgroup a {
-    display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 7px;
-    color: var(--ink-soft); font-size: 13.5px; text-decoration: none;
-  }
-  .navgroup a:hover { background: var(--surface-2); color: var(--ink); }
-  .navgroup a code { font-size: 12.5px; color: inherit; }
-  .navgroup a .dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
-  .dot.review { background: var(--accent); }
-  .dot.authoring { background: var(--warn); }
-
-  /* ---- Content ---- */
-  .content { padding: 0; min-width: 0; }
-  .content-inner { max-width: 820px; margin: 0 auto; padding: 40px 40px 96px; }
-
-  .topbar {
-    position: sticky; top: 0; z-index: 5; display: flex; justify-content: flex-end;
-    padding: 14px 24px; background: color-mix(in srgb, var(--bg) 88%, transparent);
-    backdrop-filter: blur(8px); border-bottom: 1px solid var(--border);
-  }
-  .theme-toggle {
-    font: inherit; font-size: 13px; cursor: pointer; color: var(--ink-soft);
-    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-    padding: 5px 12px; display: inline-flex; align-items: center; gap: 6px;
-  }
+  .tab:hover { background: var(--surface-2); color: var(--ink); }
+  .tab.active { color: var(--accent-ink); background: var(--accent-soft); }
+  .theme-toggle { font: inherit; font-size: 13px; cursor: pointer; color: var(--ink-soft); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 6px 11px; margin-left: 8px; display: inline-flex; align-items: center; gap: 6px; }
   .theme-toggle:hover { border-color: var(--border-strong); color: var(--ink); }
+  @media (max-width: 720px) { .topnav { gap: 8px; padding: 0 12px; } .brand small { display: none; } .tabs { margin-left: 0; overflow-x: auto; } .tab { padding: 8px 10px; } }
 
-  h1 { font-size: 30px; letter-spacing: -.02em; margin: 8px 0 6px; text-wrap: balance; }
-  .lede { font-size: 16px; color: var(--ink-soft); margin: 0 0 8px; max-width: 62ch; }
-  h2.section-title {
-    font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent-ink);
-    margin: 52px 0 4px; padding-top: 20px; border-top: 1px solid var(--border);
-  }
-  .section-blurb { color: var(--ink-faint); font-size: 14px; margin: 0 0 20px; max-width: 60ch; }
+  .page { display: none; }
+  .page.active { display: block; animation: fade .25s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 40px 28px 100px; }
+  .wrap.narrow { max-width: 820px; }
 
-  /* ---- Skill card ---- */
-  .card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-    box-shadow: var(--shadow); margin: 18px 0; overflow: hidden;
-    scroll-margin-top: 72px;
-  }
+  /* ---- Hero ---- */
+  .hero { text-align: center; padding: 40px 0 18px; }
+  .hero .eyebrow { font-size: 12px; font-weight: 650; text-transform: uppercase; letter-spacing: .12em; color: var(--accent-ink); }
+  .hero h1 { font-size: clamp(34px, 6vw, 52px); letter-spacing: -.03em; margin: 14px 0 12px; line-height: 1.05; }
+  .hero h1 .grad { background: linear-gradient(120deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero p { font-size: 18px; color: var(--ink-soft); max-width: 60ch; margin: 0 auto; }
+  .hero .cta { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 26px; }
+  .btn { font: inherit; font-size: 14px; font-weight: 550; cursor: pointer; border-radius: 10px; padding: 10px 18px; border: 1px solid transparent; display: inline-flex; align-items: center; gap: 7px; }
+  .btn.primary { background: var(--accent); color: #fff; }
+  .btn.primary:hover { background: var(--accent-ink); text-decoration: none; }
+  .btn.ghost { background: var(--surface); color: var(--ink); border-color: var(--border-strong); }
+  .btn.ghost:hover { background: var(--surface-2); text-decoration: none; }
+
+  .stat-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin: 40px 0 8px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); padding: 18px 26px; text-align: center; min-width: 120px; }
+  .stat .n { font-size: 30px; font-weight: 700; letter-spacing: -.02em; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
+  .stat .l { font-size: 12.5px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
+
+  /* ---- Class cards (home) ---- */
+  .class-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin: 40px 0; }
+  .class-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); padding: 22px; }
+  .class-card h3 { margin: 0 0 4px; font-size: 17px; display: flex; align-items: center; gap: 9px; }
+  .class-card .tagline { color: var(--ink-faint); font-size: 13px; margin: 0 0 14px; }
+  .class-card ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .class-card li a { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--ink-soft); padding: 3px 0; }
+  .class-card li a:hover { color: var(--accent-ink); text-decoration: none; }
+  .swatch { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .sw-review { background: var(--accent); } .sw-authoring { background: var(--warn); } .sw-social { background: var(--social); }
+
+  .home-callout { display: flex; gap: 12px; padding: 16px 18px; border-radius: 14px; background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border)); margin: 8px 0 0; font-size: 14px; }
+
+  /* ---- Section headings ---- */
+  h2.section-title { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent-ink); margin: 52px 0 4px; padding-top: 22px; border-top: 1px solid var(--border); scroll-margin-top: 74px; }
+  .page > .wrap > h2.section-title:first-child, .wrap > section:first-child h2.section-title { border-top: 0; padding-top: 0; margin-top: 8px; }
+  .section-blurb { color: var(--ink-faint); font-size: 14px; margin: 0 0 20px; max-width: 62ch; }
+  .page-head { margin-bottom: 8px; }
+  .page-head h1 { font-size: 30px; letter-spacing: -.02em; margin: 0 0 6px; }
+  .page-head p { color: var(--ink-soft); margin: 0; max-width: 64ch; }
+
+  /* ---- Skill cards ---- */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); margin: 16px 0; overflow: hidden; scroll-margin-top: 74px; }
   .card-head { padding: 18px 20px 16px; }
   .card-title { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-  .card-title code {
-    font-size: 16px; font-weight: 600; color: var(--accent-ink);
-    background: var(--accent-soft); padding: 3px 9px; border-radius: 7px;
-  }
-  .badge {
-    font-size: 10.5px; font-weight: 650; text-transform: uppercase; letter-spacing: .05em;
-    padding: 2px 8px; border-radius: 20px; border: 1px solid var(--border-strong); color: var(--ink-faint);
-  }
+  .card-title code { font-size: 16px; font-weight: 600; color: var(--accent-ink); background: var(--accent-soft); padding: 3px 9px; border-radius: 7px; }
+  .badge { font-size: 10.5px; font-weight: 650; text-transform: uppercase; letter-spacing: .05em; padding: 2px 8px; border-radius: 20px; border: 1px solid var(--border-strong); color: var(--ink-faint); }
   .badge.multi { color: var(--accent-ink); border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); background: var(--accent-soft); }
   .badge.ver { font-family: var(--mono); }
   .card-purpose { margin: 12px 0 0; color: var(--ink-soft); }
-
   .meta-grid { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 16px 0 2px; font-size: 13.5px; }
   .meta-grid dt { color: var(--ink-faint); font-weight: 600; }
   .meta-grid dd { margin: 0; color: var(--ink-soft); }
   .meta-grid dd code { background: var(--mono-bg); padding: 1px 5px; border-radius: 5px; }
-
   details.more { border-top: 1px solid var(--border); }
-  details.more > summary {
-    cursor: pointer; list-style: none; padding: 12px 20px; font-size: 13px; font-weight: 600;
-    color: var(--accent-ink); display: flex; align-items: center; gap: 8px; user-select: none;
-  }
+  details.more > summary { cursor: pointer; list-style: none; padding: 12px 20px; font-size: 13px; font-weight: 600; color: var(--accent-ink); display: flex; align-items: center; gap: 8px; user-select: none; }
   details.more > summary::-webkit-details-marker { display: none; }
   details.more > summary .chev { transition: transform .18s ease; display: inline-block; }
   details.more[open] > summary .chev { transform: rotate(90deg); }
   details.more > summary:hover { background: var(--surface-2); }
   .more-body { padding: 4px 20px 22px; border-top: 1px solid var(--border); }
-  .more-body h4 {
-    font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint);
-    margin: 20px 0 8px;
-  }
+  .more-body h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint); margin: 20px 0 8px; }
   .more-body ol, .more-body ul { margin: 0; padding-left: 20px; }
   .more-body li { margin: 5px 0; color: var(--ink-soft); }
   .more-body li strong { color: var(--ink); font-weight: 600; }
 
-  pre {
-    background: var(--mono-bg); border: 1px solid var(--border); border-radius: 9px;
-    padding: 12px 14px; overflow-x: auto; margin: 10px 0; font-size: 12.5px; line-height: 1.55;
-  }
-  pre code { color: var(--ink); }
-  .cmd { color: var(--accent-ink); }
-  .cmt { color: var(--ink-faint); }
-
-  .verdicts { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 0; }
-  .v { font-size: 11.5px; font-weight: 650; padding: 3px 10px; border-radius: 6px; letter-spacing: .02em; }
-  .v.pass { color: var(--pass); background: var(--pass-bg); }
-  .v.warn { color: var(--warn); background: var(--warn-bg); }
-  .v.block { color: var(--block); background: var(--block-bg); }
-  .v.skip { color: var(--ink-faint); background: var(--surface-2); }
-
-  .callout {
-    display: flex; gap: 10px; padding: 12px 14px; border-radius: 10px; margin: 16px 0;
-    font-size: 13.5px; background: var(--surface-2); border: 1px solid var(--border);
-  }
-  .callout .ic { flex: none; }
+  pre { background: var(--mono-bg); border: 1px solid var(--border); border-radius: 9px; padding: 12px 14px; overflow-x: auto; margin: 10px 0; font-size: 12.5px; line-height: 1.55; }
+  .cmd { color: var(--accent-ink); } .cmt { color: var(--ink-faint); }
+  .verdicts { display: flex; gap: 8px; flex-wrap: wrap; }
+  .v { font-size: 11.5px; font-weight: 650; padding: 3px 10px; border-radius: 6px; }
+  .v.pass { color: var(--pass); background: var(--pass-bg); } .v.warn { color: var(--warn); background: var(--warn-bg); }
+  .v.block { color: var(--block); background: var(--block-bg); } .v.skip { color: var(--ink-faint); background: var(--surface-2); }
+  .callout { display: flex; gap: 10px; padding: 12px 14px; border-radius: 10px; margin: 16px 0; font-size: 13.5px; background: var(--surface-2); border: 1px solid var(--border); }
   .callout.safe { background: var(--pass-bg); border-color: color-mix(in srgb, var(--pass) 30%, var(--border)); }
   .callout.warn { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn) 30%, var(--border)); }
-
-  .agent-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
-  .agent-pills code {
-    font-size: 12px; background: var(--surface-2); border: 1px solid var(--border);
-    padding: 3px 8px; border-radius: 6px; color: var(--ink-soft);
-  }
-
-  /* ---- Verdict legend ---- */
+  .agent-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .agent-pills code { font-size: 12px; background: var(--surface-2); border: 1px solid var(--border); padding: 3px 8px; border-radius: 6px; color: var(--ink-soft); }
   .legend-title { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint); margin: 26px 0 4px; }
-  .legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; margin: 4px 0 2px; }
+  .legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; }
   .legend-item { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--ink-soft); background: var(--surface); border: 1px solid var(--border); border-radius: 9px; padding: 8px 12px; }
-  .legend-item .v { flex: none; }
 
   /* ---- Agents table ---- */
   .agent-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); background: var(--surface); margin: 18px 0; }
-  table.agents { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 620px; }
+  table.agents { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 640px; }
   table.agents th, table.agents td { text-align: left; padding: 11px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
-  table.agents thead th {
-    font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint);
-    font-weight: 650; background: var(--surface-2); position: sticky; top: 0;
-  }
+  table.agents thead th { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint); font-weight: 650; background: var(--surface-2); position: sticky; top: 0; }
   table.agents tbody tr:last-child td { border-bottom: none; }
   table.agents tbody tr:hover { background: var(--surface-2); }
   table.agents td.name { white-space: nowrap; }
   table.agents td.name code { font-size: 12.5px; color: var(--ink); background: var(--mono-bg); padding: 2px 7px; border-radius: 6px; }
-  table.agents td.role { color: var(--ink-soft); }
-  table.agents td.via code { font-size: 12px; color: var(--accent-ink); }
+  table.agents td.role { color: var(--ink-soft); } table.agents td.via code { font-size: 12px; color: var(--accent-ink); }
   .agent-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; vertical-align: middle; }
   .grp-row td { background: var(--accent-soft); font-weight: 650; font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--accent-ink); padding: 8px 16px; }
 
-  /* ---- Deep-link anchors ---- */
-  .anchor {
-    opacity: 0; margin-left: 8px; font-size: .78em; font-weight: 400; color: var(--ink-faint);
-    text-decoration: none; cursor: pointer; transition: opacity .12s ease, color .12s ease;
-    border: 0; background: none; padding: 0; font-family: var(--mono); vertical-align: middle;
-  }
-  .card-title:hover .anchor,
-  h2.section-title:hover .anchor,
-  .anchor:focus-visible { opacity: 1; }
-  .anchor:hover { color: var(--accent-ink); }
-  h2.section-title .anchor { font-size: .82em; }
-  @media (hover: none) { .anchor { opacity: .5; } }
+  /* ---- Workflow diagrams ---- */
+  .flow { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); padding: 22px; margin: 18px 0 30px; }
+  .flow > h3 { margin: 0 0 3px; font-size: 17px; }
+  .flow > .desc { color: var(--ink-faint); font-size: 13.5px; margin: 0 0 16px; max-width: 64ch; }
+  .flow-svg-wrap { overflow-x: auto; }
+  .flow svg { display: block; max-width: 100%; height: auto; }
+  .flow svg text { font-family: var(--sans); }
+  .flow-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 14px; font-size: 12px; color: var(--ink-faint); }
+  .flow-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .flow-legend i { width: 20px; height: 10px; border-radius: 3px; display: inline-block; }
 
-  .toast {
-    position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(12px);
-    background: var(--ink); color: var(--bg); font-size: 13px; font-weight: 500;
-    padding: 9px 16px; border-radius: 9px; box-shadow: var(--shadow);
-    opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease; z-index: 50;
-  }
+  /* ---- Deep-link anchors ---- */
+  .anchor { opacity: 0; margin-left: 8px; font-size: .78em; font-weight: 400; color: var(--ink-faint); text-decoration: none; cursor: pointer; transition: opacity .12s ease, color .12s ease; border: 0; background: none; padding: 0; font-family: var(--mono); vertical-align: middle; }
+  .card-title:hover .anchor, h2.section-title:hover .anchor, .anchor:focus-visible { opacity: 1; }
+  .anchor:hover { color: var(--accent-ink); }
+  @media (hover: none) { .anchor { opacity: .5; } }
+  .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(12px); background: var(--ink); color: var(--bg); font-size: 13px; font-weight: 500; padding: 9px 16px; border-radius: 9px; box-shadow: var(--shadow-lg); opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease; z-index: 50; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
   .foot { margin-top: 60px; padding-top: 22px; border-top: 1px solid var(--border); color: var(--ink-faint); font-size: 13px; }
-
-  @media (max-width: 820px) {
-    .layout { grid-template-columns: 1fr; }
-    .sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
-    .content-inner { padding: 28px 20px 72px; }
-  }
 </style>
 </head>
 <body>
-<div class="layout">
 
-  <!-- ============ SIDEBAR ============ -->
-  <aside class="sidebar">
-    <div class="brand">
-      <div class="mark">nj</div>
-      <div class="name">nj-agents<small>skills &amp; agents reference</small></div>
+<nav class="topnav">
+  <div class="brand"><span class="mark">nj</span> nj-agents <small style="font-weight:400;color:var(--ink-faint);font-size:11px">reference</small></div>
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-page="home" role="tab">Home</button>
+    <button class="tab" data-page="suites" role="tab">Suites</button>
+    <button class="tab" data-page="workflows" role="tab">Workflows</button>
+    <button class="tab" data-page="reference" role="tab">Reference</button>
+  </div>
+  <button class="theme-toggle" id="themeBtn" aria-label="Toggle theme"><span id="themeIc">◐</span> <span id="themeLbl">Theme</span></button>
+</nav>
+
+<!-- ============================ HOME ============================ -->
+<div class="page active" id="page-home" role="tabpanel">
+  <div class="wrap">
+    <section class="hero">
+      <div class="eyebrow">Claude Code · skills &amp; agents</div>
+      <h1>Automate the work <span class="grad">around your code</span></h1>
+      <p>A personal, project-agnostic collection of Claude Code skills and agents — installed into any repo via symlink. Review before you push, generate docs &amp; diagrams &amp; changelogs, capture redacted screenshots, write grounded technical blogs, and draft launch copy.</p>
+      <div class="cta">
+        <button class="btn primary" data-goto="suites">Explore the suites →</button>
+        <button class="btn ghost" data-goto="workflows">See how they work</button>
+      </div>
+    </section>
+
+    <div class="stat-row">
+      <div class="stat"><div class="n">12</div><div class="l">Skills</div></div>
+      <div class="stat"><div class="n">20</div><div class="l">Agents</div></div>
+      <div class="stat"><div class="n">3</div><div class="l">Classes</div></div>
+      <div class="stat"><div class="n">0</div><div class="l">External APIs</div></div>
     </div>
 
-    <nav class="navgroup">
-      <div class="label">Overview</div>
-      <a href="#overview"><span class="dot" style="background:var(--ink-faint)"></span> What this is</a>
-      <a href="#install"><span class="dot" style="background:var(--ink-faint)"></span> Install &amp; invoke</a>
-      <a href="#classes"><span class="dot" style="background:var(--ink-faint)"></span> Two classes</a>
-    </nav>
-
-    <nav class="navgroup">
-      <div class="label">Review suite</div>
-      <a href="#pre-push-review"><span class="dot review"></span> <code>/pre-push-review</code></a>
-      <a href="#review-secrets"><span class="dot review"></span> <code>/review-secrets</code></a>
-      <a href="#review-correctness"><span class="dot review"></span> <code>/review-correctness</code></a>
-      <a href="#review-tests-build"><span class="dot review"></span> <code>/review-tests-build</code></a>
-      <a href="#review-dependencies"><span class="dot review"></span> <code>/review-dependencies</code></a>
-      <a href="#review-style"><span class="dot review"></span> <code>/review-style</code></a>
-    </nav>
-
-    <nav class="navgroup">
-      <div class="label">Authoring suite</div>
-      <a href="#changelog"><span class="dot authoring"></span> <code>/changelog</code></a>
-      <a href="#arch-diagram"><span class="dot authoring"></span> <code>/arch-diagram</code></a>
-      <a href="#capture-screenshots"><span class="dot authoring"></span> <code>/capture-screenshots</code></a>
-      <a href="#tech-blog"><span class="dot authoring"></span> <code>/tech-blog</code></a>
-      <a href="#docs-site"><span class="dot authoring"></span> <code>/docs-site</code></a>
-    </nav>
-
-    <nav class="navgroup">
-      <div class="label">Social</div>
-      <a href="#social-post"><span class="dot" style="background:#0a66c2"></span> <code>/social-post</code></a>
-    </nav>
-
-    <nav class="navgroup">
-      <div class="label">Agents</div>
-      <a href="#agents"><span class="dot" style="background:var(--ink-faint)"></span> All 20 agents</a>
-    </nav>
-  </aside>
-
-  <!-- ============ CONTENT ============ -->
-  <main class="content">
-    <div class="topbar">
-      <button class="theme-toggle" id="themeBtn" aria-label="Toggle theme">
-        <span id="themeIc">◐</span> <span id="themeLbl">Theme</span>
-      </button>
+    <div class="class-grid">
+      <div class="class-card">
+        <h3><span class="swatch sw-review"></span> Review suite</h3>
+        <p class="tagline">Advise only · never commits · gates a push</p>
+        <ul>
+          <li><a data-goto="reference" data-hash="pre-push-review"><span class="swatch sw-review"></span> <code>/pre-push-review</code></a></li>
+          <li><a data-goto="reference" data-hash="review-secrets"><span class="swatch sw-review"></span> <code>/review-secrets</code></a></li>
+          <li><a data-goto="reference" data-hash="review-correctness"><span class="swatch sw-review"></span> <code>/review-correctness</code></a></li>
+          <li><a data-goto="reference" data-hash="review-tests-build"><span class="swatch sw-review"></span> <code>/review-tests-build</code></a></li>
+          <li><a data-goto="reference" data-hash="review-dependencies"><span class="swatch sw-review"></span> <code>/review-dependencies</code></a></li>
+          <li><a data-goto="reference" data-hash="review-style"><span class="swatch sw-review"></span> <code>/review-style</code></a></li>
+        </ul>
+      </div>
+      <div class="class-card">
+        <h3><span class="swatch sw-authoring"></span> Authoring suite</h3>
+        <p class="tagline">Writes an artifact into the repo · proposes the commit</p>
+        <ul>
+          <li><a data-goto="reference" data-hash="changelog"><span class="swatch sw-authoring"></span> <code>/changelog</code></a></li>
+          <li><a data-goto="reference" data-hash="arch-diagram"><span class="swatch sw-authoring"></span> <code>/arch-diagram</code></a></li>
+          <li><a data-goto="reference" data-hash="capture-screenshots"><span class="swatch sw-authoring"></span> <code>/capture-screenshots</code></a></li>
+          <li><a data-goto="reference" data-hash="tech-blog"><span class="swatch sw-authoring"></span> <code>/tech-blog</code></a></li>
+          <li><a data-goto="reference" data-hash="docs-site"><span class="swatch sw-authoring"></span> <code>/docs-site</code></a></li>
+        </ul>
+      </div>
+      <div class="class-card">
+        <h3><span class="swatch sw-social"></span> Social</h3>
+        <p class="tagline">Grounded promo copy · you post it · never auto-posts</p>
+        <ul>
+          <li><a data-goto="reference" data-hash="social-post"><span class="swatch sw-social"></span> <code>/social-post</code></a></li>
+        </ul>
+        <p class="tagline" style="margin-top:14px">Plus <strong>20 sub-agents</strong> the skills orchestrate — see the <a data-goto="reference" data-hash="agents">Reference</a> or <a data-goto="workflows">Workflows</a>.</p>
+      </div>
     </div>
 
-    <div class="content-inner">
+    <div class="home-callout">
+      <span>🔒</span>
+      <span><strong>Nothing leaves your machine.</strong> Every skill runs in your current Claude session — no external API is called. The human always decides what gets committed; skills either advise, or write-then-propose.</span>
+    </div>
+  </div>
+</div>
 
-      <!-- OVERVIEW -->
-      <section id="overview">
-        <h1>nj-agents</h1>
-        <p class="lede">A personal, project-agnostic collection of Claude Code <strong>skills and agents</strong> for software-development workflows — installed into any project (or globally) via symlink. <strong>12 skills, 20 agents</strong> across review, authoring, and social work.</p>
-        <div class="callout">
-          <span class="ic">🔒</span>
-          <span>Everything runs in your current Claude session — <strong>no external API is called, nothing leaves your machine.</strong> Every skill prints a banner describing what it does before it touches anything.</span>
-        </div>
-      </section>
+<!-- ============================ SUITES ============================ -->
+<div class="page" id="page-suites" role="tabpanel">
+  <div class="wrap">
+    <div class="page-head"><h1>The suites</h1><p>Two classes of skill with opposite stances on touching your repo — plus a social class that produces copy you post. Both code-facing classes share one rule: the human decides what gets committed.</p></div>
 
-      <!-- INSTALL -->
-      <section id="install">
-        <h2 class="section-title">Install &amp; invoke</h2>
-        <p class="section-blurb">Skills are symlinked into a Claude Code config dir; invoke any one with its slash command.</p>
-        <pre><code><span class="cmt"># global (all projects) — symlinks into ~/.claude/</span>
+    <section id="classes">
+      <h2 class="section-title">Two classes, one rule</h2>
+      <dl class="meta-grid" style="row-gap:14px;">
+        <dt><span class="swatch sw-review" style="display:inline-block"></span> Review</dt>
+        <dd><strong>Advise only, leave no files, never commit.</strong> Reads your changes and reports. Shared rules: <code>CONVENTIONS.md</code>.</dd>
+        <dt><span class="swatch sw-authoring" style="display:inline-block"></span> Authoring</dt>
+        <dd><strong>Writes an artifact into the repo</strong> (changelog, diagram, blog, screenshots, docs), then <strong>proposes</strong> the commit — never runs <code>git add/commit/push/tag</code>. Shared rules: <code>CONVENTIONS-authoring.md</code>.</dd>
+        <dt><span class="swatch sw-social" style="display:inline-block"></span> Social</dt>
+        <dd>Produces <strong>paste-ready copy</strong> for a published thing. Never writes to the repo, never auto-posts.</dd>
+      </dl>
+
+      <h4 class="legend-title">Verdicts (review dimensions &amp; gated pipelines)</h4>
+      <div class="legend">
+        <div class="legend-item"><span class="v pass">PASS</span> clean — safe to proceed</div>
+        <div class="legend-item"><span class="v warn">WARN</span> only nits / warnings</div>
+        <div class="legend-item"><span class="v block">BLOCK</span> a real problem — stop</div>
+        <div class="legend-item"><span class="v skip">SKIP</span> couldn't run — never a false PASS</div>
+      </div>
+    </section>
+
+    <section id="install">
+      <h2 class="section-title">Install &amp; invoke</h2>
+      <p class="section-blurb">Skills are symlinked into a Claude Code config dir; invoke any one with its slash command. The installer globs the repo, so new skills/agents are picked up automatically.</p>
+      <pre><code><span class="cmt"># global (all projects) — symlinks into ~/.claude/</span>
 <span class="cmd">./install.sh</span>
-
-<span class="cmt"># per-project — symlinks into DIR/.claude/</span>
+<span class="cmt"># per-project — into DIR/.claude/</span>
 <span class="cmd">./install.sh --project /path/to/your/repo</span>
-
-<span class="cmt"># remove symlinks (only ones pointing back into this repo)</span>
+<span class="cmt"># remove (only symlinks pointing back into this repo)</span>
 <span class="cmd">./install.sh --uninstall</span>
-<span class="cmd">./install.sh --project /path/to/your/repo --uninstall</span>
 
 <span class="cmt"># then, in any repo:</span>
-<span class="cmd">/pre-push-review</span>        <span class="cmt"># or /changelog, /arch-diagram, /tech-blog, ...</span></code></pre>
-        <dl class="meta-grid" style="row-gap:8px;">
-          <dt><code>./install.sh</code></dt><dd>Global install — links every skill + agent into <code>~/.claude/</code>.</dd>
-          <dt><code>--project DIR</code></dt><dd>Installs into <code>DIR/.claude/</code> instead, for a single repo.</dd>
-          <dt><code>--uninstall</code></dt><dd>Removes the symlinks. <strong>Safe</strong> — only touches links that point back into this repo; never deletes a real file or a link it doesn't own.</dd>
-        </dl>
-        <div class="callout">
-          <span class="ic">📎</span>
-          <span>The installer is <strong>idempotent</strong> and uses <strong>symlinks</strong>, so editing a skill in the repo updates every install. It refuses to clobber a real file that already sits where a link would go. Reload Claude Code after installing to pick up new skills/agents.</span>
-        </div>
-      </section>
+<span class="cmd">/pre-push-review</span>   <span class="cmt"># or /changelog, /arch-diagram, /docs-site, ...</span></code></pre>
+      <div class="callout"><span>📎</span><span>Idempotent, symlink-based (edit the repo → every install updates), and it refuses to clobber a real file. Reload Claude Code after installing.</span></div>
+    </section>
 
-      <!-- CLASSES -->
-      <section id="classes">
-        <h2 class="section-title">Two classes of skill</h2>
-        <p class="section-blurb">The two kinds take opposite stances on touching your repo. Both share one rule: <strong>the human decides what gets committed.</strong></p>
-        <dl class="meta-grid" style="grid-template-columns: max-content 1fr; row-gap:14px;">
-          <dt><span class="dot review" style="display:inline-block;width:8px;height:8px;border-radius:50%"></span> Review</dt>
-          <dd><strong>Advise only, leave no files, never commit.</strong> Reads your changes and reports. Shared rules in <code>CONVENTIONS.md</code>.</dd>
-          <dt><span class="dot authoring" style="display:inline-block;width:8px;height:8px;border-radius:50%"></span> Authoring</dt>
-          <dd><strong>Writes an artifact into the repo</strong> (changelog, diagram, blog, screenshots), then <strong>proposes</strong> the commit — never runs <code>git add/commit/push/tag</code>. Shared rules in <code>CONVENTIONS-authoring.md</code>.</dd>
-        </dl>
+    <section>
+      <h2 class="section-title">At a glance</h2>
+      <p class="section-blurb">The whole suite in one table. Jump to any skill's full card in the <a data-goto="reference">Reference</a>.</p>
+      <div class="agent-table-wrap">
+        <table class="agents">
+          <thead><tr><th>Skill</th><th>Class</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr class="grp-row"><td colspan="3">Review</td></tr>
+            <tr><td class="name"><code>/pre-push-review</code></td><td>review</td><td class="role">Umbrella — secret gate, then 5 dimensions in parallel → one PASS/WARN/BLOCK verdict + report.</td></tr>
+            <tr><td class="name"><code>/review-secrets</code></td><td>review</td><td class="role">Required scanner gate (gitleaks/trufflehog/detect-secrets) + semantic security pass.</td></tr>
+            <tr><td class="name"><code>/review-correctness</code></td><td>review</td><td class="role">Bugs, regressions, edge cases, missing validation in the changed lines.</td></tr>
+            <tr><td class="name"><code>/review-tests-build</code></td><td>review</td><td class="role">Auto-detects &amp; runs the repo's test/lint/build commands as a gate.</td></tr>
+            <tr><td class="name"><code>/review-dependencies</code></td><td>review</td><td class="role">Dependency/version/license changes &amp; supply-chain signals (typosquats).</td></tr>
+            <tr><td class="name"><code>/review-style</code></td><td>review</td><td class="role">Consistency, commit-message hygiene, leftover debug/TODO.</td></tr>
+            <tr class="grp-row"><td colspan="3">Authoring</td></tr>
+            <tr><td class="name"><code>/changelog</code></td><td>authoring</td><td class="role">Keep a Changelog + SemVer from commit history; proposes the commit.</td></tr>
+            <tr><td class="name"><code>/arch-diagram</code></td><td>authoring</td><td class="role">Docs-grounded architecture diagram (Excalidraw+SVG / mermaid / Figma).</td></tr>
+            <tr><td class="name"><code>/capture-screenshots</code></td><td>authoring</td><td class="role">Capture → detect PII → redact → verify-gate; only the redacted image is committed.</td></tr>
+            <tr><td class="name"><code>/tech-blog</code></td><td>authoring</td><td class="role">Multi-agent post; fact-checker blocks unverifiable claims.</td></tr>
+            <tr><td class="name"><code>/docs-site</code></td><td>authoring</td><td class="role">Universal doc-site generator (this page); auto-derives structure, flags gaps.</td></tr>
+            <tr class="grp-row"><td colspan="3">Social</td></tr>
+            <tr><td class="name"><code>/social-post</code></td><td>social</td><td class="role">Grounded LinkedIn/X promo copy from a published URL; never auto-posts.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
 
-        <h4 class="legend-title">Verdicts</h4>
-        <p class="section-blurb" style="margin-bottom:12px;">Review dimensions and gated pipelines report one of these. The umbrella aggregates them into a single overall verdict.</p>
-        <div class="legend">
-          <div class="legend-item"><span class="v pass">PASS</span> clean — safe to proceed</div>
-          <div class="legend-item"><span class="v warn">WARN</span> only nits / warnings — proceed with awareness</div>
-          <div class="legend-item"><span class="v block">BLOCK</span> a real problem (bug, secret, failing test) — stop</div>
-          <div class="legend-item"><span class="v skip">SKIP</span> couldn't run (e.g. no test command) — never a false PASS</div>
-        </div>
-      </section>
+<!-- ============================ WORKFLOWS ============================ -->
+<div class="page" id="page-workflows" role="tabpanel">
+  <div class="wrap">
+    <div class="page-head"><h1>How they work</h1><p>Four workflows, drawn straight from the skill and agent definitions — the orchestration, the gates, and where a step can BLOCK.</p></div>
 
-      <!-- ============================================================= -->
-      <!-- REVIEW SUITE                                                  -->
-      <!-- ============================================================= -->
-      <h2 class="section-title">Review suite</h2>
-      <p class="section-blurb">AI-assisted review of your current commit or uncommitted changes, before you push (or on demand, or from CI). Advises only — never pushes, commits, or bypasses git hooks.</p>
-
-      <!-- pre-push-review -->
-      <article class="card" id="pre-push-review">
-        <div class="card-head">
-          <div class="card-title">
-            <code>/pre-push-review</code>
-            <span class="badge multi">umbrella</span>
-            <span class="badge ver">v0.3.0</span>
-          </div>
-          <p class="card-purpose">Runs all five review dimensions — the secret scan first as a gate, then the rest in parallel — and aggregates one verdict with a report artifact. Supports a non-interactive CI mode with an exit-code contract.</p>
-          <dl class="meta-grid">
-            <dt>Invoke</dt><dd><code>/pre-push-review</code></dd>
-            <dt>Reviews</dt><dd>staged + unstaged + committed-but-unpushed changes</dd>
-            <dt>Requires</dt><dd>a git repo, a diff to review, and a secret scanner on PATH (<code>gitleaks</code>/<code>trufflehog</code>/<code>detect-secrets</code>)</dd>
-            <dt>Expect</dt><dd class="verdicts">
-              <span class="v pass">PASS</span><span class="v warn">WARN</span><span class="v block">BLOCK</span> + a per-dimension table &amp; report file
-            </dd>
-          </dl>
-        </div>
-        <details class="more">
-          <summary><span class="chev">›</span> Full flow &amp; what to expect</summary>
-          <div class="more-body">
-            <h4>What happens</h4>
-            <ol>
-              <li>Prints the <strong>AI-assisted</strong> banner (nothing leaves your machine).</li>
-              <li>Detects interactive vs. <strong>CI mode</strong> (<code>NJ_AGENTS_CI=1</code> / <code>--ci</code>).</li>
-              <li>Builds the diff snapshot and applies <strong>diff hygiene</strong> (excludes lockfiles/binaries/generated; caps very large diffs to a partial top-N review).</li>
-              <li><strong>Secret gate first</strong> — nothing is shared with any sub-agent until it clears (see <code>/review-secrets</code>).</li>
-              <li>Spawns the remaining dimensions <strong>in parallel</strong>: correctness, tests/build, dependencies, style, plus the semantic security pass.</li>
-              <li>Aggregates → one verdict; writes a timestamped <strong>report artifact</strong> (outside the repo tree / gitignored, no unmasked secrets).</li>
-              <li>Optionally offers to wire a git pre-push hook — proposed, never silently installed.</li>
-            </ol>
-            <h4>Aggregate verdict</h4>
-            <ul>
-              <li><strong>BLOCK</strong> — a secret is found, any dimension BLOCKs, or a required command fails.</li>
-              <li><strong>WARN</strong> — only warnings / nits.</li>
-              <li><strong>PASS</strong> — all clean (a SKIP or partial review is always called out — PASS-with-gaps ≠ PASS).</li>
-            </ul>
-            <h4>Example output</h4>
-            <pre><code>Dimension       Verdict   Top findings
-Secrets         <span class="cmd">PASS</span>      gitleaks: clean; semantic: clean
-Correctness     <span style="color:var(--block)">BLOCK</span>     off-by-one in pager (src/list.js:42)
-Tests / Build   <span class="cmd">PASS</span>      npm test: 128 passed
-Dependencies    <span style="color:var(--warn)">WARN</span>      left-pad@^2 floating range
-Style           <span style="color:var(--warn)">WARN</span>      leftover console.log (src/api.js:88)
-OVERALL: <span style="color:var(--block)">BLOCK</span> — fix the correctness blocker before pushing.</code></pre>
-            <h4>Exit-code contract (hooks / CI)</h4>
-            <p style="color:var(--ink-soft);margin:0">PASS/WARN → <code>0</code>, BLOCK → non-zero. The suite still advises only — it never runs <code>git push</code>.</p>
-          </div>
-        </details>
-      </article>
-
-      <!-- review-secrets -->
-      <article class="card" id="review-secrets">
-        <div class="card-head">
-          <div class="card-title"><code>/review-secrets</code> <span class="badge">dimension</span> <span class="badge ver">v0.3.0</span></div>
-          <p class="card-purpose">The security gate. Runs a <strong>required</strong> dedicated scanner over the diff first (hard gate), then a deeper semantic security pass.</p>
-          <dl class="meta-grid">
-            <dt>Invoke</dt><dd><code>/review-secrets</code></dd>
-            <dt>Requires</dt><dd><code>gitleaks</code>, <code>trufflehog</code>, or <code>detect-secrets</code> on PATH</dd>
-            <dt>Uses agent</dt><dd><span class="agent-pills"><code>secrets-reviewer</code></span></dd>
-            <dt>Expect</dt><dd class="verdicts"><span class="v block">BLOCK</span> on any secret or missing scanner · <span class="v warn">WARN</span> hardening · <span class="v pass">PASS</span></dd>
-          </dl>
-        </div>
-        <details class="more">
-          <summary><span class="chev">›</span> Full flow &amp; what to expect</summary>
-          <div class="more-body">
-            <h4>What happens</h4>
-            <ol>
-              <li>Detects a scanner on PATH. <strong>If none is installed → BLOCK</strong> with install instructions (no heuristic-only fallback).</li>
-              <li>Runs the scanner over added lines. Any credible hit → <strong>hard stop</strong>: prints <code>file:line</code> + pattern class + <strong>masked</strong> value, shares nothing.</li>
-              <li>If clean, spawns <code>secrets-reviewer</code> for a semantic pass: injection, missing authz, unsafe deserialization, path traversal, SSRF, weak crypto, structurally-hardcoded secrets.</li>
-            </ol>
-            <div class="callout warn"><span class="ic">⚠️</span><span>A missing scanner is a <strong>BLOCK</strong>, never a silent skip. Raw secret values are always masked, never echoed.</span></div>
-          </div>
-        </details>
-      </article>
-
-      <!-- review-correctness -->
-      <article class="card" id="review-correctness">
-        <div class="card-head">
-          <div class="card-title"><code>/review-correctness</code> <span class="badge">dimension</span> <span class="badge ver">v0.2.0</span></div>
-          <p class="card-purpose">Reviews the changed lines and their blast radius for logic errors, regressions, unhandled edge cases, and missing validation.</p>
-          <dl class="meta-grid">
-            <dt>Invoke</dt><dd><code>/review-correctness</code></dd>
-            <dt>Scope</dt><dd>changed lines + their callers/contracts — not the whole repo</dd>
-            <dt>Uses agent</dt><dd><span class="agent-pills"><code>correctness-reviewer</code></span></dd>
-            <dt>Expect</dt><dd class="verdicts"><span class="v block">BLOCK</span> real bug · <span class="v warn">WARN</span> risky · <span class="v pass">PASS</span></dd>
-          </dl>
-        </div>
-        <details class="more">
-          <summary><span class="chev">›</span> Full flow &amp; what to expect</summary>
-          <div class="more-body">
-            <h4>What it looks for</h4>
-            <ul>
-              <li>Off-by-one / boundary errors, null/undefined/None dereferences</li>
-              <li>Inverted or wrong conditionals; changed signatures/returns that break existing callers</li>
-              <li>Unhandled error/edge cases, missing validation on new inputs, resource leaks, concurrency hazards</li>
-            </ul>
-            <p style="color:var(--ink-soft);margin:0">Runs after the secret gate clears. Reports only high-confidence findings (≥80), each with a concrete failure scenario and fix.</p>
-          </div>
-        </details>
-      </article>
-
-      <!-- review-tests-build -->
-      <article class="card" id="review-tests-build">
-        <div class="card-head">
-          <div class="card-title"><code>/review-tests-build</code> <span class="badge">dimension</span> <span class="badge ver">v0.2.0</span></div>
-          <p class="card-purpose">Auto-detects and runs the repo's own test/lint/build commands as a gate. Never hardcodes a stack; never installs tooling.</p>
-          <dl class="meta-grid">
-            <dt>Invoke</dt><dd><code>/review-tests-build</code></dd>
-            <dt>Detects</dt><dd>Node, Python, Go, Rust, JVM, Make/just — or commands documented in <code>CLAUDE.md</code>/<code>AGENTS.md</code></dd>
-            <dt>Uses agent</dt><dd><span class="agent-pills"><code>tests-build-runner</code></span></dd>
-            <dt>Expect</dt><dd class="verdicts"><span class="v block">BLOCK</span> a command fails · <span class="v pass">PASS</span> · <span class="v skip">SKIP</span> none found</dd>
-          </dl>
-        </div>
-        <details class="more">
-          <summary><span class="chev">›</span> Full flow &amp; what to expect</summary>
-          <div class="more-body">
-            <h4>Detection order (first hit wins; documented beats inferred)</h4>
-            <ol>
-              <li>Commands documented in <code>CLAUDE.md</code>/<code>AGENTS.md</code>/<code>README</code></li>
-              <li>Node <code>package.json</code> scripts (manager from lockfile) → task runners (just/make/Taskfile) → Python → Go → Rust → JVM</li>
-            </ol>
-            <div class="callout"><span class="ic">🚫</span><span>Missing tooling is <strong>reported, not installed</strong>. Nothing detected → <strong>SKIP</strong>, never a false PASS.</span></div>
-          </div>
-        </details>
-      </article>
-
-      <!-- review-dependencies -->
-      <article class="card" id="review-dependencies">
-        <div class="card-head">
-          <div class="card-title"><code>/review-dependencies</code> <span class="badge">dimension</span> <span class="badge ver">v0.2.0</span></div>
-          <p class="card-purpose">Governance review of dependency &amp; license changes: added/removed/upgraded packages, version-pinning risk, license shifts, supply-chain signals.</p>
-          <dl class="meta-grid">
-            <dt>Invoke</dt><dd><code>/review-dependencies</code></dd>
-            <dt>Scope</dt><dd>manifest changes only — no network, no install</dd>
-            <dt>Uses agent</dt><dd><span class="agent-pills"><code>dependency-reviewer</code></span></dd>
-            <dt>Expect</dt><dd class="verdicts"><span class="v block">BLOCK</span> · <span class="v warn">WARN</span> · <span class="v pass">PASS</span> · <span class="v skip">SKIP</span></dd>
-          </dl>
-        </div>
-        <details class="more">
-          <summary><span class="chev">›</span> Full flow &amp; what to expect</summary>
-          <div class="more-body">
-            <h4>Flags</h4>
-            <ul>
-              <li><strong>Typosquat / lookalike</strong> package names (a primary supply-chain vector)</li>
-              <li>Major-version bumps, suspicious downgrades, floating ranges (<code>*</code>, <code>latest</code>) added where the repo otherwise pins</li>
-              <li>Copyleft/strong-copyleft or unknown <strong>licenses</strong> entering a permissive codebase (flagged for legal/governance)</li>
-              <li>Removed dependency still used in the diff; changed registry/source URL; disabled integrity checks</li>
-            </ul>
-            <p style="color:var(--ink-soft);margin:0">Advises &amp; flags — it does not adjudicate license compatibility.</p>
-          </div>
-        </details>
-      </article>
-
-      <!-- review-style -->
-      <article class="card" id="review-style">
-        <div class="card-head">
-          <div class="card-title"><code>/review-style</code> <span class="badge">dimension</span> <span class="badge ver">v0.2.0</span></div>
-          <p class="card-purpose">Consistency &amp; hygiene: does new code match the conventions around it, are commit messages clean, is there leftover debug/TODO output.</p>
-          <dl class="meta-grid">
-            <dt>Invoke</dt><dd><code>/review-style</code></dd>
-            <dt>Standard</dt><dd>inferred from surrounding code — not a hardcoded style guide</dd>
-            <dt>Uses agent</dt><dd><span class="agent-pills"><code>style-reviewer</code></span></dd>
-            <dt>Expect</dt><dd class="verdicts">usually <span class="v warn">WARN</span> / <span class="v pass">PASS</span> · <span class="v block">BLOCK</span> only for e.g. a committed conflict marker</dd>
-          </dl>
-        </div>
-        <details class="more">
-          <summary><span class="chev">›</span> Full flow &amp; what to expect</summary>
-          <div class="more-body">
-            <h4>Checks</h4>
-            <ul>
-              <li>Consistency with local naming/formatting/idioms &amp; reuse of existing helpers</li>
-              <li>Commit-message hygiene (imperative mood, no <code>wip</code>/<code>asdf</code>, matches the repo's convention e.g. Conventional Commits)</li>
-              <li>Leftover <code>console.log</code>/<code>print</code>/<code>dbg!</code>, added <code>TODO</code>/<code>FIXME</code>, commented-out code, test-focus flags (<code>.only</code>), merge-conflict markers</li>
-            </ul>
-          </div>
-        </details>
-      </article>
-
-      <!-- ============================================================= -->
-      <!-- AUTHORING SUITE                                               -->
-      <!-- ============================================================= -->
-      <h2 class="section-title">Authoring suite</h2>
-      <p class="section-blurb">Generates documentation artifacts from your project and places them in the repo, then proposes the commit. Every skill reads the repo to ground its output — nothing is invented.</p>
-
-      <!-- changelog -->
-      <article class="card" id="changelog">
-        <div class="card-head">
-          <div class="card-title"><code>/changelog</code> <span class="badge">authoring</span> <span class="badge ver">v0.1.0</span></div>
-          <p class="card-purpose">Generates/updates <code>CHANGELOG.md</code> in <strong>Keep a Changelog</strong> format + SemVer, from your commit history (Conventional Commits as the signal). Proposes the commit — never commits, pushes, or tags.</p>
-          <dl class="meta-grid">
-            <dt>Invoke</dt><dd><code>/changelog</code></dd>
-            <dt>Writes</dt><dd><code>CHANGELOG.md</code> at repo root (merges into <code>[Unreleased]</code>)</dd>
-            <dt>Uses agent</dt><dd><span class="agent-pills"><code>changelog-writer</code></span></dd>
-            <dt>Expect</dt><dd>a suggested version bump + a proposed <code>git commit</code> block you run yourself</dd>
-          </dl>
-        </div>
-        <details class="more">
-          <summary><span class="chev">›</span> Full flow &amp; what to expect</summary>
-          <div class="more-body">
-            <h4>What happens</h4>
-            <ol>
-              <li>Determines the range: since the last <code>git tag</code>, or the existing changelog's latest entry, else full history.</li>
-              <li>Parses Conventional Commits → suggests a bump (<code>feat</code>→minor, <code>fix</code>→patch, <code>!</code>/BREAKING→major). <strong>You can override.</strong></li>
-              <li><code>changelog-writer</code> groups into Added/Changed/Deprecated/Removed/Fixed/Security, de-dupes, drops noise (<code>wip</code>/<code>merge</code>/<code>fixup</code>), rewrites terse subjects into user-facing prose.</li>
-              <li>Merges into <code>[Unreleased]</code> (never clobbers released sections), maintains compare link refs.</li>
-              <li>Proposes the commit — plus an <strong>optional, clearly-marked release-only</strong> <code>git tag</code> line it never runs.</li>
-            </ol>
-          </div>
-        </details>
-      </article>
-
-      <!-- arch-diagram -->
-      <article class="card" id="arch-diagram">
-        <div class="card-head">
-          <div class="card-title"><code>/arch-diagram</code> <span class="badge">authoring</span> <span class="badge ver">v0.1.0</span></div>
-          <p class="card-purpose">Reads your README/docs/ADRs, then generates a system / solution / sequence / data-flow / deployment / ER diagram, places it in <code>docs/architecture/</code>, and proposes the commit.</p>
-          <dl class="meta-grid">
-            <dt>Invoke</dt><dd><code>/arch-diagram</code> — specify a <strong>type</strong> (default <code>system-arch</code>)</dd>
-            <dt>Format</dt><dd>default <strong>Excalidraw + exported SVG</strong>; also mermaid, inline SVG, or Figma (if MCP connected)</dd>
-            <dt>Uses agent</dt><dd><span class="agent-pills"><code>diagram-architect</code></span></dd>
-            <dt>Expect</dt><dd>a <code>.excalidraw</code> + <code>.svg</code> in docs, embedded, + a proposed commit</dd>
-          </dl>
-        </div>
-        <details class="more">
-          <summary><span class="chev">›</span> Full flow &amp; what to expect</summary>
-          <div class="more-body">
-            <h4>What happens</h4>
-            <ol>
-              <li>Resolves diagram <strong>type</strong> and <strong>format</strong>.</li>
-              <li>Ingests architecture docs (README, ARCHITECTURE, <code>docs/</code>, ADRs) and skims entry points to <strong>ground</strong> the diagram.</li>
-              <li><code>diagram-architect</code> builds a structured model (nodes/edges/boundaries) → emits valid <code>.excalidraw</code> JSON + a matching self-contained SVG (so it renders on GitHub without the Excalidraw app).</li>
-              <li>Places it per the placement ladder, embeds the SVG, proposes the commit.</li>
-            </ol>
-            <div class="callout"><span class="ic">🖼️</span><span>View the <code>.svg</code> on GitHub; open the <code>.excalidraw</code> at excalidraw.com to edit. Nothing in the diagram is invented — every box/arrow traces to the repo.</span></div>
-          </div>
-        </details>
-      </article>
-
-      <!-- capture-screenshots -->
-      <article class="card" id="capture-screenshots">
-        <div class="card-head">
-          <div class="card-title"><code>/capture-screenshots</code> <span class="badge multi">multi-agent</span> <span class="badge ver">v0.1.0</span></div>
-          <p class="card-purpose">Captures from a running web app, terminal/CLI output, a static HTML/component, or existing images — then runs a redaction pipeline so nothing sensitive ships. Only the redacted image is committed.</p>
-          <dl class="meta-grid">
-            <dt>Invoke</dt><dd><code>/capture-screenshots</code></dd>
-            <dt>Writes</dt><dd>redacted images to <code>docs/images/</code>; raw stays gitignored</dd>
-            <dt>Uses agents</dt><dd><span class="agent-pills"><code>screenshot-capturer</code><code>sensitive-data-reviewer</code><code>screenshot-redactor</code></span></dd>
-            <dt>Expect</dt><dd>before/after + a list of every redacted region; a proposed commit</dd>
-          </dl>
-        </div>
-        <details class="more">
-          <summary><span class="chev">›</span> Full flow &amp; what to expect</summary>
-          <div class="more-body">
-            <h4>Pipeline</h4>
-            <ol>
-              <li><strong>Capture</strong> — <code>screenshot-capturer</code> grabs the raw image (web via Playwright with discover-per-repo launch/auth, terminal, static, or existing). Never fabricates credentials.</li>
-              <li><strong>Detect</strong> — <code>sensitive-data-reviewer</code> marks PII/secrets (emails, tokens, keys, phone, cards, SSNs, names, hostnames) with regions + risk class.</li>
-              <li><strong>Redact</strong> — <code>screenshot-redactor</code> blurs via sharp/jimp: <strong>full/solid box</strong> for high-risk, <strong>partial mask</strong> for low-risk illustrative data.</li>
-              <li><strong>Verify gate</strong> — confirms every flagged region is obscured; if it can't verify coverage, it <span class="v block" style="padding:1px 6px">BLOCKS</span> the write.</li>
-            </ol>
-            <div class="callout safe"><span class="ic">🛡️</span><span><strong>Redact by default. The un-redacted original is never committed</strong> — it stays in a gitignored <code>.screenshots-raw/</code>. High-risk secrets are always fully obscured.</span></div>
-          </div>
-        </details>
-      </article>
-
-      <!-- tech-blog -->
-      <article class="card" id="tech-blog">
-        <div class="card-head">
-          <div class="card-title"><code>/tech-blog</code> <span class="badge multi">multi-agent</span> <span class="badge ver">v0.1.0</span></div>
-          <p class="card-purpose">A pipeline (writer → fact-checker → reviewer → editor → final-polish → platform-lint → optional poster) that writes an expert technical post about the project. The <strong>fact-checker BLOCKS</strong> on any claim it can't verify against the repo.</p>
-          <dl class="meta-grid">
-            <dt>Invoke</dt><dd><code>/tech-blog</code> — give a topic/angle &amp; audience</dd>
-            <dt>Writes</dt><dd><code>docs/blog/&lt;slug&gt;.md</code> + publish-ready MD/HTML (HTML via <code>pandoc</code> if present)</dd>
-            <dt>Uses agents</dt><dd><span class="agent-pills"><code>blog-writer</code><code>blog-fact-checker</code><code>blog-reviewer</code><code>blog-editor</code><code>blog-final-polish</code><code>blog-platform-lint</code><code>blog-poster</code></span></dd>
-            <dt>Expect</dt><dd>a grounded post; a proposed commit; posting only via a connected MCP (or Dev.to REST fallback) you opt into</dd>
-          </dl>
-        </div>
-        <details class="more">
-          <summary><span class="chev">›</span> Full flow &amp; what to expect</summary>
-          <div class="more-body">
-            <h4>Pipeline</h4>
-            <ol>
-              <li>Deep repo ingest + discovers any <code>/arch-diagram</code> outputs to embed.</li>
-              <li><code>blog-writer</code> drafts to the scratchpad, citing each claim's source.</li>
-              <li><code>blog-fact-checker</code> verifies <strong>every</strong> claim against the repo — <strong>hard-blocks</strong> on anything <em>wrong</em> or <em>unverifiable</em> until it's fixed or cut.</li>
-              <li><code>blog-reviewer</code> critiques structure/clarity/depth → <code>blog-editor</code> finalizes, embeds diagrams, adds front-matter.</li>
-              <li><code>blog-final-polish</code> runs a pre-publish mechanical checklist; <code>blog-platform-lint</code> checks the target platform's rules (Dev.to first) before posting.</li>
-              <li>Writes to <code>docs/blog/</code> + publish-ready copies; <code>blog-poster</code> creates a <strong>draft</strong> only if you opt in — via a publishing MCP or a Dev.to REST fallback (never auto-publishes).</li>
-            </ol>
-            <div class="callout"><span class="ic">✅</span><span>Nothing is invented: every fact traces to your repo, or it doesn't ship.</span></div>
-          </div>
-        </details>
-      </article>
-
-      <!-- docs-site -->
-      <article class="card" id="docs-site">
-        <div class="card-head">
-          <div class="card-title"><code>/docs-site</code> <span class="badge multi">multi-agent</span> <span class="badge ver">v0.1.0</span></div>
-          <p class="card-purpose">Universal documentation generator. Builds a self-contained, theme-aware <code>docs.html</code> from existing docs, the codebase, an outline, or structured definition files (SKILL.md/OpenAPI/JSON-Schema). Auto-derives the menu from the content, grounds everything in the source (flags gaps rather than inventing), and embeds auto-redacted screenshots via <code>/capture-screenshots</code>.</p>
-          <dl class="meta-grid">
-            <dt>Invoke</dt><dd><code>/docs-site</code></dd>
-            <dt>Inputs</dt><dd>docs/markdown · the codebase · a topic/outline · definition files (any/all)</dd>
-            <dt>Uses agents</dt><dd><span class="agent-pills"><code>docs-architect</code><code>docs-designer</code></span></dd>
-            <dt>Expect</dt><dd>a browsable <code>docs.html</code> with sidebar nav; gaps flagged; a proposed commit</dd>
-          </dl>
-        </div>
-        <details class="more">
-          <summary><span class="chev">›</span> Full flow &amp; what to expect</summary>
-          <div class="more-body">
-            <h4>What happens</h4>
-            <ol>
-              <li>Resolves inputs + scope (docs, code, outline, definition files) and the audience.</li>
-              <li>Ingests the sources into a content model (parses structured definition files exactly).</li>
-              <li><code>docs-architect</code> <strong>auto-derives the menu/sections</strong> from the content, writes grounded copy, and <strong>flags gaps</strong> ("not documented") instead of inventing.</li>
-              <li>If a page needs UI/terminal images, it <strong>delegates to <code>/capture-screenshots</code></strong> — so embedded shots are PII/secret-redacted and the raw never lands in the repo.</li>
-              <li><code>docs-designer</code> builds the self-contained page (sidebar nav, tiered content, light/dark, zero external deps; reuses an existing design system if present).</li>
-              <li>Writes <code>docs.html</code> (or <code>docs/index.html</code>), proposes the commit.</li>
-            </ol>
-            <div class="callout"><span class="ic">🧩</span><span>Composes with the suite: run it inside <code>nj-agents</code> and it regenerates this very reference.</span></div>
-          </div>
-        </details>
-      </article>
-
-      <!-- ============================================================= -->
-      <!-- SOCIAL                                                        -->
-      <!-- ============================================================= -->
-      <h2 class="section-title">Social</h2>
-      <p class="section-blurb">Promotional copy for a published thing — grounded in the real content, handed to you to post. Not review, not authoring-into-the-repo; it produces paste-ready copy and never auto-posts.</p>
-
-      <!-- social-post -->
-      <article class="card" id="social-post">
-        <div class="card-head">
-          <div class="card-title"><code>/social-post</code> <span class="badge">social</span> <span class="badge ver">v0.1.0</span></div>
-          <p class="card-purpose">Drafts LinkedIn / X promo copy for a <strong>published</strong> URL (blog, repo, demo) — hook-first opener, correct link + preview-card strategy, clean hashtags, in short / medium / builder-story variants. Grounded in the actual linked content; never invents claims. Hands you copy to paste — never auto-posts.</p>
-          <dl class="meta-grid">
-            <dt>Invoke</dt><dd><code>/social-post</code> — give a published URL</dd>
-            <dt>Platform</dt><dd>LinkedIn (default) or X/Twitter</dd>
-            <dt>Uses agent</dt><dd><span class="agent-pills"><code>social-post</code></span></dd>
-            <dt>Expect</dt><dd>short / medium / builder-story variants + hashtag line + first-comment block</dd>
-          </dl>
-        </div>
-        <details class="more">
-          <summary><span class="chev">›</span> Full flow &amp; what to expect</summary>
-          <div class="more-body">
-            <h4>What happens</h4>
-            <ol>
-              <li>Fetches the URL and grounds the copy in what the piece actually says (no invented metrics/claims).</li>
-              <li>Confirms angle (builder story / problem hook / announce), primary CTA, and style prefs.</li>
-              <li>Applies feed-algorithm mechanics: hook in the first ~2 lines; the link whose preview card you want goes <strong>first</strong>; secondary links move to a ready-to-paste <strong>first comment</strong> (multiple body links suppress reach); platform-appropriate hashtag count &amp; form.</li>
-              <li>Delivers paste-ready variants — you post them yourself.</li>
-            </ol>
-            <div class="callout"><span class="ic">📢</span><span>Deliverable is copy you paste. It never posts, and won't call a publishing MCP unless you explicitly opt in (draft-first even then).</span></div>
-          </div>
-        </details>
-      </article>
-
-      <!-- ============================================================= -->
-      <!-- AGENTS                                                        -->
-      <!-- ============================================================= -->
-      <section id="agents">
-        <h2 class="section-title">Agents</h2>
-        <p class="section-blurb">The 20 sub-agents that do the actual work. Skills orchestrate them — you don't invoke agents directly; the skill spawns the ones it needs (some in parallel, some as a pipeline). Each is read-only unless its skill writes the artifact.</p>
-        <div class="agent-table-wrap">
-          <table class="agents">
-            <thead>
-              <tr><th>Agent</th><th>What it does</th><th>Driven by</th></tr>
-            </thead>
-            <tbody>
-              <tr class="grp-row"><td colspan="3">Review suite</td></tr>
-              <tr>
-                <td class="name"><span class="agent-dot" style="background:var(--warn)"></span><code>secrets-reviewer</code></td>
-                <td class="role">Semantic security pass on the cleared diff — injection, missing authz/IDOR, unsafe deserialization, path traversal, SSRF, weak crypto, structurally-hardcoded secrets.</td>
-                <td class="via"><code>/review-secrets</code></td>
-              </tr>
-              <tr>
-                <td class="name"><span class="agent-dot" style="background:var(--block)"></span><code>correctness-reviewer</code></td>
-                <td class="role">Finds logic bugs in changed lines &amp; their blast radius — off-by-one, null derefs, broken caller contracts, missing validation, concurrency hazards.</td>
-                <td class="via"><code>/review-correctness</code></td>
-              </tr>
-              <tr>
-                <td class="name"><span class="agent-dot" style="background:var(--pass)"></span><code>tests-build-runner</code></td>
-                <td class="role">Auto-detects &amp; runs the repo's test/lint/build commands, triages failures. Never installs tooling; SKIP if none found.</td>
-                <td class="via"><code>/review-tests-build</code></td>
-              </tr>
-              <tr>
-                <td class="name"><span class="agent-dot" style="background:#3aa8c9"></span><code>dependency-reviewer</code></td>
-                <td class="role">Reviews dependency/license changes — added/upgraded packages, typosquats, floating ranges, copyleft licenses. Diff-only, no network.</td>
-                <td class="via"><code>/review-dependencies</code></td>
-              </tr>
-              <tr>
-                <td class="name"><span class="agent-dot" style="background:var(--accent)"></span><code>style-reviewer</code></td>
-                <td class="role">Consistency with surrounding code, commit-message hygiene, leftover debug/TODO/conflict markers. Infers conventions from context.</td>
-                <td class="via"><code>/review-style</code></td>
-              </tr>
-
-              <tr class="grp-row"><td colspan="3">Authoring — changelog &amp; diagram</td></tr>
-              <tr>
-                <td class="name"><span class="agent-dot" style="background:var(--pass)"></span><code>changelog-writer</code></td>
-                <td class="role">Turns grouped commits into Keep a Changelog entries — de-dupes, drops noise, rewrites terse subjects into user-facing prose.</td>
-                <td class="via"><code>/changelog</code></td>
-              </tr>
-              <tr>
-                <td class="name"><span class="agent-dot" style="background:#3aa8c9"></span><code>diagram-architect</code></td>
-                <td class="role">Reads the repo model → structured diagram (nodes/edges/boundaries) → emits valid Excalidraw JSON + SVG (or mermaid/Figma). Nothing invented.</td>
-                <td class="via"><code>/arch-diagram</code></td>
-              </tr>
-
-              <tr class="grp-row"><td colspan="3">Authoring — capture-screenshots pipeline</td></tr>
-              <tr>
-                <td class="name"><span class="agent-dot" style="background:#3aa8c9"></span><code>screenshot-capturer</code></td>
-                <td class="role">Captures the raw image from a web app (Playwright), terminal, static HTML, or existing files. Never fabricates credentials.</td>
-                <td class="via"><code>/capture-screenshots</code></td>
-              </tr>
-              <tr>
-                <td class="name"><span class="agent-dot" style="background:var(--block)"></span><code>sensitive-data-reviewer</code></td>
-                <td class="role">Marks PII/secrets in the image (emails, tokens, keys, phone, cards, SSNs, names, hostnames) with regions + risk class. Marks, doesn't blur.</td>
-                <td class="via"><code>/capture-screenshots</code></td>
-              </tr>
-              <tr>
-                <td class="name"><span class="agent-dot" style="background:var(--warn)"></span><code>screenshot-redactor</code></td>
-                <td class="role">Blurs/masks flagged regions (full for high-risk, partial for illustrative) via sharp/jimp, then verifies coverage — BLOCKS the write if unsure.</td>
-                <td class="via"><code>/capture-screenshots</code></td>
-              </tr>
-
-              <tr class="grp-row"><td colspan="3">Authoring — tech-blog pipeline</td></tr>
-              <tr>
-                <td class="name"><span class="agent-dot" style="background:var(--accent)"></span><code>blog-writer</code></td>
-                <td class="role">Drafts the expert-level post grounded in the repo model; cites each claim's source for the fact-checker.</td>
-                <td class="via"><code>/tech-blog</code></td>
-              </tr>
-              <tr>
-                <td class="name"><span class="agent-dot" style="background:var(--block)"></span><code>blog-fact-checker</code></td>
-                <td class="role">Verifies every claim against the repo — marks verified/unverifiable/wrong and <strong>hard-blocks</strong> finalization until issues are fixed or cut.</td>
-                <td class="via"><code>/tech-blog</code></td>
-              </tr>
-              <tr>
-                <td class="name"><span class="agent-dot" style="background:var(--warn)"></span><code>blog-reviewer</code></td>
-                <td class="role">Developmental critique — structure, clarity, technical depth, narrative, audience fit. Returns notes, not a rewrite.</td>
-                <td class="via"><code>/tech-blog</code></td>
-              </tr>
-              <tr>
-                <td class="name"><span class="agent-dot" style="background:var(--pass)"></span><code>blog-editor</code></td>
-                <td class="role">Produces the final post — applies fact-checker cuts + reviewer notes, embeds diagrams, adds front-matter, terminology/emphasis/style passes. Won't finalize over an open block.</td>
-                <td class="via"><code>/tech-blog</code></td>
-              </tr>
-              <tr>
-                <td class="name"><span class="agent-dot" style="background:#14b8a6"></span><code>blog-final-polish</code></td>
-                <td class="role">Pre-publish checklist gate for mechanical issues the editor doesn't catch — duplicate H1, weak ending, leftover/duplicated artifacts, over/under-done bold. Applies trivial fixes.</td>
-                <td class="via"><code>/tech-blog</code></td>
-              </tr>
-              <tr>
-                <td class="name"><span class="agent-dot" style="background:#e08a1e"></span><code>blog-platform-lint</code></td>
-                <td class="role">Checks a post against a target platform's publish rules (Dev.to first) — too many tags, SVG/relative images, missing/stale cover, draft→publish flow. Reports go/no-go; doesn't publish.</td>
-                <td class="via"><code>/tech-blog</code></td>
-              </tr>
-              <tr>
-                <td class="name"><span class="agent-dot" style="background:#c264c2"></span><code>blog-poster</code></td>
-                <td class="role">Creates a <strong>draft</strong> — via a connected publishing MCP (preferred), or a bundled Dev.to REST fallback when <code>DEVTO_API_KEY</code> is set. Opt-in only; never auto-publishes.</td>
-                <td class="via"><code>/tech-blog</code></td>
-              </tr>
-
-              <tr class="grp-row"><td colspan="3">Authoring — docs-site</td></tr>
-              <tr>
-                <td class="name"><span class="agent-dot" style="background:var(--accent)"></span><code>docs-architect</code></td>
-                <td class="role">Ingests sources → auto-derives the section structure + grounded copy + a gap list + screenshot requests. Read-only.</td>
-                <td class="via"><code>/docs-site</code></td>
-              </tr>
-              <tr>
-                <td class="name"><span class="agent-dot" style="background:#c264c2"></span><code>docs-designer</code></td>
-                <td class="role">Turns the doc model into a single self-contained <code>docs.html</code> — sidebar nav, tiered content, light/dark, zero external deps; reuses an existing design system if present.</td>
-                <td class="via"><code>/docs-site</code></td>
-              </tr>
-
-              <tr class="grp-row"><td colspan="3">Social</td></tr>
-              <tr>
-                <td class="name"><span class="agent-dot" style="background:#0a66c2"></span><code>social-post</code></td>
-                <td class="role">Drafts grounded LinkedIn / X promo copy from a published URL — hook-first, correct link/preview strategy, clean hashtags, short/medium/builder-story variants. Never auto-posts.</td>
-                <td class="via"><code>/social-post</code></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="callout"><span class="ic">🎨</span><span>The colored dot mirrors each agent's <code>color:</code> in its definition — the same label Claude Code shows when the agent runs.</span></div>
-      </section>
-
-      <footer class="foot">
-        <p>nj-agents · project-agnostic Claude Code skills &amp; agents. This reference is generated from the actual skill definitions — <code>skills/&lt;name&gt;/SKILL.md</code> and <code>agents/*.md</code>. Shared rules: <code>CONVENTIONS.md</code> (review) &amp; <code>CONVENTIONS-authoring.md</code> (authoring).</p>
-      </footer>
+    <!-- 1. SUITE OVERVIEW MAP -->
+    <div class="flow" id="wf-overview">
+      <h3>Suite overview</h3>
+      <p class="desc">12 skills across three classes, and the 20 agents they orchestrate. You invoke a skill; it spawns the agents it needs.</p>
+      <div class="flow-svg-wrap">
+        <svg viewBox="0 0 900 470" role="img" aria-label="Suite overview map">
+          <defs>
+            <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--ink-faint)"/></marker>
+          </defs>
+          <!-- Review -->
+          <rect x="20" y="20" width="270" height="430" rx="14" fill="var(--accent-soft)" stroke="var(--border)"/>
+          <text x="36" y="46" font-size="13" font-weight="700" fill="var(--accent-ink)">REVIEW</text>
+          <text x="36" y="64" font-size="10.5" fill="var(--ink-faint)">advise only · gates a push</text>
+          <g font-size="12" fill="var(--ink)">
+            <rect x="36" y="78" width="238" height="30" rx="7" fill="var(--surface)" stroke="var(--border-strong)"/><text x="46" y="97" font-weight="600">/pre-push-review</text><text x="250" y="97" font-size="9" fill="var(--ink-faint)">umbrella</text>
+            <rect x="52" y="116" width="222" height="26" rx="6" fill="var(--surface)" stroke="var(--border)"/><text x="62" y="133">/review-secrets</text>
+            <rect x="52" y="148" width="222" height="26" rx="6" fill="var(--surface)" stroke="var(--border)"/><text x="62" y="165">/review-correctness</text>
+            <rect x="52" y="180" width="222" height="26" rx="6" fill="var(--surface)" stroke="var(--border)"/><text x="62" y="197">/review-tests-build</text>
+            <rect x="52" y="212" width="222" height="26" rx="6" fill="var(--surface)" stroke="var(--border)"/><text x="62" y="229">/review-dependencies</text>
+            <rect x="52" y="244" width="222" height="26" rx="6" fill="var(--surface)" stroke="var(--border)"/><text x="62" y="261">/review-style</text>
+          </g>
+          <text x="36" y="298" font-size="9.5" fill="var(--ink-faint)">agents: secrets-, correctness-,</text>
+          <text x="36" y="312" font-size="9.5" fill="var(--ink-faint)">tests-build-, dependency-, style-reviewer</text>
+          <line x1="155" y1="108" x2="155" y2="116" stroke="var(--ink-faint)"/>
+          <line x1="155" y1="108" x2="155" y2="257" stroke="var(--ink-faint)" stroke-dasharray="3 3"/>
+          <!-- Authoring -->
+          <rect x="310" y="20" width="360" height="430" rx="14" fill="var(--warn-bg)" stroke="var(--border)"/>
+          <text x="326" y="46" font-size="13" font-weight="700" fill="var(--warn)">AUTHORING</text>
+          <text x="326" y="64" font-size="10.5" fill="var(--ink-faint)">writes an artifact · proposes the commit</text>
+          <g font-size="12" fill="var(--ink)">
+            <rect x="326" y="78" width="328" height="26" rx="6" fill="var(--surface)" stroke="var(--border)"/><text x="336" y="95">/changelog</text><text x="640" y="95" font-size="9" fill="var(--ink-faint)" text-anchor="end">changelog-writer</text>
+            <rect x="326" y="110" width="328" height="26" rx="6" fill="var(--surface)" stroke="var(--border)"/><text x="336" y="127">/arch-diagram</text><text x="640" y="127" font-size="9" fill="var(--ink-faint)" text-anchor="end">diagram-architect</text>
+            <rect x="326" y="142" width="328" height="40" rx="6" fill="var(--surface)" stroke="var(--border)"/><text x="336" y="160">/capture-screenshots</text><text x="336" y="174" font-size="9" fill="var(--ink-faint)">capturer · sensitive-data-reviewer · redactor</text>
+            <rect x="326" y="188" width="328" height="52" rx="6" fill="var(--surface)" stroke="var(--border)"/><text x="336" y="206">/tech-blog</text><text x="336" y="220" font-size="9" fill="var(--ink-faint)">writer · fact-checker · reviewer · editor</text><text x="336" y="232" font-size="9" fill="var(--ink-faint)">final-polish · platform-lint · poster</text>
+            <rect x="326" y="246" width="328" height="40" rx="6" fill="var(--surface)" stroke="var(--border)"/><text x="336" y="264">/docs-site</text><text x="336" y="278" font-size="9" fill="var(--ink-faint)">docs-architect · docs-designer</text>
+          </g>
+          <!-- Social -->
+          <rect x="690" y="20" width="190" height="430" rx="14" fill="var(--social-bg)" stroke="var(--border)"/>
+          <text x="706" y="46" font-size="13" font-weight="700" fill="var(--social)">SOCIAL</text>
+          <text x="706" y="64" font-size="10.5" fill="var(--ink-faint)">copy you post</text>
+          <rect x="706" y="78" width="158" height="40" rx="6" fill="var(--surface)" stroke="var(--border)"/><text x="716" y="96" font-size="12" fill="var(--ink)">/social-post</text><text x="716" y="110" font-size="9" fill="var(--ink-faint)">social-post agent</text>
+          <!-- cross link: tech-blog -> social / arch-diagram -> tech-blog -->
+          <path d="M654 214 C 680 214, 686 98, 706 98" fill="none" stroke="var(--ink-faint)" stroke-dasharray="4 3" marker-end="url(#ar)"/>
+          <path d="M490 136 C 500 160, 500 180, 490 188" fill="none" stroke="var(--ink-faint)" stroke-dasharray="4 3" marker-end="url(#ar)"/>
+          <text x="700" y="140" font-size="9" fill="var(--ink-faint)">publish → promo</text>
+        </svg>
+      </div>
+      <div class="flow-legend"><span><i style="background:var(--accent-soft)"></i> Review</span><span><i style="background:var(--warn-bg)"></i> Authoring</span><span><i style="background:var(--social-bg)"></i> Social</span><span>▪ dashed = one feeds another</span></div>
     </div>
-  </main>
+
+    <!-- 2. PRE-PUSH FAN-OUT -->
+    <div class="flow" id="wf-prepush">
+      <h3><code>/pre-push-review</code> — secret gate, then parallel fan-out</h3>
+      <p class="desc">The secret scan runs <strong>first and alone</strong> — nothing is shared with any sub-agent until it clears. Then the other dimensions run in a single parallel batch and aggregate to one verdict.</p>
+      <div class="flow-svg-wrap">
+        <svg viewBox="0 0 900 340" role="img" aria-label="pre-push-review flow">
+          <defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--ink-faint)"/></marker></defs>
+          <!-- snapshot -->
+          <rect x="20" y="140" width="120" height="52" rx="9" fill="var(--surface)" stroke="var(--border-strong)"/><text x="80" y="163" text-anchor="middle" font-size="12" font-weight="600" fill="var(--ink)">diff</text><text x="80" y="179" text-anchor="middle" font-size="10" fill="var(--ink-faint)">snapshot</text>
+          <!-- secret gate -->
+          <rect x="180" y="132" width="150" height="68" rx="10" fill="var(--block-bg)" stroke="var(--block)"/><text x="255" y="158" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--block)">SECRET GATE</text><text x="255" y="176" text-anchor="middle" font-size="9.5" fill="var(--ink-soft)">scanner required</text><text x="255" y="190" text-anchor="middle" font-size="9.5" fill="var(--ink-soft)">hit / none → BLOCK</text>
+          <line x1="140" y1="166" x2="178" y2="166" stroke="var(--ink-faint)" marker-end="url(#ar2)"/>
+          <!-- parallel batch -->
+          <g font-size="11" fill="var(--ink)">
+            <rect x="400" y="20" width="230" height="30" rx="7" fill="var(--surface)" stroke="var(--border)"/><text x="414" y="39">correctness-reviewer</text>
+            <rect x="400" y="60" width="230" height="30" rx="7" fill="var(--surface)" stroke="var(--border)"/><text x="414" y="79">tests-build-runner</text>
+            <rect x="400" y="100" width="230" height="30" rx="7" fill="var(--surface)" stroke="var(--border)"/><text x="414" y="119">dependency-reviewer</text>
+            <rect x="400" y="140" width="230" height="30" rx="7" fill="var(--surface)" stroke="var(--border)"/><text x="414" y="159">style-reviewer</text>
+            <rect x="400" y="180" width="230" height="30" rx="7" fill="var(--surface)" stroke="var(--border)"/><text x="414" y="199">secrets-reviewer (semantic)</text>
+          </g>
+          <text x="515" y="232" text-anchor="middle" font-size="9.5" fill="var(--ink-faint)">spawned in parallel, one message</text>
+          <!-- gate -> batch -->
+          <path d="M330 150 C 360 150, 360 35, 400 35" fill="none" stroke="var(--ink-faint)" marker-end="url(#ar2)"/>
+          <path d="M330 158 C 365 158, 370 75, 400 75" fill="none" stroke="var(--ink-faint)" marker-end="url(#ar2)"/>
+          <path d="M330 166 L400 115" fill="none" stroke="var(--ink-faint)" marker-end="url(#ar2)"/>
+          <path d="M330 174 C 365 174, 370 155, 400 155" fill="none" stroke="var(--ink-faint)" marker-end="url(#ar2)"/>
+          <path d="M330 182 C 360 190, 360 195, 400 195" fill="none" stroke="var(--ink-faint)" marker-end="url(#ar2)"/>
+          <text x="360" y="128" font-size="9" fill="var(--pass)">clean ✓</text>
+          <!-- aggregate -->
+          <rect x="700" y="90" width="180" height="120" rx="12" fill="var(--surface)" stroke="var(--border-strong)"/><text x="790" y="118" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--ink)">AGGREGATE</text>
+          <text x="790" y="144" text-anchor="middle" font-size="11" fill="var(--pass)">PASS</text>
+          <text x="790" y="164" text-anchor="middle" font-size="11" fill="var(--warn)">WARN</text>
+          <text x="790" y="184" text-anchor="middle" font-size="11" fill="var(--block)">BLOCK</text>
+          <path d="M630 110 C 665 110, 670 140, 700 140" fill="none" stroke="var(--ink-faint)" marker-end="url(#ar2)"/>
+          <text x="790" y="228" text-anchor="middle" font-size="9.5" fill="var(--ink-faint)">+ report artifact · exit code</text>
+        </svg>
+      </div>
+      <div class="flow-legend"><span><i style="background:var(--block-bg)"></i> hard gate (can BLOCK)</span><span>secret scan clears before anything is shared with AI</span></div>
+    </div>
+
+    <!-- 3. TECH-BLOG PIPELINE -->
+    <div class="flow" id="wf-techblog">
+      <h3><code>/tech-blog</code> — sequential pipeline with a blocking fact-check</h3>
+      <p class="desc">Writer → fact-checker → reviewer → editor is strictly sequential (each transforms the prior). The fact-checker is a <strong>hard gate</strong>: it loops back to the writer until no claim is wrong or unverifiable. The finalize checks after the editor run in parallel, then the optional poster and promo.</p>
+      <div class="flow-svg-wrap">
+        <svg viewBox="0 0 900 300" role="img" aria-label="tech-blog pipeline">
+          <defs><marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--ink-faint)"/></marker></defs>
+          <g font-size="11" fill="var(--ink)" text-anchor="middle">
+            <rect x="20" y="70" width="110" height="40" rx="8" fill="var(--surface)" stroke="var(--border-strong)"/><text x="75" y="94">blog-writer</text>
+            <rect x="165" y="66" width="120" height="48" rx="9" fill="var(--block-bg)" stroke="var(--block)"/><text x="225" y="86" font-weight="700" fill="var(--block)">fact-checker</text><text x="225" y="102" font-size="9" fill="var(--ink-soft)">BLOCKS</text>
+            <rect x="320" y="70" width="110" height="40" rx="8" fill="var(--surface)" stroke="var(--border-strong)"/><text x="375" y="94">blog-reviewer</text>
+            <rect x="465" y="70" width="110" height="40" rx="8" fill="var(--surface)" stroke="var(--border-strong)"/><text x="520" y="94">blog-editor</text>
+          </g>
+          <line x1="130" y1="90" x2="163" y2="90" stroke="var(--ink-faint)" marker-end="url(#ar3)"/>
+          <line x1="285" y1="90" x2="318" y2="90" stroke="var(--ink-faint)" marker-end="url(#ar3)"/>
+          <line x1="430" y1="90" x2="463" y2="90" stroke="var(--ink-faint)" marker-end="url(#ar3)"/>
+          <!-- fact-check loop back to writer -->
+          <path d="M195 114 C 175 150, 95 150, 75 112" fill="none" stroke="var(--block)" stroke-dasharray="4 3" marker-end="url(#ar3)"/>
+          <text x="135" y="150" text-anchor="middle" font-size="9" fill="var(--block)">wrong/unverifiable → fix &amp; re-check</text>
+          <!-- finalize checks (parallel) -->
+          <g font-size="10.5" fill="var(--ink)" text-anchor="middle">
+            <rect x="620" y="40" width="140" height="34" rx="8" fill="var(--surface)" stroke="var(--border)"/><text x="690" y="61">blog-final-polish</text>
+            <rect x="620" y="86" width="140" height="34" rx="8" fill="var(--surface)" stroke="var(--border)"/><text x="690" y="107">blog-platform-lint</text>
+          </g>
+          <text x="690" y="134" text-anchor="middle" font-size="9" fill="var(--ink-faint)">parallel analysis, serial apply</text>
+          <path d="M575 86 C 595 70, 600 57, 618 57" fill="none" stroke="var(--ink-faint)" marker-end="url(#ar3)"/>
+          <path d="M575 94 C 595 100, 600 103, 618 103" fill="none" stroke="var(--ink-faint)" marker-end="url(#ar3)"/>
+          <!-- poster + social -->
+          <rect x="620" y="170" width="140" height="34" rx="8" fill="var(--surface)" stroke="var(--border)"/><text x="690" y="191" text-anchor="middle" font-size="10.5" fill="var(--ink)">blog-poster (opt-in)</text>
+          <rect x="620" y="216" width="140" height="34" rx="8" fill="var(--social-bg)" stroke="var(--border)"/><text x="690" y="237" text-anchor="middle" font-size="10.5" fill="var(--social)">/social-post (promo)</text>
+          <path d="M690 120 L690 168" fill="none" stroke="var(--ink-faint)" marker-end="url(#ar3)"/>
+          <path d="M690 204 L690 214" fill="none" stroke="var(--ink-faint)" stroke-dasharray="3 3" marker-end="url(#ar3)"/>
+          <text x="820" y="191" font-size="9" fill="var(--ink-faint)" text-anchor="end">draft only</text>
+        </svg>
+      </div>
+      <div class="flow-legend"><span><i style="background:var(--block-bg)"></i> hard gate</span><span>▪ dashed = loop / optional</span><span>writes to docs/blog/ · proposes commit</span></div>
+    </div>
+
+    <!-- 4. SCREENSHOT REDACTION GATE -->
+    <div class="flow" id="wf-screenshots">
+      <h3><code>/capture-screenshots</code> — the redaction verify-gate</h3>
+      <p class="desc">Capture → detect PII → redact → <strong>verify</strong>. The verify step is a hard gate: if it can't confirm every flagged region is obscured, nothing is written. Only the redacted image is committed; the raw stays in a gitignored dir.</p>
+      <div class="flow-svg-wrap">
+        <svg viewBox="0 0 900 230" role="img" aria-label="capture-screenshots redaction gate">
+          <defs><marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--ink-faint)"/></marker></defs>
+          <g font-size="11" fill="var(--ink)" text-anchor="middle">
+            <rect x="20" y="80" width="150" height="46" rx="9" fill="var(--surface)" stroke="var(--border-strong)"/><text x="95" y="100" font-weight="600">screenshot-capturer</text><text x="95" y="116" font-size="9" fill="var(--ink-faint)">→ raw (gitignored)</text>
+            <rect x="205" y="80" width="160" height="46" rx="9" fill="var(--surface)" stroke="var(--border-strong)"/><text x="285" y="100" font-weight="600">sensitive-data-</text><text x="285" y="114" font-weight="600">reviewer</text>
+            <rect x="400" y="80" width="150" height="46" rx="9" fill="var(--surface)" stroke="var(--border-strong)"/><text x="475" y="100" font-weight="600">screenshot-redactor</text><text x="475" y="116" font-size="9" fill="var(--ink-faint)">blur / mask</text>
+            <rect x="585" y="72" width="150" height="62" rx="10" fill="var(--block-bg)" stroke="var(--block)"/><text x="660" y="96" font-weight="700" fill="var(--block)">VERIFY GATE</text><text x="660" y="113" font-size="9" fill="var(--ink-soft)">coverage unproven</text><text x="660" y="126" font-size="9" fill="var(--ink-soft)">→ no write</text>
+            <rect x="770" y="80" width="110" height="46" rx="9" fill="var(--pass-bg)" stroke="var(--pass)"/><text x="825" y="100" fill="var(--pass)" font-weight="700">docs/</text><text x="825" y="116" font-size="9" fill="var(--ink-soft)">redacted only</text>
+          </g>
+          <line x1="170" y1="103" x2="203" y2="103" stroke="var(--ink-faint)" marker-end="url(#ar4)"/>
+          <line x1="365" y1="103" x2="398" y2="103" stroke="var(--ink-faint)" marker-end="url(#ar4)"/>
+          <line x1="550" y1="103" x2="583" y2="103" stroke="var(--ink-faint)" marker-end="url(#ar4)"/>
+          <line x1="735" y1="103" x2="768" y2="103" stroke="var(--pass)" marker-end="url(#ar4)"/>
+          <text x="752" y="96" font-size="9" fill="var(--pass)">pass ✓</text>
+          <path d="M620 134 C 600 175, 500 175, 480 128" fill="none" stroke="var(--block)" stroke-dasharray="4 3" marker-end="url(#ar4)"/>
+          <text x="545" y="185" text-anchor="middle" font-size="9" fill="var(--block)">unverified → re-redact / wider blur</text>
+        </svg>
+      </div>
+      <div class="flow-legend"><span><i style="background:var(--block-bg)"></i> hard gate (blocks the write)</span><span><i style="background:var(--pass-bg)"></i> committed output</span><span>raw original never committed</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================ REFERENCE ============================ -->
+<div class="page" id="page-reference" role="tabpanel">
+  <div class="wrap narrow">
+    <div class="page-head"><h1>Reference</h1><p>Every skill and agent, grounded in its definition file. Hover a heading to copy a deep link.</p></div>
+
+    <h2 class="section-title" id="ref-review">Review suite</h2>
+    <p class="section-blurb">AI-assisted review of your current commit or uncommitted changes. Advises only — never pushes, commits, or bypasses hooks.</p>
+
+    <article class="card" id="pre-push-review">
+      <div class="card-head">
+        <div class="card-title"><code>/pre-push-review</code> <span class="badge multi">umbrella</span> <span class="badge ver">v0.3.0</span></div>
+        <p class="card-purpose">Runs all five review dimensions — secret scan first as a gate, then the rest in parallel — and aggregates one verdict with a report artifact. Supports non-interactive CI mode with an exit-code contract.</p>
+        <dl class="meta-grid">
+          <dt>Invoke</dt><dd><code>/pre-push-review</code></dd>
+          <dt>Reviews</dt><dd>staged + unstaged + committed-but-unpushed changes</dd>
+          <dt>Requires</dt><dd>a git repo, a diff, and a secret scanner on PATH</dd>
+          <dt>Expect</dt><dd class="verdicts"><span class="v pass">PASS</span><span class="v warn">WARN</span><span class="v block">BLOCK</span> + per-dimension table &amp; report</dd>
+        </dl>
+      </div>
+      <details class="more"><summary><span class="chev">›</span> Full flow</summary><div class="more-body">
+        <h4>What happens</h4>
+        <ol>
+          <li>Prints the AI-assisted banner; detects interactive vs. <strong>CI mode</strong> (<code>NJ_AGENTS_CI=1</code>).</li>
+          <li>Builds the diff snapshot + <strong>diff hygiene</strong> (excludes lockfiles/binaries/generated; caps huge diffs to a partial top-N).</li>
+          <li><strong>Secret gate first</strong> — nothing shared with a sub-agent until it clears.</li>
+          <li>Spawns correctness, tests/build, dependencies, style + the semantic security pass <strong>in parallel</strong>.</li>
+          <li>Aggregates → one verdict; writes a timestamped report (gitignored, no unmasked secrets).</li>
+          <li>Optionally offers to wire a git pre-push hook — proposed, never silently installed.</li>
+        </ol>
+        <h4>Exit-code contract (hook / CI)</h4>
+        <p style="color:var(--ink-soft);margin:0">PASS/WARN → <code>0</code>, BLOCK → non-zero. Still advises only — never runs <code>git push</code>.</p>
+      </div></details>
+    </article>
+
+    <article class="card" id="review-secrets">
+      <div class="card-head"><div class="card-title"><code>/review-secrets</code> <span class="badge">dimension</span> <span class="badge ver">v0.3.0</span></div>
+        <p class="card-purpose">The security gate. A <strong>required</strong> dedicated scanner runs over the diff first (hard gate), then a deeper semantic security pass.</p>
+        <dl class="meta-grid"><dt>Requires</dt><dd><code>gitleaks</code>, <code>trufflehog</code>, or <code>detect-secrets</code> on PATH</dd><dt>Agent</dt><dd><span class="agent-pills"><code>secrets-reviewer</code></span></dd><dt>Expect</dt><dd class="verdicts"><span class="v block">BLOCK</span> on secret or missing scanner · <span class="v warn">WARN</span> · <span class="v pass">PASS</span></dd></dl>
+      </div>
+      <details class="more"><summary><span class="chev">›</span> Full flow</summary><div class="more-body"><ol>
+        <li><strong>No scanner installed → BLOCK</strong> with install instructions (no heuristic-only fallback).</li>
+        <li>Scanner hit → <strong>hard stop</strong>: <code>file:line</code> + pattern class + <strong>masked</strong> value, shares nothing.</li>
+        <li>Clean → spawns <code>secrets-reviewer</code>: injection, missing authz/IDOR, unsafe deserialization, SSRF, weak crypto, hardcoded secrets.</li>
+      </ol></div></details>
+    </article>
+
+    <article class="card" id="review-correctness">
+      <div class="card-head"><div class="card-title"><code>/review-correctness</code> <span class="badge">dimension</span> <span class="badge ver">v0.2.0</span></div>
+        <p class="card-purpose">Reviews changed lines and their blast radius for logic errors, regressions, unhandled edge cases, and missing validation.</p>
+        <dl class="meta-grid"><dt>Scope</dt><dd>changed lines + callers/contracts — not the whole repo</dd><dt>Agent</dt><dd><span class="agent-pills"><code>correctness-reviewer</code></span></dd><dt>Expect</dt><dd class="verdicts"><span class="v block">BLOCK</span> real bug · <span class="v warn">WARN</span> · <span class="v pass">PASS</span></dd></dl>
+      </div>
+      <details class="more"><summary><span class="chev">›</span> What it looks for</summary><div class="more-body"><ul>
+        <li>Off-by-one / boundary, null/undefined/None derefs, inverted conditionals</li>
+        <li>Changed signatures/returns that break existing callers; unhandled edge cases</li>
+        <li>Missing validation on new inputs; resource leaks; concurrency hazards</li>
+      </ul><p style="color:var(--ink-soft);margin:8px 0 0">High-confidence findings only (≥80), each with a concrete failure scenario + fix.</p></div></details>
+    </article>
+
+    <article class="card" id="review-tests-build">
+      <div class="card-head"><div class="card-title"><code>/review-tests-build</code> <span class="badge">dimension</span> <span class="badge ver">v0.2.0</span></div>
+        <p class="card-purpose">Auto-detects and runs the repo's own test/lint/build commands. Never hardcodes a stack; never installs tooling.</p>
+        <dl class="meta-grid"><dt>Detects</dt><dd>Node, Python, Go, Rust, JVM, Make/just — or commands in <code>CLAUDE.md</code>/<code>AGENTS.md</code></dd><dt>Agent</dt><dd><span class="agent-pills"><code>tests-build-runner</code></span></dd><dt>Expect</dt><dd class="verdicts"><span class="v block">BLOCK</span> a fail · <span class="v pass">PASS</span> · <span class="v skip">SKIP</span> none found</dd></dl>
+      </div>
+      <details class="more"><summary><span class="chev">›</span> Detection order</summary><div class="more-body"><ol>
+        <li>Commands documented in <code>CLAUDE.md</code>/<code>AGENTS.md</code>/<code>README</code></li>
+        <li>Node scripts → task runners (just/make) → Python → Go → Rust → JVM</li>
+      </ol><div class="callout"><span>🚫</span><span>Missing tooling is <strong>reported, not installed</strong>. Nothing detected → <strong>SKIP</strong>.</span></div></div></details>
+    </article>
+
+    <article class="card" id="review-dependencies">
+      <div class="card-head"><div class="card-title"><code>/review-dependencies</code> <span class="badge">dimension</span> <span class="badge ver">v0.2.0</span></div>
+        <p class="card-purpose">Governance review of dependency &amp; license changes — added/upgraded packages, pinning risk, license shifts, supply-chain signals.</p>
+        <dl class="meta-grid"><dt>Scope</dt><dd>manifest changes only — no network, no install</dd><dt>Agent</dt><dd><span class="agent-pills"><code>dependency-reviewer</code></span></dd><dt>Expect</dt><dd class="verdicts"><span class="v block">BLOCK</span> · <span class="v warn">WARN</span> · <span class="v pass">PASS</span> · <span class="v skip">SKIP</span></dd></dl>
+      </div>
+      <details class="more"><summary><span class="chev">›</span> Flags</summary><div class="more-body"><ul>
+        <li><strong>Typosquat / lookalike</strong> package names</li>
+        <li>Major bumps, downgrades, floating ranges added where the repo pins</li>
+        <li>Copyleft/unknown <strong>licenses</strong> entering a permissive codebase</li>
+        <li>Removed dep still used; changed registry URL; disabled integrity checks</li>
+      </ul></div></details>
+    </article>
+
+    <article class="card" id="review-style">
+      <div class="card-head"><div class="card-title"><code>/review-style</code> <span class="badge">dimension</span> <span class="badge ver">v0.2.0</span></div>
+        <p class="card-purpose">Consistency &amp; hygiene: does new code match the conventions around it, are commit messages clean, is there leftover debug output.</p>
+        <dl class="meta-grid"><dt>Standard</dt><dd>inferred from surrounding code — not a hardcoded guide</dd><dt>Agent</dt><dd><span class="agent-pills"><code>style-reviewer</code></span></dd><dt>Expect</dt><dd class="verdicts">usually <span class="v warn">WARN</span> / <span class="v pass">PASS</span></dd></dl>
+      </div>
+      <details class="more"><summary><span class="chev">›</span> Checks</summary><div class="more-body"><ul>
+        <li>Consistency with local naming/formatting/idioms &amp; reuse of helpers</li>
+        <li>Commit-message hygiene (imperative, no <code>wip</code>/<code>asdf</code>, matches convention)</li>
+        <li>Leftover debug output, added <code>TODO</code>/<code>FIXME</code>, <code>.only</code>, merge-conflict markers</li>
+      </ul></div></details>
+    </article>
+
+    <h2 class="section-title" id="ref-authoring">Authoring suite</h2>
+    <p class="section-blurb">Generates artifacts from your project and places them in the repo, then proposes the commit. Nothing is invented — everything traces to the source.</p>
+
+    <article class="card" id="changelog">
+      <div class="card-head"><div class="card-title"><code>/changelog</code> <span class="badge">authoring</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Generates/updates <code>CHANGELOG.md</code> in <strong>Keep a Changelog</strong> format + SemVer from your commit history (Conventional Commits as the signal). Proposes the commit — never commits, pushes, or tags.</p>
+        <dl class="meta-grid"><dt>Writes</dt><dd><code>CHANGELOG.md</code> (merges into <code>[Unreleased]</code>)</dd><dt>Agent</dt><dd><span class="agent-pills"><code>changelog-writer</code></span></dd><dt>Expect</dt><dd>a suggested version bump + a proposed <code>git commit</code> block</dd></dl>
+      </div>
+      <details class="more"><summary><span class="chev">›</span> Full flow</summary><div class="more-body"><ol>
+        <li>Determines range: last <code>git tag</code> / existing changelog / full history.</li>
+        <li>Parses Conventional Commits → bump (feat→minor, fix→patch, !/BREAKING→major). You override.</li>
+        <li><code>changelog-writer</code> groups Added/Changed/…, de-dupes, drops noise, rewrites into user-facing prose.</li>
+        <li>Merges into <code>[Unreleased]</code> (never clobbers released sections); proposes commit + optional release-only tag.</li>
+      </ol></div></details>
+    </article>
+
+    <article class="card" id="arch-diagram">
+      <div class="card-head"><div class="card-title"><code>/arch-diagram</code> <span class="badge">authoring</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Reads your README/docs/ADRs, then generates a system/solution/sequence/data-flow/deployment/ER diagram, places it in <code>docs/architecture/</code>, and proposes the commit.</p>
+        <dl class="meta-grid"><dt>Format</dt><dd>default <strong>Excalidraw + exported SVG</strong>; also mermaid, inline SVG, or Figma (MCP)</dd><dt>Agent</dt><dd><span class="agent-pills"><code>diagram-architect</code></span></dd><dt>Expect</dt><dd>a <code>.excalidraw</code> + <code>.svg</code> in docs, embedded, + a proposed commit</dd></dl>
+      </div>
+      <details class="more"><summary><span class="chev">›</span> Full flow</summary><div class="more-body"><ol>
+        <li>Resolves diagram type + format; ingests architecture docs to <strong>ground</strong> it.</li>
+        <li><code>diagram-architect</code> builds a structured model → valid <code>.excalidraw</code> JSON + a matching SVG.</li>
+        <li>Places &amp; embeds it; proposes the commit. Every box/arrow traces to the repo.</li>
+      </ol></div></details>
+    </article>
+
+    <article class="card" id="capture-screenshots">
+      <div class="card-head"><div class="card-title"><code>/capture-screenshots</code> <span class="badge multi">multi-agent</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Captures from a running web app, terminal/CLI, a static HTML/component, or existing images — then runs a redaction pipeline so nothing sensitive ships. Only the redacted image is committed.</p>
+        <dl class="meta-grid"><dt>Writes</dt><dd>redacted images to <code>docs/images/</code>; raw stays gitignored</dd><dt>Agents</dt><dd><span class="agent-pills"><code>screenshot-capturer</code><code>sensitive-data-reviewer</code><code>screenshot-redactor</code></span></dd><dt>Expect</dt><dd>before/after + a list of every redacted region; a proposed commit</dd></dl>
+      </div>
+      <details class="more"><summary><span class="chev">›</span> Pipeline</summary><div class="more-body"><ol>
+        <li><strong>Capture</strong> — grabs the raw image (never fabricates credentials).</li>
+        <li><strong>Detect</strong> — marks PII/secrets with regions + risk class.</li>
+        <li><strong>Redact</strong> — full/solid box for high-risk, partial mask (or placeholder) for illustrative.</li>
+        <li><strong>Verify gate</strong> — unproven coverage <span class="v block" style="padding:1px 6px">BLOCKS</span> the write.</li>
+      </ol><div class="callout safe"><span>🛡️</span><span><strong>The un-redacted original is never committed</strong> — it stays in a gitignored <code>.screenshots-raw/</code>.</span></div></div></details>
+    </article>
+
+    <article class="card" id="tech-blog">
+      <div class="card-head"><div class="card-title"><code>/tech-blog</code> <span class="badge multi">multi-agent</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">A pipeline (writer → fact-checker → reviewer → editor → final-polish → platform-lint → optional poster) that writes an expert technical post. The <strong>fact-checker BLOCKS</strong> on any claim it can't verify against the repo.</p>
+        <dl class="meta-grid"><dt>Writes</dt><dd><code>docs/blog/&lt;slug&gt;.md</code> + publish-ready MD/HTML</dd><dt>Agents</dt><dd><span class="agent-pills"><code>blog-writer</code><code>blog-fact-checker</code><code>blog-reviewer</code><code>blog-editor</code><code>blog-final-polish</code><code>blog-platform-lint</code><code>blog-poster</code></span></dd><dt>Expect</dt><dd>a grounded post; a proposed commit; posting only via a connected MCP (or Dev.to fallback) you opt into</dd></dl>
+      </div>
+      <details class="more"><summary><span class="chev">›</span> Pipeline</summary><div class="more-body"><ol>
+        <li>Deep repo ingest + discovers <code>/arch-diagram</code> outputs to embed.</li>
+        <li><code>blog-writer</code> drafts (cites each claim) → <code>blog-fact-checker</code> <strong>hard-blocks</strong> wrong/unverifiable claims, looping to the writer.</li>
+        <li><code>blog-reviewer</code> critiques → <code>blog-editor</code> finalizes (embeds diagrams, front-matter, terminology/emphasis passes).</li>
+        <li><code>blog-final-polish</code> (mechanical checklist) + <code>blog-platform-lint</code> (platform rules) run, then optional <code>blog-poster</code> draft.</li>
+      </ol><div class="callout"><span>✅</span><span>Nothing is invented: every fact traces to your repo, or it doesn't ship.</span></div></div></details>
+    </article>
+
+    <article class="card" id="docs-site">
+      <div class="card-head"><div class="card-title"><code>/docs-site</code> <span class="badge multi">multi-agent</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Universal documentation generator (it built this page). From existing docs, the codebase, an outline, or structured definition files (SKILL.md/OpenAPI/JSON-Schema): auto-derives the menu, grounds everything in the source (flags gaps), embeds auto-redacted screenshots via <code>/capture-screenshots</code>.</p>
+        <dl class="meta-grid"><dt>Inputs</dt><dd>docs · codebase · outline · definition files (any/all)</dd><dt>Agents</dt><dd><span class="agent-pills"><code>docs-architect</code><code>docs-designer</code></span></dd><dt>Expect</dt><dd>a browsable <code>docs.html</code>; gaps flagged; a proposed commit</dd></dl>
+      </div>
+      <details class="more"><summary><span class="chev">›</span> Full flow</summary><div class="more-body"><ol>
+        <li>Resolves inputs + scope; ingests into a content model (parses definition files exactly).</li>
+        <li><code>docs-architect</code> auto-derives sections, writes grounded copy, <strong>flags gaps</strong>.</li>
+        <li>If a page needs UI shots, delegates to <code>/capture-screenshots</code> (auto-redacted).</li>
+        <li><code>docs-designer</code> builds the self-contained page; proposes the commit.</li>
+      </ol><div class="callout"><span>🧩</span><span>Run it inside <code>nj-agents</code> and it regenerates this very reference.</span></div></div></details>
+    </article>
+
+    <h2 class="section-title" id="ref-social">Social</h2>
+    <p class="section-blurb">Promotional copy for a published thing — grounded in the real content, handed to you to post. Never writes to the repo, never auto-posts.</p>
+
+    <article class="card" id="social-post">
+      <div class="card-head"><div class="card-title"><code>/social-post</code> <span class="badge">social</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Drafts LinkedIn / X promo copy for a <strong>published</strong> URL — hook-first opener, correct link + preview-card strategy, clean hashtags, in short / medium / builder-story variants. Grounded in the actual linked content; never invents claims.</p>
+        <dl class="meta-grid"><dt>Invoke</dt><dd><code>/social-post</code> — give a published URL</dd><dt>Platform</dt><dd>LinkedIn (default) or X/Twitter</dd><dt>Agent</dt><dd><span class="agent-pills"><code>social-post</code></span></dd><dt>Expect</dt><dd>short / medium / builder-story variants + hashtag line + first-comment block</dd></dl>
+      </div>
+      <details class="more"><summary><span class="chev">›</span> Full flow</summary><div class="more-body"><ol>
+        <li>Fetches the URL; grounds the copy in what the piece actually says.</li>
+        <li>Confirms angle, CTA, style prefs.</li>
+        <li>Applies feed mechanics: hook first; preview-card link first; secondary links in a first comment; platform-right hashtags.</li>
+        <li>Delivers paste-ready variants — you post them.</li>
+      </ol><div class="callout"><span>📢</span><span>Never posts; won't call a publishing MCP unless you explicitly opt in.</span></div></div></details>
+    </article>
+
+    <!-- AGENTS -->
+    <h2 class="section-title" id="agents">Agents</h2>
+    <p class="section-blurb">The 20 sub-agents that do the actual work. Skills orchestrate them — you don't invoke agents directly. The colored dot mirrors each agent's <code>color:</code> in its definition.</p>
+    <div class="agent-table-wrap">
+      <table class="agents">
+        <thead><tr><th>Agent</th><th>What it does</th><th>Driven by</th></tr></thead>
+        <tbody>
+          <tr class="grp-row"><td colspan="3">Review suite</td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:var(--warn)"></span><code>secrets-reviewer</code></td><td class="role">Semantic security pass on the cleared diff — injection, authz/IDOR, unsafe deserialization, SSRF, weak crypto, hardcoded secrets.</td><td class="via"><code>/review-secrets</code></td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:var(--block)"></span><code>correctness-reviewer</code></td><td class="role">Bugs in changed lines &amp; blast radius — off-by-one, null derefs, broken caller contracts, missing validation.</td><td class="via"><code>/review-correctness</code></td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:var(--pass)"></span><code>tests-build-runner</code></td><td class="role">Auto-detects &amp; runs test/lint/build, triages failures. Never installs; SKIP if none.</td><td class="via"><code>/review-tests-build</code></td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:#3aa8c9"></span><code>dependency-reviewer</code></td><td class="role">Dependency/license changes — typosquats, floating ranges, copyleft. Diff-only.</td><td class="via"><code>/review-dependencies</code></td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:var(--accent)"></span><code>style-reviewer</code></td><td class="role">Consistency, commit-message hygiene, leftover debug/TODO. Infers conventions from context.</td><td class="via"><code>/review-style</code></td></tr>
+          <tr class="grp-row"><td colspan="3">Authoring — changelog &amp; diagram</td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:var(--pass)"></span><code>changelog-writer</code></td><td class="role">Groups commits into Added/Changed/…, de-dupes, drops noise, rewrites into user-facing prose.</td><td class="via"><code>/changelog</code></td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:#3aa8c9"></span><code>diagram-architect</code></td><td class="role">Repo model → structured diagram → valid Excalidraw JSON + SVG (or mermaid/Figma). Nothing invented.</td><td class="via"><code>/arch-diagram</code></td></tr>
+          <tr class="grp-row"><td colspan="3">Authoring — capture-screenshots pipeline</td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:#3aa8c9"></span><code>screenshot-capturer</code></td><td class="role">Captures the raw image (web/terminal/static/existing). Never fabricates credentials.</td><td class="via"><code>/capture-screenshots</code></td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:var(--block)"></span><code>sensitive-data-reviewer</code></td><td class="role">Marks PII/secrets with bounding regions + risk class. Marks, doesn't blur.</td><td class="via"><code>/capture-screenshots</code></td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:var(--warn)"></span><code>screenshot-redactor</code></td><td class="role">Blurs/masks (full for high-risk, partial/placeholder for illustrative), then verifies coverage — BLOCKS if unsure.</td><td class="via"><code>/capture-screenshots</code></td></tr>
+          <tr class="grp-row"><td colspan="3">Authoring — tech-blog pipeline</td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:var(--accent)"></span><code>blog-writer</code></td><td class="role">Drafts the expert post grounded in the repo model; cites each claim's source.</td><td class="via"><code>/tech-blog</code></td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:var(--block)"></span><code>blog-fact-checker</code></td><td class="role">Verifies every claim vs the repo; <strong>hard-blocks</strong> until wrong/unverifiable claims are fixed or cut.</td><td class="via"><code>/tech-blog</code></td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:var(--warn)"></span><code>blog-reviewer</code></td><td class="role">Developmental critique — structure, clarity, depth, audience. Notes, not a rewrite.</td><td class="via"><code>/tech-blog</code></td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:var(--pass)"></span><code>blog-editor</code></td><td class="role">Final post — applies cuts + notes, embeds diagrams, front-matter, terminology/emphasis/style passes.</td><td class="via"><code>/tech-blog</code></td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:#14b8a6"></span><code>blog-final-polish</code></td><td class="role">Pre-publish mechanical checklist — duplicate H1, weak ending, leftover artifacts, over/under bold. Applies trivial fixes.</td><td class="via"><code>/tech-blog</code></td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:#e08a1e"></span><code>blog-platform-lint</code></td><td class="role">Checks a post against a platform's rules (Dev.to first) — tags, SVG/relative images, cover, draft flow. Go/no-go.</td><td class="via"><code>/tech-blog</code></td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:#c264c2"></span><code>blog-poster</code></td><td class="role">Creates a <strong>draft</strong> — via a publishing MCP, or a Dev.to REST fallback (<code>DEVTO_API_KEY</code>). Opt-in; never auto-publishes.</td><td class="via"><code>/tech-blog</code></td></tr>
+          <tr class="grp-row"><td colspan="3">Authoring — docs-site</td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:var(--accent)"></span><code>docs-architect</code></td><td class="role">Ingests sources → auto-derived section structure + grounded copy + gap list + screenshot requests.</td><td class="via"><code>/docs-site</code></td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:#c264c2"></span><code>docs-designer</code></td><td class="role">Doc model → a single self-contained <code>docs.html</code> — nav, tiered content, light/dark, zero deps.</td><td class="via"><code>/docs-site</code></td></tr>
+          <tr class="grp-row"><td colspan="3">Social</td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:#0a66c2"></span><code>social-post</code></td><td class="role">Grounded LinkedIn/X promo from a published URL — hook-first, link/preview strategy, clean hashtags, variants. Never auto-posts.</td><td class="via"><code>/social-post</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <footer class="foot">
+      <p>nj-agents · project-agnostic Claude Code skills &amp; agents. This reference is generated by <code>/docs-site</code> from the actual definitions — <code>skills/&lt;name&gt;/SKILL.md</code> and <code>agents/*.md</code>. Shared rules: <code>CONVENTIONS.md</code> (review) &amp; <code>CONVENTIONS-authoring.md</code> (authoring).</p>
+    </footer>
+  </div>
 </div>
 
 <div class="toast" id="toast">Link copied</div>
@@ -870,81 +728,78 @@ OVERALL: <span style="color:var(--block)">BLOCK</span> — fix the correctness b
     var order = ['system', 'light', 'dark'], i = 0;
     try { var s = localStorage.getItem('nj-theme'); if (s) { i = order.indexOf(s); if (i < 0) i = 0; } } catch (e) {}
     apply(order[i]);
-    btn.addEventListener('click', function () {
-      i = (i + 1) % order.length; apply(order[i]);
-      try { localStorage.setItem('nj-theme', order[i]); } catch (e) {}
-    });
+    btn.addEventListener('click', function () { i = (i + 1) % order.length; apply(order[i]); try { localStorage.setItem('nj-theme', order[i]); } catch (e) {} });
   })();
 
-  /* ---- Per-section deep links: copyable # anchors, live URL hash ---- */
+  /* ---- Tabs ---- */
+  (function () {
+    var tabs = [].slice.call(document.querySelectorAll('.tab'));
+    var pages = { home: 'page-home', suites: 'page-suites', workflows: 'page-workflows', reference: 'page-reference' };
+    function show(name, hash) {
+      if (!pages[name]) name = 'home';
+      tabs.forEach(function (t) { t.classList.toggle('active', t.dataset.page === name); });
+      Object.keys(pages).forEach(function (k) { document.getElementById(pages[k]).classList.toggle('active', k === name); });
+      // update the URL: page in the path-hash, optional section after a slash
+      var h = '#' + name + (hash ? '/' + hash : '');
+      try { if (location.hash !== h) location.hash = h; } catch (e) {}
+      if (hash) { var el = document.getElementById(hash); if (el) setTimeout(function () { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); }
+      else window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+    tabs.forEach(function (t) { t.addEventListener('click', function () { show(t.dataset.page); }); });
+    // in-page "go to" links (home cards, hero buttons)
+    document.addEventListener('click', function (e) {
+      var g = e.target.closest('[data-goto]'); if (!g) return;
+      e.preventDefault(); show(g.dataset.goto, g.dataset.hash);
+    });
+    // deep-link on load: #page or #page/section
+    function fromHash() {
+      var raw = (location.hash || '').replace(/^#/, ''); if (!raw) { show('home'); return; }
+      var parts = raw.split('/'); var name = parts[0]; var sec = parts[1];
+      // allow bare section hashes (e.g. #tech-blog) by finding which page holds it
+      if (!pages[name]) {
+        var el = document.getElementById(raw);
+        if (el) { var pg = el.closest('.page'); var pname = pg ? pg.id.replace('page-', '') : 'reference'; show(pname, raw); return; }
+        show('home'); return;
+      }
+      show(name, sec);
+    }
+    window.addEventListener('hashchange', fromHash);
+    fromHash();
+  })();
+
+  /* ---- Deep-link anchors on headings ---- */
   (function () {
     var toast = document.getElementById('toast'), toastT;
-    function showToast(msg) {
-      toast.textContent = msg; toast.classList.add('show');
-      clearTimeout(toastT); toastT = setTimeout(function () { toast.classList.remove('show'); }, 1600);
-    }
-    // Build the most useful copyable reference for this section.
-    // A full http(s) URL is only shareable when the page is served from a real,
-    // non-local origin AND not embedded in an iframe (e.g. a sandboxed Artifact,
-    // where location is an internal URL). Otherwise copy just the "#fragment".
+    function showToast(msg) { toast.textContent = msg; toast.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { toast.classList.remove('show'); }, 1600); }
     function refFor(id) {
       var frag = '#' + id, embedded = false;
       try { embedded = window.top !== window.self; } catch (e) { embedded = true; }
-      var host = location.hostname || '';
-      var local = host === 'localhost' || host === '127.0.0.1' || host === '' || location.protocol === 'file:';
+      var host = location.hostname || '', local = host === 'localhost' || host === '127.0.0.1' || host === '' || location.protocol === 'file:';
       var httpish = location.protocol === 'http:' || location.protocol === 'https:';
-      if (httpish && !embedded && !local) {
-        return { text: location.origin + location.pathname + location.search + frag, full: true };
-      }
+      if (httpish && !embedded && !local) return { text: location.origin + location.pathname + location.search + frag, full: true };
       return { text: frag, full: false };
     }
     function copy(text) {
       if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text);
-      return new Promise(function (res, rej) {
-        try { var t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0';
-          document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t); res(); }
-        catch (e) { rej(e); }
-      });
+      return new Promise(function (res, rej) { try { var t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t); res(); } catch (e) { rej(e); } });
     }
-    // Attach an anchor button to a heading, targeting the given id.
     function attach(headingEl, id) {
       if (!headingEl || headingEl.querySelector('.anchor')) return;
-      var a = document.createElement('button');
-      a.className = 'anchor'; a.type = 'button'; a.textContent = '#';
+      var a = document.createElement('button'); a.className = 'anchor'; a.type = 'button'; a.textContent = '#';
       a.title = 'Copy link to this section'; a.setAttribute('aria-label', 'Copy link to ' + id);
       a.addEventListener('click', function (e) {
         e.preventDefault();
-        // Set the hash so the address bar reflects the section (native, visible in
-        // normal browsing). Guarded because a sandboxed iframe may disallow it.
-        try { if (location.hash !== '#' + id) location.hash = id; } catch (err) {}
+        var pg = headingEl.closest('.page'); var pname = pg ? pg.id.replace('page-', '') : '';
+        try { location.hash = pname ? ('#' + pname + '/' + id) : ('#' + id); } catch (err) {}
         var ref = refFor(id);
-        copy(ref.text).then(
-          function () { showToast(ref.full ? 'Link copied' : 'Copied ' + ref.text); },
-          function () { showToast(ref.text); }
-        );
+        // when embedded/local, prefer the page/section combo fragment
+        var text = ref.full ? ref.text : (pname ? '#' + pname + '/' + id : '#' + id);
+        copy(text).then(function () { showToast(ref.full ? 'Link copied' : 'Copied ' + text); }, function () { showToast(text); });
       });
       headingEl.appendChild(a);
     }
-    // Cards: id lives on .card / section; heading is .card-title.
-    document.querySelectorAll('article.card[id], section[id]').forEach(function (el) {
-      attach(el.querySelector('.card-title') || el.querySelector('h2.section-title, h1'), el.id);
-    });
-    // Standalone section-title h2s not already inside an id'd section get their own
-    // id + anchor. Skip any heading already within an element that has an id (that
-    // section already owns the anchor) and avoid slug collisions with existing ids.
-    document.querySelectorAll('h2.section-title').forEach(function (h) {
-      if (h.querySelector('.anchor') || h.closest('[id]')) return;
-      if (!h.id) {
-        var base = h.textContent.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-        var slug = base, n = 2;
-        while (slug && document.getElementById(slug)) { slug = base + '-' + (n++); }
-        if (slug) h.id = slug;
-      }
-      if (h.id) attach(h, h.id);
-    });
-    // Sidebar links are native <a href="#id">, so the browser sets the hash on click
-    // automatically — no JS needed. (In a sandboxed Artifact iframe the parent address
-    // bar can't change; use the copy-link button on any heading to grab the URL.)
+    document.querySelectorAll('article.card[id]').forEach(function (el) { attach(el.querySelector('.card-title'), el.id); });
+    document.querySelectorAll('h2.section-title[id]').forEach(function (h) { attach(h, h.id); });
   })();
 </script>
 </body>
