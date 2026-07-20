@@ -50,6 +50,24 @@ Keep it legible: group related nodes, label edges with what flows across them, n
 boundaries. Prefer clarity over exhaustiveness — a readable diagram of the core beats
 a cluttered one of everything.
 
+### Semantic color (non-negotiable — QA enforces it)
+
+Pick each node's color by **meaning**, not decoration. A node's outcome meaning
+overrides its class color:
+
+- **Red / danger** — failure, block, stop, error, "no write", a gate that *rejects*,
+  risk or PII detection. **Never** color a failure green.
+- **Green / success** — success, pass, "done", the produced/committed output, a
+  workflow concluding well. **Never** color a success red.
+- **Class color** (review / authoring / social) — ordinary in-flow steps that belong
+  to a suite but carry no good/bad outcome.
+- **Grey / neutral** — inputs, raw/pass-through with no good-or-bad meaning.
+
+A pure-reporting node that lists *all* outcomes (e.g. an aggregate "PASS · WARN ·
+BLOCK") is neither a failure nor a success — color it green (a normal conclusion) or
+neutral, not red. The `diagram-qa` check will BLOCK a diagram where a failure reads
+green or a success reads red, so get it right here.
+
 ## Phase 3 — Emit the artifact in the target format
 
 - **draw.io (default)** — emit valid `.drawio` XML the skill will export to SVG via the

@@ -1,7 +1,7 @@
 ---
 name: arch-diagram
 description: Use this skill when the user asks to "generate an architecture diagram", "draw the system architecture", "create a solution/deployment/data-flow/sequence/ER diagram", or wants a visual of how the project fits together. Reads the project's README, architecture docs, and ADRs first to ground the diagram, then generates it (default draw.io + an exported SVG; Excalidraw fallback, mermaid, inline SVG, or Figma-via-MCP on request), places it into the project docs, and PROPOSES the commit. Works in any git repo; nothing here is project-specific.
-version: 0.2.0
+version: 0.3.0
 ---
 
 # Architecture Diagram (authoring)
@@ -182,33 +182,56 @@ Default file paths for the **draw.io** format:
 
 Update in place on re-run; keep the same filenames so doc links don't break (§A7).
 
-## Step 6a — Render and VERIFY before you ship it (do not skip)
+## House "icon-tile" style (recommended for suite/overview & workflow diagrams)
 
-**A diagram is not done when the file is written — it is done when it has been looked
-at and is clean.** Overlaps are invisible in the source and only appear on screen;
-this is the step that catches the crowded, unreadable output that hand-authored or
-agent-emitted diagrams otherwise ship.
+For project-agnostic overview and workflow diagrams, this skill ships a
+**self-contained renderer** in `scripts/` that produces the house style: **icon
+tiles** (a crisp line icon on a soft chip, label under, class-color stripe) + soft
+rounded cards + a **subtle Excalidraw hand-drawn texture** (rough.js) on borders and
+connectors, wrapped in a **framed border**. It is deterministic, theme-neutral,
+~20–40KB SVG, and needs no draw.io/Figma.
 
-1. **Render to an image.** Load the SVG (or an HTML wrapper around it) in the browser
-   tool and screenshot it; for mermaid, render the fenced block; for the Excalidraw
-   MCP, use its rendered view. If no renderer is available at all, say so plainly in
-   the summary — an unverified diagram is a known risk, not a silent pass.
-2. **Inspect the screenshot for these specific failures** (the ones that actually
-   happen):
-   - text overlapping other text, or a label overlapping a box border;
-   - connector lines routed **through** a node instead of around it;
-   - annotation/callout text colliding with the body text of its own box;
-   - labels or nodes clipped outside the canvas / viewBox;
-   - any emoji or glyph rendering as tofu (□) — emoji in SVG/Excalidraw text is
-     unreliable; if it doesn't paint, replace it with a drawn shape or plain text.
-3. **A cheap pre-check:** before rendering, compare element bounding boxes — if two
-   text/node boxes intersect, you already have an overlap to fix. This catches most
-   problems without a render.
-4. **Fix and re-render** until it reads cleanly. Only then continue to Step 7. Loop
-   here rather than shipping "probably fine."
+- **Setup (once):** `cd scripts && npm install` (installs rough.js locally;
+  `node_modules` is gitignored). SVG→PNG for the QA visual pass uses `rsvg-convert`
+  (ships with graphviz/cairo) — or any available SVG rasterizer.
+- **Lane/tile diagrams** (suite overview, grouped maps): write a `*.iconmodel.json`
+  (lanes → items with `icon`, `label`, `role`), then
+  `node scripts/icon_diagram.js <model.json> <out.svg>`.
+- **Flow diagrams** (pipelines, gates, fan-out): write a `*.flowmodel.json` (nodes on
+  a `col`/`row` grid, `groups`, `edges`), then
+  `node scripts/flow_diagram.js <model.json> <out.svg>`.
+- **Semantic color is mandatory** (`diagram_common.js` documents it; `diagram-qa`
+  enforces it): red=failure/block/stop, green=success/pass/output, class color for
+  ordinary steps, grey for neutral inputs. Never green a failure or red a success.
 
-Clean up any preview scratch files (HTML wrappers, temporary PNGs) — they never belong
-in the repo.
+draw.io / Excalidraw / mermaid / Figma remain available (above) for other diagram
+types or when the user asks; the icon-tile renderer is the default for overviews and
+flows.
+
+## Step 6a — Render → QA → fix loop (MANDATORY, non-skippable gate)
+
+**A diagram is not done when the file is written — it is done when it has passed QA.**
+This is an enforced loop, not an eyeball: spawn the **`diagram-qa`** agent after every
+render and do not proceed until it returns **PASS**.
+
+1. **Render** the diagram to SVG (icon-tile renderer, or your chosen format).
+2. **Spawn `diagram-qa`.** It runs the deterministic checker
+   (`node scripts/qa_diagram.js <out.svg>`) — text overflow/clipping, node overlaps,
+   dangling/overlapping **edge labels**, missing icons, empty-space/balance, and the
+   **semantic-color** contract — plus a visual pass over a rasterized PNG (tofu
+   glyphs, crowding, arrow legibility).
+3. **On BLOCK, fix by issue kind, then re-render:**
+   - **mechanical** (overflow, clipping, missing_icon, edge_label_clip) → the renderer
+     already auto-fixes most (shrink-to-fit, canvas widen); if one remains, adjust the
+     renderer/model minimally.
+   - **layout / semantic_color** (overlap, empty_space, balance, edge_label_overlap,
+     wrong outcome color) → `diagram-architect` adjusts the **model** (re-wrap rows,
+     re-place a node, re-route an edge, pick the correct outcome color).
+4. **Loop** render → `diagram-qa` until PASS. Bounded at ~4 rounds; if issues persist,
+   surface them to the user rather than shipping a flawed diagram.
+
+Clean up any scratch PNGs/wrappers — they never belong in the repo (the committed
+outputs are the `.svg`, its editable source, and optionally a `.png`).
 
 ## Step 7 — Summary + propose commit
 

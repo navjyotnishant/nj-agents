@@ -1,0 +1,20 @@
+{
+  "title": "/capture-screenshots — the redaction verify-gate",
+  "subtitle": "capture → detect PII → redact → verify. The verify step hard-blocks: if coverage can't be confirmed, nothing is written. Only the redacted image is committed.",
+  "cols": 4,
+  "nodes": [
+    {"id": "cap", "label": "capturer", "sub": "→ raw (gitignored)", "icon": "camera", "role": "neutral", "col": 0, "row": 0},
+    {"id": "det", "label": "detect PII", "icon": "search", "role": "danger", "col": 1, "row": 0},
+    {"id": "red", "label": "redactor", "sub": "blur / mask", "icon": "eye", "role": "authoring", "col": 2, "row": 0},
+    {"id": "gate", "label": "VERIFY GATE", "sub": "unproven → no write", "kind": "gate", "role": "danger", "col": 3, "row": 0},
+    {"id": "red2", "label": "re-redact", "sub": "if unverified", "icon": "eye", "role": "danger", "col": 2, "row": 1},
+    {"id": "out", "label": "docs/images", "sub": "redacted only", "kind": "gate", "role": "success", "col": 3, "row": 1}
+  ],
+  "edges": [
+    {"from": "cap", "to": "det", "role": "neutral"},
+    {"from": "det", "to": "red", "role": "authoring"},
+    {"from": "red", "to": "gate", "role": "danger"},
+    {"from": "gate", "to": "out", "label": "pass", "role": "success"},
+    {"from": "gate", "to": "red2", "role": "danger", "dashed": true}
+  ]
+}

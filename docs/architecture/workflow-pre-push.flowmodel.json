@@ -1,0 +1,27 @@
+{
+  "title": "/pre-push-review — secret gate, then parallel fan-out",
+  "subtitle": "The secret scan runs first and alone; nothing is shared with any sub-agent until it clears. Then the rest run in one parallel batch and aggregate.",
+  "cols": 4,
+  "groups": [
+    {"label": "spawned in parallel", "role": "review", "cols": [2, 2], "rows": [0, 4], "caption": "one message"}
+  ],
+  "nodes": [
+    {"id": "diff", "label": "diff snapshot", "sub": "after hygiene", "icon": "file", "role": "neutral", "col": 0, "row": 2},
+    {"id": "gate", "label": "SECRET GATE", "sub": "scanner required · hit/none → BLOCK", "kind": "gate", "role": "danger", "col": 1, "row": 2},
+    {"id": "a1", "label": "correctness", "icon": "bug", "role": "review", "col": 2, "row": 0},
+    {"id": "a2", "label": "tests-build", "icon": "gear", "role": "review", "col": 2, "row": 1},
+    {"id": "a3", "label": "dependencies", "icon": "package", "role": "review", "col": 2, "row": 2},
+    {"id": "a4", "label": "style", "icon": "brush", "role": "review", "col": 2, "row": 3},
+    {"id": "a5", "label": "secrets (semantic)", "icon": "search", "role": "review", "col": 2, "row": 4},
+    {"id": "agg", "label": "AGGREGATE", "sub": "PASS · WARN · BLOCK", "kind": "gate", "role": "success", "col": 3, "row": 2}
+  ],
+  "edges": [
+    {"from": "diff", "to": "gate", "role": "neutral"},
+    {"from": "gate", "to": "a1", "label": "clean", "role": "review"},
+    {"from": "gate", "to": "a2", "role": "review"},
+    {"from": "gate", "to": "a3", "role": "review"},
+    {"from": "gate", "to": "a4", "role": "review"},
+    {"from": "gate", "to": "a5", "role": "review"},
+    {"from": "a3", "to": "agg", "role": "success"}
+  ]
+}

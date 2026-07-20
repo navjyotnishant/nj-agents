@@ -4,3 +4,6 @@
 # Python bytecode cache
 __pycache__/
 *.pyc
+node_modules/
+docs/architecture/_style-mockups.html
+docs/architecture/*.layout.json

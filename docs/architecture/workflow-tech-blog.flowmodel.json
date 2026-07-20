@@ -1,0 +1,27 @@
+{
+  "title": "/tech-blog — pipeline with a blocking fact-check",
+  "subtitle": "writer → fact-checker → reviewer → editor is sequential. The fact-checker hard-blocks, looping to the writer until no claim is wrong or unverifiable.",
+  "cols": 4,
+  "groups": [
+    {"label": "finalize checks", "role": "authoring", "cols": [3, 3], "rows": [0, 1], "caption": "parallel"}
+  ],
+  "nodes": [
+    {"id": "w", "label": "writer", "icon": "pencil", "role": "authoring", "col": 0, "row": 1},
+    {"id": "fc", "label": "fact-checker", "sub": "BLOCKS", "kind": "gate", "role": "danger", "col": 1, "row": 1},
+    {"id": "rv", "label": "reviewer", "icon": "eye", "role": "authoring", "col": 2, "row": 1},
+    {"id": "ed", "label": "editor", "icon": "doclist", "role": "authoring", "col": 2, "row": 2},
+    {"id": "fp", "label": "final-polish", "icon": "check", "role": "authoring", "col": 3, "row": 0},
+    {"id": "pl", "label": "platform-lint", "icon": "globe", "role": "authoring", "col": 3, "row": 1},
+    {"id": "post", "label": "poster", "sub": "draft only", "icon": "send", "role": "authoring", "col": 3, "row": 2},
+    {"id": "out", "label": "docs/blog", "sub": "+ MD / HTML", "kind": "gate", "role": "success", "col": 1, "row": 2}
+  ],
+  "edges": [
+    {"from": "w", "to": "fc", "role": "authoring"},
+    {"from": "fc", "to": "rv", "label": "clean", "role": "authoring"},
+    {"from": "rv", "to": "ed", "role": "authoring"},
+    {"from": "fc", "to": "w", "label": "wrong → fix", "role": "danger", "dashed": true},
+    {"from": "ed", "to": "pl", "role": "authoring"},
+    {"from": "ed", "to": "out", "label": "writes", "role": "success"},
+    {"from": "pl", "to": "post", "role": "authoring"}
+  ]
+}
