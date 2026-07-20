@@ -39,10 +39,21 @@ grounding/safety §A6, non-clobber §A7).
   runs*; if not, the diagram agent emits the SVG directly (§A5). Figma is used only
   if its MCP is connected.
 
-## Step 1 — Resolve diagram type and format
+## Step 1 — Resolve diagram type, mode, and format
 
 - **Type** (from the user's prompt or a parameter): `system-arch` (default),
   `solution-arch`, `sequence`, `data-flow`, `deployment`, `er`. If unclear, ask.
+- **Mode** — `structural` (default) or `conceptual`:
+  - **structural** — the boxes are *real repo components* (services, modules, stores).
+    Full grounding applies (§A6): every node/edge traces to the codebase.
+  - **conceptual** — the boxes are *ideas*, not modules: a trust boundary, a request
+    lifecycle, "where data is encrypted vs. in the clear," a mental model. Here the
+    grounding rule relaxes: the **facts must still be true** (don't invent behavior),
+    but a node need not map 1:1 to a file. Reach for hand-layout or the Excalidraw MCP
+    rather than trying to derive the picture from module structure. Pick this mode when
+    the user asks for a concept/flow/boundary rather than "how the code is wired."
+  If the request is a concept and you diagram it structurally (or vice-versa), the
+  result fights the intent — resolve the mode explicitly before drawing.
 - **Format** (default **Excalidraw + SVG**). Alternatives, on request:
   - `mermaid` — fenced block, renders natively on GitHub, zero deps.
   - `svg` — self-contained inline/`.svg`, no tooling.
@@ -59,8 +70,17 @@ read.
 
 ## Step 3 — Detect output capabilities
 
-Per §A5: is the Figma MCP connected? Is `npx` available for `excalidraw_export`? Is
-`pandoc`/a renderer around? Pick the path that works; never hard-require any of them.
+Per §A5, detect what's available and pick the best render path — never hard-require
+any of them:
+- **Excalidraw MCP connected?** Prefer it for Excalidraw output. It renders reliably
+  (with draw-on animation) and returns an **editable excalidraw.com link** — a better
+  authoring loop than a static export. Use its `read_me` once for the element format.
+- **`npx excalidraw_export` available?** The fallback SVG exporter. Note it can fail in
+  restricted environments (npm registry/tarball errors) — if it does, fall back to an
+  agent-emitted SVG, don't block.
+- **Figma MCP connected?** Only path for `figma` format.
+- **A browser tool (Playwright) available?** Needed for the render-and-verify step
+  (Step 6a) — it's how you actually *look* at the diagram before shipping it.
 
 ## Step 4 — Spawn the diagram-architect agent
 
@@ -96,6 +116,34 @@ Default file paths for the Excalidraw format:
 - **Figma:** create via MCP; embed the Figma link + an exported PNG/SVG if available.
 
 Update in place on re-run; keep the same filenames so doc links don't break (§A7).
+
+## Step 6a — Render and VERIFY before you ship it (do not skip)
+
+**A diagram is not done when the file is written — it is done when it has been looked
+at and is clean.** Overlaps are invisible in the source and only appear on screen;
+this is the step that catches the crowded, unreadable output that hand-authored or
+agent-emitted diagrams otherwise ship.
+
+1. **Render to an image.** Load the SVG (or an HTML wrapper around it) in the browser
+   tool and screenshot it; for mermaid, render the fenced block; for the Excalidraw
+   MCP, use its rendered view. If no renderer is available at all, say so plainly in
+   the summary — an unverified diagram is a known risk, not a silent pass.
+2. **Inspect the screenshot for these specific failures** (the ones that actually
+   happen):
+   - text overlapping other text, or a label overlapping a box border;
+   - connector lines routed **through** a node instead of around it;
+   - annotation/callout text colliding with the body text of its own box;
+   - labels or nodes clipped outside the canvas / viewBox;
+   - any emoji or glyph rendering as tofu (□) — emoji in SVG/Excalidraw text is
+     unreliable; if it doesn't paint, replace it with a drawn shape or plain text.
+3. **A cheap pre-check:** before rendering, compare element bounding boxes — if two
+   text/node boxes intersect, you already have an overlap to fix. This catches most
+   problems without a render.
+4. **Fix and re-render** until it reads cleanly. Only then continue to Step 7. Loop
+   here rather than shipping "probably fine."
+
+Clean up any preview scratch files (HTML wrappers, temporary PNGs) — they never belong
+in the repo.
 
 ## Step 7 — Summary + propose commit
 

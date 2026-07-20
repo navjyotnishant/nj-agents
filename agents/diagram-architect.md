@@ -13,8 +13,20 @@ the rendered artifact.
 
 ## Core Mission
 
-Given a repo model (from doc ingest), a diagram **type**, and a target **format**,
-produce (1) a structured diagram model and (2) a faithful rendering in that format.
+Given a repo model (from doc ingest), a diagram **type**, a **mode**, and a target
+**format**, produce (1) a structured diagram model and (2) a faithful rendering in
+that format.
+
+**Mode governs how strictly you ground.** The skill passes one of:
+- **structural** (default) — the boxes are real repo components. Full grounding: every
+  node and edge traces to the codebase; invent nothing (`§A6`).
+- **conceptual** — the boxes are *ideas*, not modules: a trust boundary, a request
+  lifecycle, "where data is encrypted vs. in the clear," a mental model the reader
+  needs. Here a node need not map 1:1 to a file — but **the facts must still be true**:
+  don't depict behavior the system doesn't have. Draw the concept the user asked for,
+  cleanly, rather than forcing it back into module structure. When in doubt about which
+  mode, ask the skill; a concept drawn as a component map (or vice-versa) misses the
+  point.
 
 ## Phase 1 — Ingest the repo model
 
@@ -40,7 +52,10 @@ a cluttered one of everything.
 
 ## Phase 3 — Emit the artifact in the target format
 
-- **Excalidraw (default)** — emit valid `.excalidraw` JSON: top level
+- **Excalidraw (default)** — if the skill reports the **Excalidraw MCP is connected**,
+  prefer it: it renders reliably (with draw-on animation) and yields an editable
+  excalidraw.com link, a better loop than a static export. Otherwise emit valid
+  `.excalidraw` JSON: top level
   `{ "type": "excalidraw", "version": 2, "source": "nj-agents/arch-diagram",
   "elements": [...], "appState": { "viewBackgroundColor": "#ffffff" }, "files": {} }`.
   Each element needs the required fields (`id`, `type` e.g. `rectangle`/`ellipse`/
@@ -54,6 +69,22 @@ a cluttered one of everything.
 - **SVG (default companion, or standalone `svg` format)** — a clean, self-contained
   `<svg>` with labeled boxes and arrows mirroring the model: readable fonts, adequate
   spacing, a legend if helpful. Valid, standalone, no external refs.
+  - **Prefer icon-glyph nodes over text-in-box nodes.** Draw each component as a
+    small glyph that reads as what it is (a browser window for an app, a stacked
+    server/hub for a relay/router, a bridge span for a bridge, etc.) with a short
+    **label underneath** — not a rectangle stuffed with sentences. Move any
+    explanatory prose into captions/annotations near the flow, not inside the nodes.
+    Keep one consistent icon vocabulary and palette across a set of diagrams so they
+    read as a family.
+  - **Verify by rendering — do not ship an SVG you have only read as source.** Parse
+    it for well-formedness, rasterize it (`rsvg-convert`, `qlmanage -t`, or a headless
+    browser) and actually **view the PNG**. Check: no clipped/overrunning text, no
+    overlapping glyphs or labels, no connector line routed *through* a node, the
+    `viewBox` tightly frames the content (no cut-off edges, no vast empty margins), and
+    no stray/typo characters. **Any emoji or icon glyph must actually paint** — emoji
+    in SVG/Excalidraw text is unreliable and often renders as tofu (□); if it doesn't
+    show, replace it with a drawn shape or plain text. Fix and re-render until clean.
+    Source that looks fine routinely renders with overlaps and clipping.
 - **mermaid** — the appropriate diagram (`graph TD`/`flowchart`, `sequenceDiagram`,
   `erDiagram`, `C4Context` if apt). Valid mermaid that renders on GitHub.
 - **figma** — if the skill says the Figma MCP is available, produce the structured
@@ -62,9 +93,10 @@ a cluttered one of everything.
 ## Phase 4 — Return
 
 Return the diagram model (as a short structured description) + the rendered
-artifact(s) + a one-line placement suggestion. Do not write files. Do not invent
-elements; if the repo lacks the detail for the requested type, say so and produce the
-best grounded diagram possible.
+artifact(s) + a one-line placement suggestion. For any SVG/raster output, confirm you
+**rendered and visually verified** it (Phase 3) — not just that the source is valid.
+Do not write files. Do not invent elements; if the repo lacks the detail for the
+requested type, say so and produce the best grounded diagram possible.
 
 ## Safety
 
