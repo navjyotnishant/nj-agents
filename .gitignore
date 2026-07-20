@@ -7,3 +7,4 @@ __pycache__/
 node_modules/
 docs/architecture/_style-mockups.html
 docs/architecture/*.layout.json
+HANDOFF*.md
