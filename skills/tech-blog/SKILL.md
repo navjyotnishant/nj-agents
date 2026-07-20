@@ -46,12 +46,33 @@ key source (entry points, core modules, public API). Also **discover any Bundle-
 diagrams** (`docs/architecture/*.svg` / `*.excalidraw` / mermaid blocks) to embed or
 reference in the post. Build the repo model the whole pipeline will be grounded in.
 
-## Step 2 — Confirm topic, angle, audience, landing path
+## Step 2 — Confirm topic, angle, audience, voice, landing path
 
 Ask (or accept as parameters): the **topic/angle** (e.g. "how we built X", "our
 architecture", "lessons from Y"), the **audience** (e.g. senior engineers, general
-dev), and confirm the **landing path** (default `docs/blog/<slug>.md`, §A4). Derive a
-URL-safe `<slug>` from the title.
+dev), the **voice**, and confirm the **landing path** (default `docs/blog/<slug>.md`,
+§A4). Derive a URL-safe `<slug>` from the title.
+
+**Voice** — default to a real practitioner writing, not a neutral explainer: first
+person where natural, contractions, varied sentence length, an actual point of view,
+the occasional aside. **Actively avoid the AI-symmetry tells**: relentless tricolons,
+over-balanced "not X but Y" constructions, and every paragraph the same shape. The
+first drafts of this pipeline drift toward that register unless steered — steer it up
+front, and have the reviewer (Step 5) flag AI-symmetry as a finding if it creeps in.
+
+### Revising an existing post (don't regenerate from scratch)
+
+If the user asks to **change an existing post** — reframe the angle, adjust
+positioning, cut or add a section, retitle — do NOT re-run the whole writer pipeline
+from zero. Revise in place:
+1. Start from the current post, apply the requested change (writer or editor, as fits
+   the size of the change).
+2. Re-run `blog-fact-checker` (Step 4) — but scoped to **new or changed claims**; a
+   reframe can carry old prose forward, and the checker must re-verify anything the
+   change touched (it has caught claims silently carried over from a prior draft).
+3. Editor (Step 6) finalizes; re-emit outputs (Step 7) and **re-publish the same
+   artifact/HTML** so the review link stays current.
+Keep the same `<slug>`/filename so links don't break (§A7).
 
 ## Step 3 — Writer
 
@@ -87,9 +108,19 @@ front-matter (title, date, tags, summary).
 
 - Write the final post to `docs/blog/<slug>.md` (§A4; merge/revise if the slug exists,
   §A7).
-- Write **publish-ready copies to the scratchpad**: the Markdown, and — if `pandoc`
-  is on PATH — a standalone HTML render (`pandoc <slug>.md -s -o <slug>.html`). If
-  `pandoc` is absent, note that only Markdown was produced.
+- Write **publish-ready copies to the scratchpad**: the Markdown, and a standalone HTML
+  render. Prefer a **self-contained** HTML — images inlined as `data:` URIs — so the
+  page renders anywhere with no broken links and can be shared/opened directly (this
+  was the single most useful "review it like a blog before posting" artifact). Use
+  `pandoc` if on PATH; if absent, note that only Markdown was produced.
+- **Image paths — mind the publish target.** In-repo Markdown uses repo-relative links
+  (`./images/…`, `../architecture/…`) that render on GitHub. But **most external
+  platforms (Dev.to, Medium, generic CMS) can't resolve them** — they need absolute
+  URLs or platform-uploaded images. When the target is external, flag every relative
+  image path and either rewrite to absolute (e.g. raw GitHub URLs) or note that the
+  images must be uploaded to the platform. (The Dev.to REST poster in Step 8 handles
+  the upload automatically; other targets do not.) Don't ship a post whose images will
+  silently 404 for readers.
 
 ## Step 8 — Optional poster
 
@@ -105,14 +136,27 @@ idempotent re-runs). It needs a `DEVTO_API_KEY` — exported or in `~/.claude/.e
 stop here and hand the user the publish-ready MD/HTML files with manual posting
 instructions.
 
-## Step 9 — Propose the commit
+## Step 9 — Propose the commit (opt-in; the artifact is the real deliverable)
 
-Per `CONVENTIONS-authoring.md §A3`, for the repo copy:
+The publish-ready files (and the published artifact/HTML, if one was made) are the
+deliverable on their own — a git commit is **optional and never assumed**. Some
+projects/users deliberately keep blog output out of git; if the user has said so, or
+you're unsure, stop after handing over the files and **do not** propose a commit.
+
+If a commit IS wanted, per `CONVENTIONS-authoring.md §A3`, scope it to *exactly* the
+blog artefacts you created/changed — the post plus the assets it references
+(screenshots, diagrams) — and nothing else:
 ```bash
-git add docs/blog/<slug>.md
+# stage only the blog files you touched — list them explicitly, never `git add docs/`
+git add docs/blog/<slug>.md docs/blog/images/<...> docs/architecture/<diagram>.svg
 git commit -m "docs: add technical blog — <title>"
-git push
 ```
-Never run git. Summarize: the post's angle, where it landed, the publish-ready files,
-how many fact-check iterations it took, and any claim that was cut for being
-unverifiable.
+- **Never `git add` a whole directory** — this session swept an entire `docs/` tree
+  (unrelated screenshots, a stale excalidraw source, a design note) into one commit.
+  Stage the specific files, and if the post references images, include exactly those.
+- **Do not propose `git push`** and do not offer to open a PR — the user pushes when
+  they choose. Never run git yourself.
+
+Summarize: the post's angle, where it landed (files + artifact URL if published), the
+publish-ready files, how many fact-check iterations it took, and any claim that was
+cut for being unverifiable.

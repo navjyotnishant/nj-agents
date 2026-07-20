@@ -77,6 +77,25 @@ to commit anything while the raw dir is untracked-and-not-ignored). Use a consis
 viewport for web (e.g. 1600×1000); target elements by stable selector for component
 shots.
 
+**Two constraints from real runs — plan for them, don't fail on them:**
+- **The capturer subagent can be blocked** (a sandbox/permission classifier may deny a
+  browser subagent that loads a live external URL). If the spawn is denied, fall back
+  to driving the **browser tool directly** from the skill, or — if that's blocked too
+  — hand the user the exact URL/viewport and ask them to supply the image (then treat
+  it as source `existing`). A denial is a redirect, not a dead end.
+- **The browser tool can usually only write under the repo root** (Playwright's
+  allowed-roots). If a capture to `.screenshots-raw/` (or a scratch path) is refused,
+  write to an allowed path under the repo, then move the file into the gitignored raw
+  dir. Don't let a write-root refusal abort the capture.
+
+**Auth-gated targets — offer "you capture, I redact."** If the page is behind login
+and no legitimate dev credential exists (Step 2), do NOT try to obtain or fabricate one
+and do NOT drive a separate unauthenticated browser expecting the user's session — a
+fresh browser has no session and lands on the login page. Instead offer: the user
+captures the authenticated screen themselves and gives you the file (source
+`existing`), and the pipeline still runs detection → redaction → verify on it. This
+keeps credentials on the user's machine and still delivers a safe, redacted image.
+
 ## Step 4 — Detect sensitive data (mark regions)
 
 Spawn `sensitive-data-reviewer` on each raw image. It identifies PII/secrets —
@@ -91,6 +110,11 @@ Spawn `screenshot-redactor` with the raw image + marked regions. Using `sharp`/`
 (extract region → blur/box → composite back), it applies, **by default**:
 - **Full blur / solid box** for `high`-risk regions (unrecoverable).
 - **Half/partial mask** for `low`-risk illustrative regions (e.g. `j***@example.com`).
+- **Placeholder substitution** for `low`-risk illustrative regions in a blog/marketing
+  shot: overlay a realistic fake (a real email → `demo-admin@example.com`) instead of a
+  blur box. It reads far more naturally in a polished screenshot than a black bar, and
+  the real value is still gone. Only for low-risk data, and only when the region is
+  clean enough to cover fully — never for high-risk secrets.
 
 Then it **verifies coverage** — confirms every flagged region is actually obscured in
 the output. **This is a hard gate:** if any flagged region's coverage can't be
