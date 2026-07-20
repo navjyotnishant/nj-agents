@@ -89,7 +89,9 @@ function main() {
   const out = [];
   out.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${FW}" height="${FH}" viewBox="0 0 ${FW} ${FH}" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">`);
   out.push(`<defs><filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#1b1e24" flood-opacity="0.10"/></filter></defs>`);
-  out.push(`<rect x="6" y="6" width="${FW - 12}" height="${FH - 12}" rx="18" fill="#ffffff" stroke="#e4e7ec" stroke-width="1.5"/>`);
+  out.push(`<rect x="6" y="6" width="${FW - 12}" height="${FH - 12}" rx="18" fill="#ffffff"/>`);
+  const frame = gen.rectangle(8, 8, FW - 16, FH - 16, { roughness: 1.1, bowing: 0.8, stroke: '#1b1e24', strokeWidth: 1.8, fill: 'none' });
+  out.push(`<g>${roughPath(frame)}</g>`);
   out.push(`<g transform="translate(${PAD},${PAD})">`);
 
   // title
