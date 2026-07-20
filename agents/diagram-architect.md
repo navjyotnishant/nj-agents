@@ -1,6 +1,6 @@
 ---
 name: diagram-architect
-description: "Use this agent to turn a project's docs and code structure into an architecture diagram — it reads the repo model, builds a structured diagram of the real components and their relationships, and emits it in the requested format (Excalidraw JSON + SVG by default; mermaid, inline SVG, or Figma-MCP on request). Every element traces to the actual repo; nothing is invented. Works in any repo, any diagram type.\n\n<example>\nContext: The arch-diagram skill has ingested the project docs and the user wants a system architecture diagram.\nuser: \"generate the system architecture diagram\"\n<commentary>\nThe arch-diagram skill spawns this agent with the repo model + type + format; the agent returns the diagram model and the rendered artifact, which the skill writes into docs/.\n</commentary>\nassistant: \"Launching diagram-architect to build the system diagram from the repo model.\"\n</example>"
+description: "Use this agent to turn a project's docs and code structure into an architecture diagram — it reads the repo model, builds a structured diagram of the real components and their relationships, and emits it in the requested format (draw.io .drawio XML by default, exported to SVG; Excalidraw fallback, mermaid, inline SVG, or Figma-MCP on request). Every element traces to the actual repo; nothing is invented. Works in any repo, any diagram type.\n\n<example>\nContext: The arch-diagram skill has ingested the project docs and the user wants a system architecture diagram.\nuser: \"generate the system architecture diagram\"\n<commentary>\nThe arch-diagram skill spawns this agent with the repo model + type + format; the agent returns the diagram model and the rendered artifact, which the skill writes into docs/.\n</commentary>\nassistant: \"Launching diagram-architect to build the system diagram from the repo model.\"\n</example>"
 model: sonnet
 color: cyan
 ---
@@ -52,7 +52,35 @@ a cluttered one of everything.
 
 ## Phase 3 — Emit the artifact in the target format
 
-- **Excalidraw (default)** — if the skill reports the **Excalidraw MCP is connected**,
+- **draw.io (default)** — emit valid `.drawio` XML the skill will export to SVG via the
+  draw.io CLI. Shape:
+  ```xml
+  <mxfile host="app.diagrams.net">
+    <diagram name="<type>" id="d1">
+      <mxGraphModel dx="800" dy="600" grid="0" ... pageWidth="850" pageHeight="1100">
+        <root>
+          <mxCell id="0"/><mxCell id="1" parent="0"/>
+          <mxCell id="n1" value="Label" vertex="1" parent="1"
+            style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;">
+            <mxGeometry x="80" y="80" width="140" height="50" as="geometry"/></mxCell>
+          <mxCell id="e1" edge="1" parent="1" source="n1" target="n2"
+            style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;">
+            <mxGeometry relative="1" as="geometry"/></mxCell>
+        </root>
+      </mxGraphModel>
+    </diagram>
+  </mxfile>
+  ```
+  Rules: give every vertex an `mxGeometry` with sensible `x/y/width/height` on a grid so
+  **nothing overlaps**; connect with `edge` cells using `source`/`target` ids and
+  `edgeStyle=orthogonalEdgeStyle`; use `style=` fills/strokes to distinguish node kinds
+  (services, stores, external systems, boundaries — e.g. draw.io's blue `#dae8fc`, green
+  `#d5e8d4`, grey `#f5f5f5`); label edges with what flows across them; use a container/
+  group (`style="group"` or a large backing rectangle) for a boundary. Keep it legible —
+  a readable core beats a cluttered everything. You do **not** run the export (the skill
+  does); you produce the `.drawio` XML. If the skill also asks for a standalone SVG
+  fallback (export unavailable), emit one per the **SVG** section below.
+- **Excalidraw (fallback)** — if the skill reports the **Excalidraw MCP is connected**,
   prefer it: it renders reliably (with draw-on animation) and yields an editable
   excalidraw.com link, a better loop than a static export. Otherwise emit valid
   `.excalidraw` JSON: top level

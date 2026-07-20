@@ -321,7 +321,7 @@
             <tr><td class="name"><code>/review-style</code></td><td>review</td><td class="role">Consistency, commit-message hygiene, leftover debug/TODO.</td></tr>
             <tr class="grp-row"><td colspan="3">Authoring</td></tr>
             <tr><td class="name"><code>/changelog</code></td><td>authoring</td><td class="role">Keep a Changelog + SemVer from commit history; proposes the commit.</td></tr>
-            <tr><td class="name"><code>/arch-diagram</code></td><td>authoring</td><td class="role">Docs-grounded architecture diagram (Excalidraw+SVG / mermaid / Figma).</td></tr>
+            <tr><td class="name"><code>/arch-diagram</code></td><td>authoring</td><td class="role">Docs-grounded architecture diagram (draw.io+SVG default / Excalidraw / mermaid / Figma).</td></tr>
             <tr><td class="name"><code>/capture-screenshots</code></td><td>authoring</td><td class="role">Capture → detect PII → redact → verify-gate; only the redacted image is committed.</td></tr>
             <tr><td class="name"><code>/tech-blog</code></td><td>authoring</td><td class="role">Multi-agent post; fact-checker blocks unverifiable claims.</td></tr>
             <tr><td class="name"><code>/docs-site</code></td><td>authoring</td><td class="role">Universal doc-site generator (this page); auto-derives structure, flags gaps.</td></tr>
@@ -606,14 +606,14 @@
     </article>
 
     <article class="card" id="arch-diagram">
-      <div class="card-head"><div class="card-title"><code>/arch-diagram</code> <span class="badge">authoring</span> <span class="badge ver">v0.1.0</span></div>
+      <div class="card-head"><div class="card-title"><code>/arch-diagram</code> <span class="badge">authoring</span> <span class="badge ver">v0.2.0</span></div>
         <p class="card-purpose">Reads your README/docs/ADRs, then generates a system/solution/sequence/data-flow/deployment/ER diagram, places it in <code>docs/architecture/</code>, and proposes the commit.</p>
-        <dl class="meta-grid"><dt>Format</dt><dd>default <strong>Excalidraw + exported SVG</strong>; also mermaid, inline SVG, or Figma (MCP)</dd><dt>Agent</dt><dd><span class="agent-pills"><code>diagram-architect</code></span></dd><dt>Expect</dt><dd>a <code>.excalidraw</code> + <code>.svg</code> in docs, embedded, + a proposed commit</dd></dl>
+        <dl class="meta-grid"><dt>Format</dt><dd>default <strong>draw.io + exported SVG</strong> (free draw.io CLI; hard preflight gate → install or Excalidraw fallback); also mermaid, inline SVG, or Figma (MCP)</dd><dt>Agent</dt><dd><span class="agent-pills"><code>diagram-architect</code></span></dd><dt>Expect</dt><dd>a <code>.drawio</code> + <code>.svg</code> in docs, embedded, + a proposed commit</dd></dl>
       </div>
       <details class="more"><summary><span class="chev">›</span> Full flow</summary><div class="more-body"><ol>
-        <li>Resolves diagram type + format; ingests architecture docs to <strong>ground</strong> it.</li>
-        <li><code>diagram-architect</code> builds a structured model → valid <code>.excalidraw</code> JSON + a matching SVG.</li>
-        <li>Places &amp; embeds it; proposes the commit. Every box/arrow traces to the repo.</li>
+        <li>Resolves diagram type + format; if default (<strong>draw.io</strong>), a preflight gate checks the CLI — missing → stop &amp; offer install or the Excalidraw route (CI: silent Excalidraw fallback).</li>
+        <li>Ingests architecture docs to <strong>ground</strong> it; <code>diagram-architect</code> builds a structured model → valid <code>.drawio</code> XML.</li>
+        <li>Exports the SVG via the draw.io CLI (async — polls for the file), embeds it; proposes the commit. Every box/arrow traces to the repo.</li>
       </ol></div></details>
     </article>
 
@@ -687,7 +687,7 @@
           <tr><td class="name"><span class="agent-dot" style="background:var(--accent)"></span><code>style-reviewer</code></td><td class="role">Consistency, commit-message hygiene, leftover debug/TODO. Infers conventions from context.</td><td class="via"><code>/review-style</code></td></tr>
           <tr class="grp-row"><td colspan="3">Authoring — changelog &amp; diagram</td></tr>
           <tr><td class="name"><span class="agent-dot" style="background:var(--pass)"></span><code>changelog-writer</code></td><td class="role">Groups commits into Added/Changed/…, de-dupes, drops noise, rewrites into user-facing prose.</td><td class="via"><code>/changelog</code></td></tr>
-          <tr><td class="name"><span class="agent-dot" style="background:#3aa8c9"></span><code>diagram-architect</code></td><td class="role">Repo model → structured diagram → valid Excalidraw JSON + SVG (or mermaid/Figma). Nothing invented.</td><td class="via"><code>/arch-diagram</code></td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:#3aa8c9"></span><code>diagram-architect</code></td><td class="role">Repo model → structured diagram → valid draw.io XML (exported to SVG) — or Excalidraw/mermaid/Figma. Nothing invented.</td><td class="via"><code>/arch-diagram</code></td></tr>
           <tr class="grp-row"><td colspan="3">Authoring — capture-screenshots pipeline</td></tr>
           <tr><td class="name"><span class="agent-dot" style="background:#3aa8c9"></span><code>screenshot-capturer</code></td><td class="role">Captures the raw image (web/terminal/static/existing). Never fabricates credentials.</td><td class="via"><code>/capture-screenshots</code></td></tr>
           <tr><td class="name"><span class="agent-dot" style="background:var(--block)"></span><code>sensitive-data-reviewer</code></td><td class="role">Marks PII/secrets with bounding regions + risk class. Marks, doesn't blur.</td><td class="via"><code>/capture-screenshots</code></td></tr>

@@ -52,9 +52,10 @@ grounding/safety §A6, non-clobber §A7).
 ## Step 1 — Deep repo-context ingest
 
 Per `CONVENTIONS-authoring.md §A1`, **deep**: README, `docs/`, architecture docs,
-key source (entry points, core modules, public API). Also **discover any Bundle-2
-diagrams** (`docs/architecture/*.svg` / `*.excalidraw` / mermaid blocks) to embed or
-reference in the post. Build the repo model the whole pipeline will be grounded in.
+key source (entry points, core modules, public API). Also **discover any existing
+architecture diagrams** (`docs/architecture/*.svg` / `*.drawio` / `*.excalidraw` /
+mermaid blocks) to embed or reference in the post. Build the repo model the whole
+pipeline will be grounded in.
 
 ## Step 2 — Confirm topic, angle, audience, voice, landing path
 
