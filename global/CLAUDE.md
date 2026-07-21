@@ -120,11 +120,13 @@ Apply these to related work even when no skill is invoked:
   Description: <one line>
   ```
 
-  Default `<owner>` to **Navjyot Nishant** in this user's own/solo repos; in a shared or
-  open-source repo use the **actual owner** — do **not** blindly derive it from git
-  config, and don't stamp your name onto files others own. **Skip trivial files** (tiny
-  components, generated files, one-off throwaways). A project whose own `CLAUDE.md`
-  defines a different header format (e.g. EngageHub's) overrides this.
+  Fill `<owner>` from **`git config user.name`** at the time the file is created —
+  don't hardcode a name. On this user's machine that resolves to their identity; on a
+  teammate's machine it resolves to theirs, so the stamp stays correct without editing
+  the rule. If `git config user.name` is unset, ask rather than guessing. **Skip trivial
+  files** (tiny components, generated files, one-off throwaways). A project whose own
+  `CLAUDE.md` defines a different header format or authorship policy (e.g. EngageHub's
+  "actual owner — do not derive from git config") overrides this.
 - **Ground everything in the actual repo.** Read README/docs/code; never invent an
   API, file path, version, or benchmark. Unverifiable claims get cut or marked.
 - **Degrade, don't fail.** External tools and MCP connectors are detected at runtime,
