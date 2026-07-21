@@ -175,9 +175,23 @@ nj-agents/
 ├── agents/<name>.md            # each agent is a flat .md
 ├── CONVENTIONS.md              # shared rules for the review class
 ├── CONVENTIONS-authoring.md    # shared rules for the authoring class
+├── global/CLAUDE.md            # guidance installed to ~/.claude/CLAUDE.md
 ├── install.sh                  # symlinks skills/ + agents/ into a .claude/ dir
 └── README.md
 ```
+
+### Global guidance file
+
+Installing the skills makes them *available* everywhere; it doesn't tell Claude
+**when** to reach for them. [`global/CLAUDE.md`](global/CLAUDE.md) closes that gap —
+`install.sh` symlinks it to `~/.claude/CLAUDE.md`, so every session in every repo
+starts knowing the suite exists, what each skill covers, and the standing rules
+(propose-commit, ground-in-repo, degrade-don't-fail, scoped output).
+
+It is **advisory** — it suggests the right skill, it never auto-fires one. A
+project's own `CLAUDE.md` takes precedence, and the installer **never overwrites**
+an existing non-symlink `CLAUDE.md` (relevant for `--project`, where it would
+otherwise collide). `--uninstall` removes it.
 
 ## Adding more
 

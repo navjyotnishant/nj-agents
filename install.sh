@@ -29,8 +29,10 @@ done
 
 SKILLS_SRC="$REPO_DIR/skills"
 AGENTS_SRC="$REPO_DIR/agents"
+GLOBAL_MD_SRC="$REPO_DIR/global/CLAUDE.md"
 SKILLS_DST="$TARGET_ROOT/skills"
 AGENTS_DST="$TARGET_ROOT/agents"
+GLOBAL_MD_DST="$TARGET_ROOT/CLAUDE.md"
 
 # Remove a symlink only if it points back into this repo (safe uninstall).
 remove_if_ours() {
@@ -58,6 +60,7 @@ if [ "$UNINSTALL" = "1" ]; then
   echo "Uninstalling nj-agents symlinks from $TARGET_ROOT ..."
   for d in "$SKILLS_SRC"/*/; do remove_if_ours "$SKILLS_DST/$(basename "$d")"; done
   for f in "$AGENTS_SRC"/*.md; do remove_if_ours "$AGENTS_DST/$(basename "$f")"; done
+  remove_if_ours "$GLOBAL_MD_DST"
   echo "Done."
   exit 0
 fi
@@ -74,6 +77,10 @@ done
 for f in "$AGENTS_SRC"/*.md; do
   link_one "$f" "$AGENTS_DST/$(basename "$f")"
 done
+
+# Guidance file: tells Claude the suite exists and when to reach for it, in EVERY
+# repo. Never clobbers a hand-written CLAUDE.md (link_one guards that).
+link_one "$GLOBAL_MD_SRC" "$GLOBAL_MD_DST"
 
 echo "Done. Restart Claude Code (or reload) to pick up the new skills/agents."
 echo "Try:  /pre-push-review   (or /review-secrets, /review-correctness, ...)"

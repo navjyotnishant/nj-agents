@@ -22,6 +22,7 @@ skills/<name>/scripts/      # optional bundled helper scripts (node_modules is g
 agents/<name>.md            # an agent is a FLAT .md file
 CONVENTIONS.md              # review-class shared rules
 CONVENTIONS-authoring.md    # authoring-class shared rules (§A1–A7)
+global/CLAUDE.md            # advisory guidance → symlinked to ~/.claude/CLAUDE.md
 install.sh                  # symlink installer (idempotent; safe uninstall; never clobbers)
 README.md                   # public overview
 docs.html                  # multi-page reference SITE (Home/Suites/Workflows/Reference)
@@ -107,3 +108,5 @@ generated from a small JSON model, not hand-placed.
 2. Use the frontmatter format above; reference the right conventions doc by class.
 3. `./install.sh` (globs automatically) → reload Claude Code.
 4. Update `README.md`'s tables and, if it's user-facing, `docs.html`.
+5. Add it to the right table in **`global/CLAUDE.md`** — that file is what makes the
+   skill discoverable in *other* repos, and it lists skills explicitly (no glob).
