@@ -82,6 +82,15 @@ Apply these to related work even when no skill is invoked:
   "Generated with" attribution) to commit messages you write or propose. This is the
   default across this user's repos; a project whose own `CLAUDE.md` asks for
   attribution overrides it.
+- **Confirm the staged set before committing.** When proposing a commit, run
+  `git diff --cached --stat` and check that only the intended files are staged — flag
+  anything unexpected rather than committing it.
+- **Self-review before pushing.** Before proposing a push, do a quick pass over the
+  changes for bugs, regressions, missing validation, and security issues — or offer
+  `/pre-push-review` for the full gate.
+- **Stash unrelated WIP before switching branches.** When in-progress changes in one
+  area aren't ready, stash them explicitly (`git stash push -m "…" -- <paths>`) before
+  a branch switch so they don't ride along into an unrelated commit or merge.
 - **Ground everything in the actual repo.** Read README/docs/code; never invent an
   API, file path, version, or benchmark. Unverifiable claims get cut or marked.
 - **Degrade, don't fail.** External tools and MCP connectors are detected at runtime,
