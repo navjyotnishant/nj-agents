@@ -7,7 +7,7 @@
 -->
 
 A personal toolkit of Claude Code **skills and agents** covering the software
-development lifecycle is installed globally on this machine — **13 skills, 21
+development lifecycle is installed globally on this machine — **14 skills, 22
 agents**. It is **project-agnostic**: every skill works in any git repo, any stack,
 any language, and discovers per-repo details at runtime rather than assuming a
 stack, path, port, or tool.
@@ -58,6 +58,16 @@ Shared behavior lives in the repo's `CONVENTIONS-authoring.md` (§A1 repo-ingest
 Two gates worth knowing: `/tech-blog`'s **fact-checker BLOCKS** on any claim it
 can't verify against the repo, and `/arch-diagram` runs a mandatory
 **render → QA → fix loop** through `diagram-qa` until the diagram PASSES.
+
+## Workflow suite — reads the diff, drafts a change artifact, proposes (never auto-acts)
+
+| Skill | What it does | Agent |
+|---|---|---|
+| `/pr-describe` | Drafts a PR **title + body** from the branch's delta vs its base (the PR view). Fills the repo's own PR template when present; grounds every line in a real commit/hunk. Opens a **draft** PR only if you opt in and `gh` is present; else hands you the text. **Never pushes, never opens a non-draft PR, never merges.** | `pr-describer` |
+
+Reads a diff like the review class but invents nothing; proposes like the authoring
+class (§A3) but its artifact is a **PR, not a repo file** — so it never writes to
+`docs/`. `gh` is detected, never required (§A5).
 
 ## Standing rules
 

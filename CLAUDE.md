@@ -9,7 +9,7 @@ agents** for software-development workflows. Install it once (symlinks into `~/.
 and invoke the skills with `/name` in **any** git repo — nothing here is specific to one
 project, stack, or language.
 
-- **13 skills · 21 agents**, in three classes + a diagram-generation subsystem.
+- **14 skills · 22 agents**, in four classes + a diagram-generation subsystem.
 - Install: `./install.sh` (global) or `./install.sh --project DIR`. The installer **globs**
   `skills/*/` and `agents/*.md`, so new files are picked up automatically. Reload Claude
   Code after installing (skills/agents load at session start).
@@ -51,6 +51,11 @@ docs/architecture/          # generated diagrams + their JSON source models
   repo — with no repo to read, §A6 is satisfied by grounding in the **OpenSSF OSPS
   Baseline** (cited by control ID) + the ecosystem's own generator + a supplied project
   doc, never by inventing.
+- **Workflow class** — *reads the diff, drafts a change artifact, proposes — never auto-acts.*
+  Sits between review and authoring: reads a diff like review-class but invents nothing,
+  proposes like authoring-class (§A3) but its artifact is a **PR, not a repo file** (so
+  the §A2/§A4 placement rules don't apply). `gh` detected-never-required (§A5).
+  Skill: `/pr-describe`.
 - **Social class** — produces paste-ready copy; never writes to the repo, never auto-posts.
   Skill: `/social-post`.
 
