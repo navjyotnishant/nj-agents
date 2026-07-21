@@ -110,6 +110,21 @@ Apply these to related work even when no skill is invoked:
   declines, or it's a throwaway repo, note that and proceed — never hard-block coding
   on a ticket. A project whose own `CLAUDE.md` mandates a stricter gate (e.g. "no code
   without an issue") overrides this softer default.
+- **Author header on new scripts and standalone modules.** For a new script, migration,
+  or major standalone module, add a comment header at the top:
+
+  ```
+  Author: <owner>
+  Created: YYYY-MM-DD
+  Last updated: YYYY-MM-DD
+  Description: <one line>
+  ```
+
+  Default `<owner>` to **Navjyot Nishant** in this user's own/solo repos; in a shared or
+  open-source repo use the **actual owner** — do **not** blindly derive it from git
+  config, and don't stamp your name onto files others own. **Skip trivial files** (tiny
+  components, generated files, one-off throwaways). A project whose own `CLAUDE.md`
+  defines a different header format (e.g. EngageHub's) overrides this.
 - **Ground everything in the actual repo.** Read README/docs/code; never invent an
   API, file path, version, or benchmark. Unverifiable claims get cut or marked.
 - **Degrade, don't fail.** External tools and MCP connectors are detected at runtime,
