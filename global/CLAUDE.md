@@ -7,7 +7,7 @@
 -->
 
 A personal toolkit of Claude Code **skills and agents** covering the software
-development lifecycle is installed globally on this machine — **16 skills, 22
+development lifecycle is installed globally on this machine — **18 skills, 22
 agents**. It is **project-agnostic**: every skill works in any git repo, any stack,
 any language, and discovers per-repo details at runtime rather than assuming a
 stack, path, port, or tool.
@@ -71,14 +71,20 @@ Reads a diff like the review class but invents nothing; proposes like the author
 class (§A3) but its artifact is a **PR, not a repo file** — so it never writes to
 `docs/`. `gh` is detected, never required (§A5).
 
-## PM-authoring suite — writes a work item into a tracker, PROPOSES the create *(planned)*
+## PM-authoring suite — writes a work item into a tracker, PROPOSES the create
 
-Foundation shipped (`CONVENTIONS-pm.md`); the skills are not built yet — do not try to
-invoke `/pm-*` until they land. Planned: `/pm-epic`, `/pm-story`, `/pm-task`, and the
-`/pm-plan` orchestrator (sequential Epic→Stories→Tasks). Tool-agnostic (Linear / Jira /
-Notion / GitHub Issues via a connected MCP), draft-first, MCP-detect-never-require, with
-a paste-ready-markdown fallback. This is what the "track work in a PM tool" standing
-rule will use to create the tracked item.
+Tool-agnostic (Linear / Jira / Notion / GitHub Issues via a connected MCP), draft-first,
+MCP-detect-never-require, with a paste-ready-markdown fallback. Shared rules in
+`CONVENTIONS-pm.md`. This is what the "track work in a PM tool" standing rule uses to
+create the tracked item.
+
+| Skill | What it does | Agent |
+|---|---|---|
+| `/pm-story` | Drafts one **INVEST user story** ("As a … I want … so that …") + acceptance criteria; on opt-in creates it in the connected tracker, else paste-ready markdown. Optional parent Epic. | (no dedicated agent) |
+| `/pm-task` | Drafts one scoped, actionable **Task** (optionally under a Story/Epic); on opt-in creates it, else markdown. | (no dedicated agent) |
+
+Still to come (NAV-83/84): `/pm-epic` and the `/pm-plan` orchestrator (sequential
+parent-first Epic→Stories→Tasks). Don't invoke those until they land.
 
 ## Standing rules
 

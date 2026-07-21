@@ -80,6 +80,22 @@ is a **PR, not a repo file**).
 
 `gh` is detected, never required (§A5); the print-and-paste path always works.
 
+## PM-authoring suite (PM-authoring class)
+
+Writes a **work item into a project-management tracker** (Linear / Jira / Notion /
+GitHub Issues) — the artifact is a tracker object, not a repo file. Tool-agnostic (via a
+connected MCP), **draft-first**, MCP-detect-never-require with a **paste-ready-markdown
+fallback**, and it **proposes the create — never bulk-creates silently**. Shared rules
+in [`CONVENTIONS-pm.md`](CONVENTIONS-pm.md) (§P1–P7).
+
+| Skill | What it does | Agent it uses |
+|---|---|---|
+| `/pm-story` | Drafts one **INVEST user story** ("As a … I want … so that …") with explicit **acceptance criteria** and an estimate hint; on opt-in creates it in the connected tracker (optional parent Epic), else hands you paste-ready markdown. Grounded in your intent — no invented scope. | (no dedicated agent) |
+| `/pm-task` | Drafts one scoped, actionable **Task** (optionally under a parent Story/Epic); on opt-in creates it, else markdown. Keeps it small and single-purpose. | (no dedicated agent) |
+
+Still to come: `/pm-epic` and the `/pm-plan` orchestrator (a sequential, parent-first
+Epic→Stories→Tasks pipeline).
+
 ## ⚠️ What it does with your code — read this
 
 **Review suite:** these skills **generate a snapshot of your changes** (the `git diff`

@@ -9,7 +9,7 @@ agents** for software-development workflows. Install it once (symlinks into `~/.
 and invoke the skills with `/name` in **any** git repo — nothing here is specific to one
 project, stack, or language.
 
-- **16 skills · 22 agents**, in four classes + a diagram-generation subsystem.
+- **18 skills · 22 agents**, in four classes + a diagram-generation subsystem.
 - Install: `./install.sh` (global) or `./install.sh --project DIR`. The installer **globs**
   `skills/*/` and `agents/*.md`, so new files are picked up automatically. Reload Claude
   Code after installing (skills/agents load at session start).
@@ -63,14 +63,15 @@ docs/architecture/          # generated diagrams + their JSON source models
   duplicating it: `/changelog` writes the `CHANGELOG.md` file, `/release-notes` reuses
   that section to draft the GitHub **Release** object — draft only, never publishes,
   never pushes a tag.
-- **PM-authoring class** *(foundation built; skills pending — NAV-82..84)* — *writes a
-  work item into a project-management tracker (Linear/Jira/Notion/GitHub Issues), then
-  PROPOSES the create.* The artifact is a **tracker object, not a repo file**, so the
-  §A2/§A4 placement rules don't apply. Shared rules: `CONVENTIONS-pm.md` (§P1 ground,
-  §P2 neutral-model→per-tracker map, §P3 propose-the-create, §P4 tracker idempotence,
-  §P5 sequential parent-first, §P6 MCP-detect-never-require, §P7 safety). Planned
-  skills: `/pm-epic`, `/pm-story`, `/pm-task` + the `/pm-plan` orchestrator (sequential
-  Epic→Stories→Tasks). Motivated by the global "track work in a PM tool" rule.
+- **PM-authoring class** *(leaf skills built; `/pm-epic` + `/pm-plan` pending — NAV-83/84)*
+  — *writes a work item into a project-management tracker (Linear/Jira/Notion/GitHub
+  Issues), then PROPOSES the create.* The artifact is a **tracker object, not a repo
+  file**, so the §A2/§A4 placement rules don't apply. Shared rules: `CONVENTIONS-pm.md`
+  (§P1 ground, §P2 neutral-model→per-tracker map, §P3 propose-the-create, §P4 tracker
+  idempotence, §P5 sequential parent-first, §P6 MCP-detect-never-require, §P7 safety).
+  Skills: `/pm-story`, `/pm-task` (built); `/pm-epic` + the `/pm-plan` orchestrator
+  (sequential Epic→Stories→Tasks) still to come. Motivated by the global "track work in
+  a PM tool" rule.
 - **Social class** — produces paste-ready copy; never writes to the repo, never auto-posts.
   Skill: `/social-post`.
 
