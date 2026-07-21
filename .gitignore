@@ -8,3 +8,6 @@ node_modules/
 docs/architecture/_style-mockups.html
 docs/architecture/*.layout.json
 HANDOFF*.md
+
+# Playwright MCP session scratch (console/page dumps) — local tool output
+.playwright-mcp/
