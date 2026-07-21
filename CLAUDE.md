@@ -9,7 +9,7 @@ agents** for software-development workflows. Install it once (symlinks into `~/.
 and invoke the skills with `/name` in **any** git repo — nothing here is specific to one
 project, stack, or language.
 
-- **14 skills · 22 agents**, in four classes + a diagram-generation subsystem.
+- **15 skills · 22 agents**, in four classes + a diagram-generation subsystem.
 - Install: `./install.sh` (global) or `./install.sh --project DIR`. The installer **globs**
   `skills/*/` and `agents/*.md`, so new files are picked up automatically. Reload Claude
   Code after installing (skills/agents load at session start).
@@ -55,7 +55,9 @@ docs/architecture/          # generated diagrams + their JSON source models
   Sits between review and authoring: reads a diff like review-class but invents nothing,
   proposes like authoring-class (§A3) but its artifact is a **PR, not a repo file** (so
   the §A2/§A4 placement rules don't apply). `gh` detected-never-required (§A5).
-  Skill: `/pr-describe`.
+  Skills: `/pr-describe`, `/commit-assistant`. The latter sits directly on the "human
+  decides what gets committed" rule — its whole output **is** the §A3 commit block, so
+  it drafts message(s) and prints `git add`/`commit`, but never runs git.
 - **Social class** — produces paste-ready copy; never writes to the repo, never auto-posts.
   Skill: `/social-post`.
 

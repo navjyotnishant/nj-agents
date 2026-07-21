@@ -75,6 +75,7 @@ is a **PR, not a repo file**).
 | Skill | What it does | Agent it uses |
 |---|---|---|
 | `/pr-describe` | Drafts a **PR title + body** from the branch's whole delta versus its base (the PR view), grounded in the real commits and diff — every line traces to a change, nothing invented. Fills the repo's own `PULL_REQUEST_TEMPLATE.md` when present, else a sensible default (Summary / Changes / Why / Test plan / Related). Opens a **draft** PR only if you opt in and `gh` is present; otherwise hands you the text to paste. **Never pushes, never opens a non-draft PR, never merges.** | `pr-describer` |
+| `/commit-assistant` | Drafts **Conventional Commits** message(s) from the working-tree changes and prints the exact `git add` + `git commit` block to run. When the tree holds unrelated changes it proposes **splitting them into separate commits**, one message each; respects changes you've already staged as your stated intent. Matches the repo's own commit style (including a `no Co-Authored-By` rule). Grounded in the diff — no `fix bug` filler. **Never runs git** — the human decides what gets committed. | (no dedicated agent) |
 
 `gh` is detected, never required (§A5); the print-and-paste path always works.
 
