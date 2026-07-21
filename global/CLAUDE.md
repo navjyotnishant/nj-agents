@@ -7,7 +7,7 @@
 -->
 
 A personal toolkit of Claude Code **skills and agents** covering the software
-development lifecycle is installed globally on this machine — **15 skills, 22
+development lifecycle is installed globally on this machine — **16 skills, 22
 agents**. It is **project-agnostic**: every skill works in any git repo, any stack,
 any language, and discovers per-repo details at runtime rather than assuming a
 stack, path, port, or tool.
@@ -43,7 +43,7 @@ review **stops and shares nothing**. (`gitleaks` is installed on this machine.)
 
 | Skill | What it does | Agents |
 |---|---|---|
-| `/changelog` | `CHANGELOG.md` in Keep a Changelog + SemVer from commit history. Merges into `[Unreleased]` without clobbering; suggests the bump. | `changelog-writer` |
+| `/changelog` | `CHANGELOG.md` in Keep a Changelog + SemVer from commit history. Merges into `[Unreleased]` without clobbering; suggests the bump. (For the GitHub **Release** object, see `/release-notes`.) | `changelog-writer` |
 | `/arch-diagram` | System/solution/sequence/data-flow/deployment/ER diagrams into `docs/architecture/`. | `diagram-architect`, `diagram-qa` |
 | `/capture-screenshots` | Capture → detect PII/secrets → blur/mask → **verify coverage before writing**. | `screenshot-capturer`, `sensitive-data-reviewer`, `screenshot-redactor` |
 | `/docs-site` | Self-contained theme-aware `docs.html` from docs, code, an outline, or SKILL.md/OpenAPI/JSON-Schema. Auto-derives the menu; flags gaps rather than inventing. | `docs-architect`, `docs-designer` |
@@ -65,6 +65,7 @@ can't verify against the repo, and `/arch-diagram` runs a mandatory
 |---|---|---|
 | `/pr-describe` | Drafts a PR **title + body** from the branch's delta vs its base (the PR view). Fills the repo's own PR template when present; grounds every line in a real commit/hunk. Opens a **draft** PR only if you opt in and `gh` is present; else hands you the text. **Never pushes, never opens a non-draft PR, never merges.** | `pr-describer` |
 | `/commit-assistant` | Drafts Conventional Commits message(s) from the working-tree changes and prints the `git add` + `git commit` block. Splits unrelated changes into separate commits; respects existing staging. **Never runs git** — the human decides what gets committed. | (no dedicated agent) |
+| `/release-notes` | Turns a version's changes into a **draft GitHub Release** — reuses the `CHANGELOG.md` section as the body (composes with `/changelog`), else summarizes the commit delta. Drafts `gh release create --draft`; **never publishes, never pushes a tag.** | (no dedicated agent) |
 
 Reads a diff like the review class but invents nothing; proposes like the authoring
 class (§A3) but its artifact is a **PR, not a repo file** — so it never writes to
