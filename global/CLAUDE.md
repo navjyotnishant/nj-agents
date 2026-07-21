@@ -91,6 +91,16 @@ Apply these to related work even when no skill is invoked:
 - **Stash unrelated WIP before switching branches.** When in-progress changes in one
   area aren't ready, stash them explicitly (`git stash push -m "…" -- <paths>`) before
   a branch switch so they don't ride along into an unrelated commit or merge.
+- **Track the work in a PM tool before non-trivial code.** For a real task, bug fix,
+  or feature (not a throwaway experiment), there should be a tracked item — in
+  **whatever project-management tool the project uses**: Linear, Jira, GitHub Issues,
+  Notion, etc. First check for one that matches; if none exists, **offer to create it**
+  in the connected PM tool (once the PM-authoring skills land, via `/pm-story` /
+  `/pm-plan`) and reference its key in the branch name and commits. This is
+  tool-agnostic and **detect-never-require**: if no PM tool is connected, or the user
+  declines, or it's a throwaway repo, note that and proceed — never hard-block coding
+  on a ticket. A project whose own `CLAUDE.md` mandates a stricter gate (e.g. "no code
+  without an issue") overrides this softer default.
 - **Ground everything in the actual repo.** Read README/docs/code; never invent an
   API, file path, version, or benchmark. Unverifiable claims get cut or marked.
 - **Degrade, don't fail.** External tools and MCP connectors are detected at runtime,
