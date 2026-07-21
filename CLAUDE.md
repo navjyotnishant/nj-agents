@@ -9,7 +9,7 @@ agents** for software-development workflows. Install it once (symlinks into `~/.
 and invoke the skills with `/name` in **any** git repo — nothing here is specific to one
 project, stack, or language.
 
-- **12 skills · 21 agents**, in three classes + a diagram-generation subsystem.
+- **13 skills · 21 agents**, in three classes + a diagram-generation subsystem.
 - Install: `./install.sh` (global) or `./install.sh --project DIR`. The installer **globs**
   `skills/*/` and `agents/*.md`, so new files are picked up automatically. Reload Claude
   Code after installing (skills/agents load at session start).
@@ -46,7 +46,11 @@ docs/architecture/          # generated diagrams + their JSON source models
   **Never `git add`/`commit`/`push`/`tag` automatically.** Shared rules:
   `CONVENTIONS-authoring.md` (§A1 repo-ingest, §A2 scoped output, §A3 propose-commit,
   §A4 placement, §A5 MCP-detect-never-require, §A6 grounding/safety, §A7 idempotent).
-  Skills: `/changelog`, `/arch-diagram`, `/capture-screenshots`, `/tech-blog`, `/docs-site`.
+  Skills: `/changelog`, `/arch-diagram`, `/capture-screenshots`, `/tech-blog`, `/docs-site`,
+  `/scaffold-project`. The last is the one authoring skill that runs on a **greenfield**
+  repo — with no repo to read, §A6 is satisfied by grounding in the **OpenSSF OSPS
+  Baseline** (cited by control ID) + the ecosystem's own generator + a supplied project
+  doc, never by inventing.
 - **Social class** — produces paste-ready copy; never writes to the repo, never auto-posts.
   Skill: `/social-post`.
 
