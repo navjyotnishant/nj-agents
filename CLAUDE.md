@@ -110,3 +110,5 @@ generated from a small JSON model, not hand-placed.
 4. Update `README.md`'s tables and, if it's user-facing, `docs.html`.
 5. Add it to the right table in **`global/CLAUDE.md`** — that file is what makes the
    skill discoverable in *other* repos, and it lists skills explicitly (no glob).
+   `./install.sh` (or `--check-only`) warns if you forget; the warning is advisory
+   and never fails the install.

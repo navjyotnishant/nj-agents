@@ -193,6 +193,22 @@ project's own `CLAUDE.md` takes precedence, and the installer **never overwrites
 an existing non-symlink `CLAUDE.md` (relevant for `--project`, where it would
 otherwise collide). `--uninstall` removes it.
 
+Unlike `skills/` and `agents/` — which the installer **globs**, so new files are
+picked up automatically — this file lists skills **by hand** (it is curated prose,
+not generated). A skill missing from it still installs, but stays invisible in other
+repos. So `install.sh` diffs the tables against what actually ships and warns:
+
+```bash
+./install.sh --check-only    # check sync without installing anything
+```
+
+```
+  ! global/CLAUDE.md is out of sync with skills/:
+      not listed (invisible in other repos): commit-assistant
+```
+
+The warning is **advisory** — it never edits the file and never fails the install.
+
 ## Adding more
 
 Drop a new skill directory under `skills/` (with a `SKILL.md`) or a new agent `.md`
