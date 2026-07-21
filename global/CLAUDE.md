@@ -71,6 +71,15 @@ Reads a diff like the review class but invents nothing; proposes like the author
 class (§A3) but its artifact is a **PR, not a repo file** — so it never writes to
 `docs/`. `gh` is detected, never required (§A5).
 
+## PM-authoring suite — writes a work item into a tracker, PROPOSES the create *(planned)*
+
+Foundation shipped (`CONVENTIONS-pm.md`); the skills are not built yet — do not try to
+invoke `/pm-*` until they land. Planned: `/pm-epic`, `/pm-story`, `/pm-task`, and the
+`/pm-plan` orchestrator (sequential Epic→Stories→Tasks). Tool-agnostic (Linear / Jira /
+Notion / GitHub Issues via a connected MCP), draft-first, MCP-detect-never-require, with
+a paste-ready-markdown fallback. This is what the "track work in a PM tool" standing
+rule will use to create the tracked item.
+
 ## Standing rules
 
 Apply these to related work even when no skill is invoked:

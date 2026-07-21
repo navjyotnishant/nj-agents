@@ -191,6 +191,7 @@ nj-agents/
 ├── agents/<name>.md            # each agent is a flat .md
 ├── CONVENTIONS.md              # shared rules for the review class
 ├── CONVENTIONS-authoring.md    # shared rules for the authoring class
+├── CONVENTIONS-pm.md           # shared rules for the PM-authoring class
 ├── global/CLAUDE.md            # guidance installed to ~/.claude/CLAUDE.md
 ├── install.sh                  # symlinks skills/ + agents/ into a .claude/ dir
 └── README.md
@@ -231,4 +232,5 @@ Drop a new skill directory under `skills/` (with a `SKILL.md`) or a new agent `.
 under `agents/`, then re-run `./install.sh`. Keep everything **project-agnostic** —
 discover per-repo details at runtime rather than hardcoding a stack, path, port, or
 tool. Point each new skill at the right class contract: `CONVENTIONS.md` if it only
-reads and advises, `CONVENTIONS-authoring.md` if it writes an artifact into the repo.
+reads and advises, `CONVENTIONS-authoring.md` if it writes an artifact into the repo,
+`CONVENTIONS-pm.md` if it writes a work item into a project-management tracker.

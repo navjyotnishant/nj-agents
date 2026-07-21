@@ -21,7 +21,8 @@ skills/<name>/SKILL.md      # a skill is a DIRECTORY containing SKILL.md
 skills/<name>/scripts/      # optional bundled helper scripts (node_modules is gitignored)
 agents/<name>.md            # an agent is a FLAT .md file
 CONVENTIONS.md              # review-class shared rules
-CONVENTIONS-authoring.md    # authoring-class shared rules (§A1–A7)
+CONVENTIONS-authoring.md    # authoring-class shared rules (§A1–A8)
+CONVENTIONS-pm.md           # PM-authoring-class shared rules (§P1–P7); skills in NAV-82..84
 global/CLAUDE.md            # advisory guidance → symlinked to ~/.claude/CLAUDE.md
 install.sh                  # symlink installer (idempotent; safe uninstall; never clobbers)
 README.md                   # public overview
@@ -36,7 +37,7 @@ docs/architecture/          # generated diagrams + their JSON source models
 - **kebab-case** names throughout. This layout matches the official Anthropic plugin
   convention (skill = dir + SKILL.md, agent = flat .md, `scripts/`/`references/` subdirs).
 
-## The two skill classes (pick the right shared rules)
+## The skill classes (pick the right shared rules)
 
 - **Review class** — *advise only, leave no files, never commit.* Reads changes, reports.
   Shared rules: `CONVENTIONS.md`.
@@ -62,6 +63,14 @@ docs/architecture/          # generated diagrams + their JSON source models
   duplicating it: `/changelog` writes the `CHANGELOG.md` file, `/release-notes` reuses
   that section to draft the GitHub **Release** object — draft only, never publishes,
   never pushes a tag.
+- **PM-authoring class** *(foundation built; skills pending — NAV-82..84)* — *writes a
+  work item into a project-management tracker (Linear/Jira/Notion/GitHub Issues), then
+  PROPOSES the create.* The artifact is a **tracker object, not a repo file**, so the
+  §A2/§A4 placement rules don't apply. Shared rules: `CONVENTIONS-pm.md` (§P1 ground,
+  §P2 neutral-model→per-tracker map, §P3 propose-the-create, §P4 tracker idempotence,
+  §P5 sequential parent-first, §P6 MCP-detect-never-require, §P7 safety). Planned
+  skills: `/pm-epic`, `/pm-story`, `/pm-task` + the `/pm-plan` orchestrator (sequential
+  Epic→Stories→Tasks). Motivated by the global "track work in a PM tool" rule.
 - **Social class** — produces paste-ready copy; never writes to the repo, never auto-posts.
   Skill: `/social-post`.
 
