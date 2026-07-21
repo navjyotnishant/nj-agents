@@ -78,6 +78,10 @@ Apply these to related work even when no skill is invoked:
 - **The human decides what gets committed.** Never `git add`, `commit`, `push`, or
   `tag` on your own initiative — write the artifact and propose the exact commands.
   An explicit "commit and push" from the user overrides this.
+- **No `Co-Authored-By` trailers.** Do not add a `Co-Authored-By:` line (or any
+  "Generated with" attribution) to commit messages you write or propose. This is the
+  default across this user's repos; a project whose own `CLAUDE.md` asks for
+  attribution overrides it.
 - **Ground everything in the actual repo.** Read README/docs/code; never invent an
   API, file path, version, or benchmark. Unverifiable claims get cut or marked.
 - **Degrade, don't fail.** External tools and MCP connectors are detected at runtime,
