@@ -45,6 +45,18 @@ Each dimension runs standalone; the umbrella runs them together. Shared behavior
 (snapshot scope, diff hygiene, findings format, CI mode, report artifact, safety
 rails) lives once in [`CONVENTIONS.md`](CONVENTIONS.md).
 
+### Repo-maintenance skills (review class)
+
+Also review-class (advise only, never modify), but **whole-repo scans** for accumulated
+maintenance debt rather than diff gates. Each detects the repo's own tooling at runtime
+with a labeled zero-dependency fallback.
+
+| Skill | What it does | Agent it uses |
+|---|---|---|
+| `/dead-code-finder` | Finds unreferenced code — unused exports, functions, orphan files, unused dependencies. Detects the repo's own tool (knip/ts-prune, vulture, `deadcode`, cargo-udeps) or falls back to a manual export-vs-import cross-reference; classifies candidates by confidence and screens out false positives (dynamic dispatch, re-exports, public API). **Never deletes.** Whole-repo or changed set. | `dead-code-finder` |
+| `/test-gap-finder` | Maps code paths to existing tests and flags gaps — uncovered functions and missing edge-case tests. Uses the repo's own coverage tool (jest/vitest, pytest-cov, `go test -cover`, tarpaulin) read-only, else a **labeled** source→test heuristic (never presented as measured coverage). **Never writes tests or config.** | `test-gap-finder` |
+| `/deps-upgrade` | Surveys the **whole current manifest** for available upgrades, risk-classifies each (semver bump + breaking-change signals), and proposes a prioritized plan (safe patches → minors → flagged majors). **Distinct from `/review-dependencies`** (which reviews diff changes). Zero-network by default; **never runs the upgrade or edits the manifest.** | `deps-upgrade` |
+
 ## Authoring suite (authoring class)
 
 Generates documentation artifacts from your project and places them in the repo, then

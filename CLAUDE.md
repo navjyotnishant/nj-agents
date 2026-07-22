@@ -9,7 +9,7 @@ agents** for software-development workflows. Install it once (symlinks into `~/.
 and invoke the skills with `/name` in **any** git repo — nothing here is specific to one
 project, stack, or language.
 
-- **20 skills · 23 agents**, in four classes + a diagram-generation subsystem.
+- **23 skills · 26 agents**, in four classes + a diagram-generation subsystem.
 - Install: `./install.sh` (global) or `./install.sh --project DIR`. The installer **globs**
   `skills/*/` and `agents/*.md`, so new files are picked up automatically. Reload Claude
   Code after installing (skills/agents load at session start).
@@ -43,6 +43,11 @@ docs/architecture/          # generated diagrams + their JSON source models
   Shared rules: `CONVENTIONS.md`.
   Skills: `/pre-push-review` (umbrella) + `/review-secrets`, `/review-correctness`,
   `/review-tests-build`, `/review-dependencies`, `/review-style`.
+  **Repo-maintenance** sub-group (review-class too — whole-repo scans, not diff gates):
+  `/dead-code-finder`, `/test-gap-finder`, `/deps-upgrade`. Same advise-only discipline
+  (never delete, never write tests, never upgrade); detect the repo's own tooling at
+  runtime with a labeled fallback. `/deps-upgrade` surveys the whole manifest for
+  *available* upgrades — distinct from `/review-dependencies`, which reviews diff changes.
 - **Authoring class** — *writes an artifact into the repo, then PROPOSES the commit.*
   **Never `git add`/`commit`/`push`/`tag` automatically.** Shared rules:
   `CONVENTIONS-authoring.md` (§A1 repo-ingest, §A2 scoped output, §A3 propose-commit,

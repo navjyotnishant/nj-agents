@@ -7,7 +7,7 @@
 -->
 
 A personal toolkit of Claude Code **skills and agents** covering the software
-development lifecycle is installed globally on this machine — **20 skills, 23
+development lifecycle is installed globally on this machine — **23 skills, 26
 agents**. It is **project-agnostic**: every skill works in any git repo, any stack,
 any language, and discovers per-repo details at runtime rather than assuming a
 stack, path, port, or tool.
@@ -38,6 +38,15 @@ repo's `CONVENTIONS.md`.
 `gitleaks`, `trufflehog`, or `detect-secrets` on PATH and **BLOCK with install
 instructions** if none is present — there is no heuristic-only fallback. On a hit the
 review **stops and shares nothing**. (`gitleaks` is installed on this machine.)
+
+**Repo-maintenance** (review-class too — advise only, never modify): whole-repo scans
+rather than diff gates, for accumulated maintenance debt.
+
+| Skill | What it does | Agent |
+|---|---|---|
+| `/dead-code-finder` | Finds unreferenced code (unused exports/functions/files/deps); detects the repo's own tool (knip/ts-prune, vulture, deadcode, cargo-udeps) or falls back to a manual cross-reference. Confidence-rated; **never deletes**. | `dead-code-finder` |
+| `/test-gap-finder` | Maps code paths to tests, flags uncovered paths + missing edge-case tests; uses the repo's own coverage tool, else a labeled heuristic. **Never writes tests.** | `test-gap-finder` |
+| `/deps-upgrade` | Surveys the **whole manifest** for available upgrades (distinct from `/review-dependencies`, which reviews diff changes); risk-classifies and proposes a plan. Zero-network by default; **never upgrades or edits the manifest**. | `deps-upgrade` |
 
 ## Authoring suite — writes one artifact, then PROPOSES the commit
 
