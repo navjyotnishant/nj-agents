@@ -90,10 +90,11 @@ in [`CONVENTIONS-pm.md`](CONVENTIONS-pm.md) (§P1–P7).
 
 | Skill | What it does | Agent it uses |
 |---|---|---|
+| `/pm-epic` | Drafts one **Epic** (goal, problem, success measure, scope / out-of-scope) plus a **suggested** decomposition into candidate stories (a list — it does not create them). On opt-in creates the epic only. To build the whole tree, use `/pm-plan`. | (no dedicated agent) |
 | `/pm-story` | Drafts one **INVEST user story** ("As a … I want … so that …") with explicit **acceptance criteria** and an estimate hint; on opt-in creates it in the connected tracker (optional parent Epic), else hands you paste-ready markdown. Grounded in your intent — no invented scope. | (no dedicated agent) |
 | `/pm-task` | Drafts one scoped, actionable **Task** (optionally under a parent Story/Epic); on opt-in creates it, else markdown. Keeps it small and single-purpose. | (no dedicated agent) |
 
-Still to come: `/pm-epic` and the `/pm-plan` orchestrator (a sequential, parent-first
+Still to come: the `/pm-plan` orchestrator (a sequential, parent-first
 Epic→Stories→Tasks pipeline).
 
 ## ⚠️ What it does with your code — read this

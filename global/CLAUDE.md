@@ -7,7 +7,7 @@
 -->
 
 A personal toolkit of Claude Code **skills and agents** covering the software
-development lifecycle is installed globally on this machine — **18 skills, 22
+development lifecycle is installed globally on this machine — **19 skills, 22
 agents**. It is **project-agnostic**: every skill works in any git repo, any stack,
 any language, and discovers per-repo details at runtime rather than assuming a
 stack, path, port, or tool.
@@ -80,11 +80,12 @@ create the tracked item.
 
 | Skill | What it does | Agent |
 |---|---|---|
+| `/pm-epic` | Drafts one **Epic** (goal, problem, success measure, scope/out-of-scope) + a **suggested** story breakdown; on opt-in creates the epic only. Use `/pm-plan` to build the whole tree. | (no dedicated agent) |
 | `/pm-story` | Drafts one **INVEST user story** ("As a … I want … so that …") + acceptance criteria; on opt-in creates it in the connected tracker, else paste-ready markdown. Optional parent Epic. | (no dedicated agent) |
 | `/pm-task` | Drafts one scoped, actionable **Task** (optionally under a Story/Epic); on opt-in creates it, else markdown. | (no dedicated agent) |
 
-Still to come (NAV-83/84): `/pm-epic` and the `/pm-plan` orchestrator (sequential
-parent-first Epic→Stories→Tasks). Don't invoke those until they land.
+Still to come (NAV-84): the `/pm-plan` orchestrator (sequential parent-first
+Epic→Stories→Tasks). Don't invoke it until it lands.
 
 ## Standing rules
 
