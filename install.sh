@@ -10,6 +10,7 @@
 #   ./install.sh --project DIR --uninstall
 #   ./install.sh --check-only    # only check global/CLAUDE.md is in sync; install nothing
 #   ./install.sh --with-hooks    # ALSO register the skill-suggestion hook in settings.json
+#   ./install.sh --git-hooks     # install this repo's own .git/hooks (per-clone, not committed)
 #
 # Idempotent: re-running relinks. It only ever touches symlinks that point back
 # into THIS repo — it never deletes a real file or a link owned by something else.
@@ -21,6 +22,7 @@ TARGET_ROOT="$HOME/.claude"
 UNINSTALL=0
 CHECK_ONLY=0
 WITH_HOOKS=0
+GIT_HOOKS=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -28,6 +30,7 @@ while [ $# -gt 0 ]; do
     --uninstall) UNINSTALL=1; shift ;;
     --check-only) CHECK_ONLY=1; shift ;;
     --with-hooks) WITH_HOOKS=1; shift ;;
+    --git-hooks) GIT_HOOKS=1; shift ;;
     -h|--help) grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "Unknown arg: $1" >&2; exit 2 ;;
   esac
@@ -90,6 +93,24 @@ register_hook() {
 
 # Validation lives in check.sh (it globs, so it covers new skills automatically).
 # --check-only stays advisory here: it reports but never fails the install.
+# .git/hooks is NOT tracked by git, so a hook cannot ship with a clone. Keep the
+# source under hooks/git/ and copy it in on request — this is the local stand-in
+# for branch protection, which needs GitHub Pro on a private repo.
+if [ "$GIT_HOOKS" = "1" ]; then
+  gitdir="$(git -C "$REPO_DIR" rev-parse --git-dir 2>/dev/null)" || {
+    echo "  ! not a git repository — nothing to install" >&2; exit 2; }
+  for h in "$REPO_DIR"/hooks/git/*; do
+    [ -f "$h" ] || continue
+    dst="$gitdir/hooks/$(basename "$h")"
+    if [ -e "$dst" ] && ! cmp -s "$h" "$dst"; then
+      echo "  ! $dst exists and differs — leaving it alone" >&2
+      continue
+    fi
+    cp "$h" "$dst" && chmod +x "$dst" && echo "  installed $dst"
+  done
+  exit 0
+fi
+
 if [ "$CHECK_ONLY" = "1" ]; then
   exec "$REPO_DIR/check.sh"
 fi

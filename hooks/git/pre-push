@@ -1,0 +1,36 @@
+#!/bin/sh
+# nj-agents pre-push gate — the local stand-in for branch protection, which needs
+# GitHub Pro on a private repo (NAV-142).
+#
+# Runs exactly what CI runs, and nothing else: check.sh --strict + tests/assert.sh.
+# Both are LLM-free and take ~1s, so this is cheap enough to fire on every push.
+#
+# It deliberately does NOT run the LLM review (bin/nj-agents-review) — that spends
+# real money per push. Run /pre-push-review by hand when you want the deep pass.
+#
+# Bypass is a conscious, visible choice: git push --no-verify
+#
+# NOT COMMITTED — .git/ is not tracked, so this is per-clone and per-machine.
+# Reinstall after a fresh clone.
+
+ROOT="$(git rev-parse --show-toplevel)"
+
+if [ -x "$ROOT/check.sh" ]; then
+  "$ROOT/check.sh" --strict || {
+    echo "" >&2
+    echo "pre-push: check.sh found problems — push stopped." >&2
+    echo "          Fix them, or override with: git push --no-verify" >&2
+    exit 1
+  }
+fi
+
+if [ -x "$ROOT/tests/assert.sh" ]; then
+  "$ROOT/tests/assert.sh" >/dev/null || {
+    echo "" >&2
+    echo "pre-push: behavioral assertions failed — push stopped." >&2
+    echo "          Run tests/assert.sh to see which, or: git push --no-verify" >&2
+    exit 1
+  }
+fi
+
+exit 0
