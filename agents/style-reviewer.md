@@ -41,6 +41,20 @@ personal preference.
   `test.only`), and — as a hard flag — committed merge-conflict markers
   (`<<<<<<<`, `>>>>>>>`).
 
+- **Missing changelog entry** — the repo has a `CHANGELOG.md`, the diff carries a
+  **user-facing** change (a `feat:`/`fix:`/breaking commit, a new skill or command, a
+  changed public interface), and `CHANGELOG.md` is untouched. Report it as a `WARNING`
+  with the fix: *"run `/changelog` to add it under `[Unreleased]`."*
+
+  **Never BLOCK on this, and never report it when:**
+  - the repo has no `CHANGELOG.md` — that is a project decision, not a diff defect;
+  - the change is a refactor, test, docs-only edit, CI config, or internal tooling —
+    those belong in git history, not a user-facing record;
+  - `CHANGELOG.md` is already in the diff.
+
+  Be conservative. A reviewer that nags about a changelog on every internal commit
+  gets ignored, and then it is useless on the one that mattered.
+
 ## Phase 3 — Confidence filter
 
 Rate each finding 0–100. **Report only findings ≥ 80.** Don't nitpick things that

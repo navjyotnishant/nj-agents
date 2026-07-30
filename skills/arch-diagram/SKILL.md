@@ -33,6 +33,11 @@ grounding/safety §A6, non-clobber §A7).
 > then read `$ROOT/CONVENTIONS-authoring.md` and `$ROOT/CONVENTIONS.md`. If a file is genuinely absent, say so and continue
 > with the procedure below rather than stopping.
 
+> **Every skill follows `CONVENTIONS-orchestration.md` §U** — ground everything in
+> the actual repo, never run git on your own initiative, no secrets in output,
+> keep `CHANGELOG.md` current when the change is user-facing, degrade rather than
+> fail, and say what you did not do.
+
 > **Spawning subagents — `CONVENTIONS-orchestration.md`.** This skill spawns agents,
 > so `§C` (cost) and `§R` (progress reporting) apply. **Cost shape:** 0–1 agent calls
 > — the diagram is normally authored inline, and `diagram-architect` is spawned only

@@ -25,6 +25,11 @@ A leaf skill of the **PM-authoring class** — follow `CONVENTIONS-pm.md` (§P1 
 > then read `$ROOT/CONVENTIONS-pm.md`. If a file is genuinely absent, say so and continue
 > with the procedure below rather than stopping.
 
+> **Every skill follows `CONVENTIONS-orchestration.md` §U** — ground everything in
+> the actual repo, never run git on your own initiative, no secrets in output,
+> keep `CHANGELOG.md` current when the change is user-facing, degrade rather than
+> fail, and say what you did not do.
+
 An Epic is a **large body of work** spanning many stories. This skill writes the epic
 and **suggests** how it breaks down — but it creates only the epic. To create the whole
 **Epic → Stories → Tasks** tree in one sequential run, use **`/pm-plan`** (which reuses

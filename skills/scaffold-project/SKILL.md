@@ -29,6 +29,11 @@ propose-commit, §A4 placement, §A5 MCP-detect-never-require, §A6 grounding,
 > then read `$ROOT/CONVENTIONS-authoring.md`. If a file is genuinely absent, say so and continue
 > with the procedure below rather than stopping.
 
+> **Every skill follows `CONVENTIONS-orchestration.md` §U** — ground everything in
+> the actual repo, never run git on your own initiative, no secrets in output,
+> keep `CHANGELOG.md` current when the change is user-facing, degrade rather than
+> fail, and say what you did not do.
+
 ---
 
 ## Grounding — where the standard comes from (READ FIRST)

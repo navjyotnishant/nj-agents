@@ -206,3 +206,13 @@ the same whatever class it belongs to — so the rules now live in
 This heading stays so existing `§8` citations resolve. Read `§C` for the rules:
 state the cost shape before spawning, scale the fleet to the work, skip what has
 nothing to do, cap fix rounds at 2, halt on any signal to stop, cheap path first.
+
+---
+
+## Also applies
+
+`CONVENTIONS-orchestration.md` **§U** binds every skill regardless of class —
+ground everything in the repo, never run git on your own initiative, no secrets in
+output, keep `CHANGELOG.md` current when the change is user-facing, degrade rather
+than fail, and say what you did not do. The rules below are what this class adds
+on top.

@@ -27,6 +27,11 @@ report §6, safety §7).
 > then read `$ROOT/CONVENTIONS.md`. If a file is genuinely absent, say so and continue
 > with the procedure below rather than stopping.
 
+> **Every skill follows `CONVENTIONS-orchestration.md` §U** — ground everything in
+> the actual repo, never run git on your own initiative, no secrets in output,
+> keep `CHANGELOG.md` current when the change is user-facing, degrade rather than
+> fail, and say what you did not do.
+
 > **Spawning subagents — `CONVENTIONS-orchestration.md`.** This skill spawns agents,
 > so `§C` (cost) and `§R` (progress reporting) apply. **Cost shape:** 1–2 agent calls.
 > State it and get a yes before the first dispatch; cap fix rounds at 2; halt on any

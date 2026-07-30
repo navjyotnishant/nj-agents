@@ -1,6 +1,7 @@
-# nj-agents — shared orchestration conventions
+# nj-agents — shared cross-class conventions
 
-Rules for **any skill that spawns subagents**, in any class. Where the per-class
+Rules that hold across every class. **§U** binds *every* skill in the toolkit; **§C**
+and **§R** bind any skill that spawns subagents. Where the per-class
 conventions docs (`CONVENTIONS.md`, `CONVENTIONS-authoring.md`, `CONVENTIONS-pm.md`)
 say *what* a class produces, this one says how a skill behaves while producing it:
 what it costs (`§C`) and what the developer sees while it runs (`§R`).
@@ -13,6 +14,44 @@ skill spawning six agents costs the same whatever class it belongs to.
 **Who this binds:** every skill whose procedure spawns an agent. `check.sh` detects
 that from the skill's own text rather than a list of names, so a skill added
 tomorrow is covered the moment it says "spawn".
+
+---
+
+## §U — Universal (every skill, every class)
+
+These hold regardless of what a skill produces. They were previously restated in each
+class doc, which meant they drifted — "no secrets" appeared in two, "ground
+everything" in one, so a PM skill was never formally bound by the grounding rule at
+all despite it obviously applying.
+
+**Ground everything in the actual repo.** Read the README, the docs, the code. Never
+invent an API, a file path, a version, a benchmark, or a component. A claim you cannot
+verify gets cut or explicitly marked — never smoothed over. This is `§A6` for
+authoring, `§P1` for PM, and it applies to the rest too.
+
+**The human decides what gets committed.** No skill runs `git add`, `commit`, `push`,
+or `tag` on its own initiative — it writes the artifact and prints the exact commands.
+An explicit "commit and push" from the user overrides this, nothing else does. Never
+`--no-verify`.
+
+**No secrets in output.** Never put a credential, token, internal hostname, or private
+URL into a file, a tracker item, a commit message, or a report. On a suspected secret,
+stop and say so rather than including it redacted-but-present.
+
+**Keep `CHANGELOG.md` current when the change is user-facing.** A feature, a fix, a
+breaking change or a deprecation goes under `[Unreleased]` **as it lands** — not
+reconstructed at release time, when the reasons are gone. Use `/changelog`. Refactors,
+tests, docs-only edits and internal tooling do **not** belong there: a changelog that
+records everything records nothing. If the repo has no `CHANGELOG.md`, offer to start
+one rather than letting the gap grow — but never hard-block a throwaway repo over it.
+
+**Degrade, don't fail.** External tools and MCP connectors are detected at runtime,
+never required; every path has a zero-dependency fallback. The one exception is secret
+scanning, which genuinely blocks without a scanner.
+
+**Say what you did not do.** A skipped step, a partial scope, an unavailable tool —
+state it plainly. An artifact that implies more coverage than it has is worse than one
+that admits the gap.
 
 ---
 

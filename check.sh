@@ -372,6 +372,24 @@ check_class_contract() {
 # validator exists to catch.
 spawns_agents() { body "$1" | grep -qi 'spawn'; }
 
+# §U binds every skill regardless of class. Restating universal rules per class is
+# what let them drift — "no secrets" landed in two conventions docs and "ground
+# everything" in one, so a PM skill was never formally bound by grounding at all.
+check_universal_rules() {
+  local d name bad=0
+  for d in "$SKILLS_SRC"/*/; do
+    name="$(basename "${d%/}")"
+    [ -f "${d%/}/SKILL.md" ] || continue
+    has "${d%/}/SKILL.md" '§U' || {
+      finding check_universal_rules referential \
+        "skills/$name never cites §U — the rules that bind every skill (grounding, no secrets, human commits, changelog)"
+      bad=1
+    }
+  done
+  [ "$bad" = "0" ] && ok "universal rules cited"
+  return 0
+}
+
 # §C — the user should never discover the cost mid-run.
 check_cost_control() {
   local f name bad=0
@@ -530,6 +548,7 @@ check_agent_references
 check_class_conventions
 check_conventions_reachable
 check_class_contract
+check_universal_rules
 check_cost_control
 check_progress_reporting
 check_conventions_sections

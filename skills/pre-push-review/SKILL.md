@@ -38,6 +38,11 @@ is defined once in **`CONVENTIONS.md`** — read it; the steps below reference i
 > than stopping — the steps here are self-contained enough to run without it, but
 > the shared findings format and report layout will be approximated.
 
+> **Every skill follows `CONVENTIONS-orchestration.md` §U** — ground everything in
+> the actual repo, never run git on your own initiative, no secrets in output,
+> keep `CHANGELOG.md` current when the change is user-facing, degrade rather than
+> fail, and say what you did not do.
+
 > **Spawning subagents — `CONVENTIONS-orchestration.md`.** This skill spawns agents,
 > so `§C` (cost) and `§R` (progress reporting) apply. **Cost shape:** up to 5 dimension
 > agents in parallel, after the secret-scan gate. State it and get a yes before the

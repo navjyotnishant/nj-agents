@@ -23,7 +23,7 @@ agents/<name>.md            # an agent is a FLAT .md file
 CONVENTIONS.md              # review-class shared rules
 CONVENTIONS-authoring.md    # authoring-class shared rules (§A1–A8)
 CONVENTIONS-pm.md           # PM-authoring-class shared rules (§P1–P8); skills in NAV-82..84
-CONVENTIONS-orchestration.md # ANY spawning skill: §C cost, §R progress reporting
+CONVENTIONS-orchestration.md # §U binds EVERY skill; §C cost + §R progress for spawning ones
 global/CLAUDE.md            # advisory guidance → symlinked to ~/.claude/CLAUDE.md
 install.sh                  # symlink installer (idempotent; safe uninstall; never clobbers)
 check.sh                    # validator — frontmatter, refs, class contracts, cost/progress

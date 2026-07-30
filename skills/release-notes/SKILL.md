@@ -35,6 +35,11 @@ release only; it never publishes a release and never pushes a tag on its own
 > then read `$ROOT/CONVENTIONS-authoring.md`. If a file is genuinely absent, say so and continue
 > with the procedure below rather than stopping.
 
+> **Every skill follows `CONVENTIONS-orchestration.md` §U** — ground everything in
+> the actual repo, never run git on your own initiative, no secrets in output,
+> keep `CHANGELOG.md` current when the change is user-facing, degrade rather than
+> fail, and say what you did not do.
+
 ## Step 0 — Print the banner FIRST
 
 ```
