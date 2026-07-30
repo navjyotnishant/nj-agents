@@ -190,6 +190,9 @@ def returns_block(body: str) -> list[str]:
 # the agents that take part, so an agent shows where it sits in the whole run.
 PIPELINE_DIAGRAMS = {"tech-blog": "pipeline-tech-blog.svg"}
 
+# Shown once on the index: how skills and agents relate at all.
+OVERVIEW_DIAGRAM = "agents-overview.svg"
+
 
 def summary(meta: dict) -> str:
     """The frontmatter description opens with trigger phrases aimed at the model
@@ -465,6 +468,10 @@ write("index.md", [
     f"{CLASSES[c][1].replace(chr(123)+'REPO_URL'+chr(125), REPO_URL).split('. ')[0]}. |"
     for c in CLASSES if counts[c]
 ] + [
+    "",
+    "## How it fits together",
+    "",
+    f"![How skills and agents relate](assets/{OVERVIEW_DIAGRAM})",
     "",
     "## Every page here is generated",
     "",

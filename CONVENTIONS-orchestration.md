@@ -59,9 +59,11 @@ Add --all to re-review everything.
 ```
 
 **Hard stops.**
-- **Cap fix rounds at 2.** After two failed QA/verify cycles on the same artifact,
-  stop and report: what's fixed, what still fails, the options. Do not start a third
-  round without being asked.
+- **Cap fix rounds at 2, then ASK.** After two cycles on the same artifact, stop and
+  report what's fixed and what still fails — then offer the choice explicitly:
+  *"Ship as-is, or run 2 more rounds?"* Never start a third round unprompted, and
+  never quietly abandon the work either. The cap makes spend a decision rather than a
+  side-effect; the question is what keeps it from becoming a dead end.
 - **A blocking verdict is a checkpoint, not a to-do.** When a QA/review agent returns
   BLOCK, surface it — do not silently fix and re-run. Say what it found and what
   fixing it would cost.

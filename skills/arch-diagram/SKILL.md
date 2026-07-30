@@ -118,6 +118,22 @@ Do not start emitting shapes. Decide, in order:
 6. **A legend**, whenever more than one shape or line style carries meaning.
 7. **A takeaway row** — two or three numbers that survive after the picture fades.
 
+**Then, before drawing a single shape, resolve these — they are the failures the
+render pass keeps catching, and every one is avoidable up front:**
+
+- **Count first, draw second.** Get every number from the repo *before* laying out.
+  If a band says 15, draw 15 shapes. A count that disagrees with the shapes beside it
+  is the most visible error a diagram can carry, and it is pure carelessness.
+- **Reserve the space each element needs.** A card's tallest text decides its height;
+  a label's length decides its width. Deciding this after placement is what produces
+  clipped text and labels sitting on frame strokes.
+- **Route the connectors before placing the boxes.** If an arrow would cross another
+  or pass through a label's space, move the box now — rerouting later never works.
+- **Fill the canvas or shrink it.** Large empty regions are not whitespace, they are
+  an unfinished layout. Size the viewBox to the content.
+- **Decide what earns emphasis.** Exactly one element should be the most prominent.
+  If everything is emphasised, nothing is.
+
 ### Visual language
 
 | | |
@@ -178,9 +194,26 @@ Then **view the PNG** and critique it as a UX designer would:
 > - Do any arrows cross? Any text clipped, overlapping, or truncated mid-word?
 > - Is every number in it actually correct?
 
+**A finding here that Step 3 should have prevented — a wrong count, a clipped
+label, dead space — is a process failure, not a QA success.** Fix it, and fix the
+habit: those belong in the design pass. What this step legitimately catches is what
+source review cannot see: text rendered behind a stroke, arrowheads suppressed by a
+filter, glyphs that fall back to tofu.
+
 If the answer is no, **redesign** — don't tweak. Rearrange the layout, re-group, cut
-nodes. Repeat until it passes, **capped at 2 fix rounds**. After two, stop and report
-what's fixed, what still fails, and the options.
+nodes. Repeat until it passes, **capped at 2 fix rounds**.
+
+**At the cap, stop and ask — don't decide alone.** Report what's fixed, what still
+fails, and whether the remainder is cosmetic or misleading. Then offer the choice:
+
+```
+Round 2/2 done. Fixed: <…>. Still open: <…>.
+Ship as-is, or run 2 more rounds?
+```
+
+Two more rounds only on a yes. The cap exists so spend is a decision, not a
+side-effect — and the answer is often "ship it", because a diagram that reads
+correctly with a cosmetic flaw beats one polished at ten times the cost.
 
 Real failures caught this way that no geometry check would have found: a group label
 rendered *behind* its own frame stroke; an agent count that said 7 when it was 9;
