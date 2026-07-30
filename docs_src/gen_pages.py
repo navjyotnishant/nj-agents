@@ -211,12 +211,21 @@ def card(name, s, cls, spawns_list, agents):
 </div>'''
 
 
-def agent_classes(name, skills_map):
-    """An agent has no class: of its own — it inherits from the skills that spawn
-    it. Derived like the wiring, so it cannot drift. A few agents span two classes
-    (social-post is spawned by /social-post AND /tech-blog); they appear under each.
+def pipeline_order(skill_name, agent_list, skills_map):
+    """Agents in the order the skill actually dispatches them, not alphabetically.
+
+    A pipeline is a sequence — writer then fact-checker then reviewer — and listing
+    it A-Z destroys the one piece of information that matters. Order is recovered
+    from first mention in the skill body, which is where the steps are written.
     """
-    return sorted({skills_map[s]["meta"].get("class", "") for s in spawned_by[name]} - {""})
+    body = strip_comments(skills_map[skill_name]["body"])
+    return sorted(agent_list, key=lambda a: body.find(f"`{a}`"))
+
+
+# Deliberately NOT guessing parallel-vs-sequential from the prose. A keyword scan
+# said /tech-blog was "9 in parallel" because it mentions running two sub-steps
+# concurrently — it is actually a 7-stage pipeline. A confidently wrong label is
+# worse than none, and the skill's own page states the shape correctly.
 
 
 nav_skills, nav_agents = [], []
@@ -287,20 +296,6 @@ for cls, (title, blurb) in CLASSES.items():
         write(page, out, s["path"])
         nav_skills.append(f"        * [/{name}]({page})")
 
-# ---- agents, grouped by the class they serve
-agents_by_class = defaultdict(list)
-for name in agents:
-    for c in agent_classes(name, skills):
-        agents_by_class[c].append(name)
-
-for cls, (title, _) in CLASSES.items():
-    members = sorted(agents_by_class.get(cls, []))
-    if not members:
-        continue
-    nav_agents.append(f"    * {title}")
-    for name in members:
-        nav_agents.append(f"        * [{name}](agents/{name}.md)")
-
 for name in sorted(agents):
     a = agents[name]
     m = a["meta"]
@@ -337,6 +332,28 @@ for svg in sorted((ROOT / "docs" / "architecture").glob("*.svg")):
         f.write(svg.read_bytes())
 
 # ---- assemble the nav: agents first, then skills
+# ---- agents, grouped by the WORKFLOW that orchestrates them
+#
+# Class was the wrong axis: it says what an agent IS, not what runs together. What a
+# reader needs is the workflow — /tech-blog's 9-agent pipeline is one thing, and
+# seeing its members in dispatch order is the whole point.
+#
+# Agents never spawn agents in this repo (verified: the only agent-to-agent mentions
+# are prose cross-references like "that's `dependency-reviewer`'s job"). The skill is
+# always the orchestrator, so the hierarchy is exactly one level deep.
+orchestrators = sorted(
+    ((n, spawns[n]) for n in skills if spawns[n]),
+    key=lambda kv: (-len(kv[1]), kv[0]),
+)
+
+for skill_name, members in orchestrators:
+    ordered = pipeline_order(skill_name, members, skills)
+    label = f"/{skill_name}" + (f" ({len(ordered)})" if len(ordered) > 1 else "")
+    nav_agents.append(f"    * {label}")
+    nav_agents.append(f"        * [Workflow](skills/{skill_name}.md)")
+    for name in ordered:
+        nav_agents.append(f"        * [{name}](agents/{name}.md)")
+
 nav = ["* [Home](index.md)", "* Agents"] + nav_agents + ["* Skills"] + nav_skills
 
 # ---- harness section
