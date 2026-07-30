@@ -9,6 +9,10 @@
 #   ./check.sh --strict          # same, but exit 1 if anything was found (CI)
 #   ./check.sh --json            # machine-readable findings on stdout
 #
+#   ./check.sh --new-skill NAME --class review|authoring|workflow|pm|social
+#   ./check.sh --new-agent NAME
+#                                # scaffold from templates/, then validate it
+#
 # It GLOBS skills/*/ and agents/*.md rather than reading a list, so a skill added
 # tomorrow is covered the moment its directory exists — there is no registration
 # step to forget. Advisory by default so it can never break an install; --strict
@@ -26,14 +30,59 @@ JSON=0
 FINDINGS=0
 JSON_ROWS=""
 
+NEW_SKILL=""
+NEW_AGENT=""
+NEW_CLASS=""
+
 while [ $# -gt 0 ]; do
   case "$1" in
     --strict) STRICT=1; shift ;;
     --json) JSON=1; shift ;;
+    --new-skill) NEW_SKILL="$2"; shift 2 ;;
+    --new-agent) NEW_AGENT="$2"; shift 2 ;;
+    --class) NEW_CLASS="$2"; shift 2 ;;
     -h|--help) grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "Unknown arg: $1" >&2; exit 2 ;;
   esac
 done
+
+# Scaffolding, so the compliant path is also the easiest one. A validator alone is a
+# wall; this is the door. The new file is deliberately NOT complete — it is a correct
+# skeleton with the required sections marked, and the validator runs immediately
+# afterwards so the author sees what is still missing now rather than at review time.
+scaffold() {
+  local kind="$1" name="$2" class="${3:-}" tmpl dst
+  case "$name" in
+    ''|*[!a-z0-9-]*) echo "  ! '$name' must be kebab-case (a-z, 0-9, -)" >&2; exit 2 ;;
+  esac
+  if [ "$kind" = "skill" ]; then
+    case "$class" in
+      review|authoring|workflow|pm|social) ;;
+      *) echo "  ! --class must be one of: review authoring workflow pm social" >&2; exit 2 ;;
+    esac
+    tmpl="$REPO_DIR/templates/SKILL.md"; dst="$SKILLS_SRC/$name/SKILL.md"
+  else
+    tmpl="$REPO_DIR/templates/agent.md"; dst="$AGENTS_SRC/$name.md"
+  fi
+  [ -f "$tmpl" ] || { echo "  ! missing template: ${tmpl#$REPO_DIR/}" >&2; exit 2; }
+  [ -e "$dst" ] && { echo "  ! ${dst#$REPO_DIR/} already exists — refusing to overwrite" >&2; exit 2; }
+
+  mkdir -p "$(dirname "$dst")"
+  sed -e "s/SKILL_NAME/$name/g" -e "s/AGENT_NAME/$name/g" -e "s/SKILL_CLASS/$class/g" "$tmpl" > "$dst"
+  # A review skill must pick gate or scan; seed the key so the author sees the choice.
+  [ "$class" = "review" ] && sed -i.bak '/^class: review$/a\
+subclass: gate
+' "$dst" && rm -f "$dst.bak"
+  echo "  created ${dst#$REPO_DIR/}"
+  echo "  fill the ALL-CAPS placeholders and the sections marked REQUIRED, then re-run ./check.sh"
+  echo ""
+}
+
+if [ -n "$NEW_SKILL" ] || [ -n "$NEW_AGENT" ]; then
+  [ -n "$NEW_SKILL" ] && scaffold skill "$NEW_SKILL" "$NEW_CLASS"
+  [ -n "$NEW_AGENT" ] && scaffold agent "$NEW_AGENT"
+  echo "Validating ..."
+fi
 
 # Every finding funnels through here: counts it, and either prints it or stashes
 # it for the --json report. `kind` is structural | referential | doc-sync, the
@@ -51,6 +100,26 @@ finding() {
 
 ok() { [ "$JSON" = "1" ] || echo "  $1"; }
 
+# Content checks must read what the skill SAYS, not the scaffolding that tells an
+# author what to write. A template's guidance comments legitimately name the very
+# tokens the checks look for ("a gate must define its BLOCK verdict"), so matching
+# raw text would let a freshly-scaffolded skill pass on boilerplate alone — a false
+# negative in exactly the checks that matter most. Strip HTML comments first.
+# awk, not `perl -0pe`: spawning a slurp-mode perl per file inside a pipeline under
+# `set -euo pipefail` proved flaky — findings varied run to run. awk is line-oriented
+# and deterministic, and comment markers here always sit on their own lines.
+body() {
+  awk '/<!--/{skip=1} !skip{print} /-->/{skip=0}' "$1"
+}
+
+# `body "$f" | grep -q X` is a trap: grep -q exits at the first match and closes the
+# pipe, body dies of SIGPIPE, and under `set -euo pipefail` that intermittently takes
+# the whole check with it — findings varied run to run. Capture first, then match.
+has() {
+  local txt; txt="$(body "$1")"
+  printf '%s' "$txt" | grep -q${3:-} -- "$2"
+}
+
 # Frontmatter is the one thing every skill must get right — it is what makes the
 # skill loadable at all. name must equal the directory so a rename can't leave a
 # skill answering to a stale name; class is what every class-conditional check
@@ -59,27 +128,27 @@ check_skill_frontmatter() {
   local d name key val bad=0
   for d in "$SKILLS_SRC"/*/; do
     name="$(basename "${d%/}")"
-    if [ ! -f "$d/SKILL.md" ]; then
+    if [ ! -f "${d%/}/SKILL.md" ]; then
       finding check_skill_frontmatter structural "skills/$name/ has no SKILL.md"
       bad=1; continue
     fi
     for key in name description version class; do
-      grep -q "^$key:" "$d/SKILL.md" || {
+      grep -q "^$key:" "${d%/}/SKILL.md" || {
         finding check_skill_frontmatter structural "skills/$name: frontmatter missing '$key:'"
         bad=1
       }
     done
-    val="$(grep -m1 '^name:' "$d/SKILL.md" | sed 's/^name: *//' || true)"
+    val="$(grep -m1 '^name:' "${d%/}/SKILL.md" | sed 's/^name: *//' || true)"
     [ "$val" = "$name" ] || {
       finding check_skill_frontmatter structural "skills/$name: name: is '$val', must match the directory"
       bad=1
     }
-    val="$(grep -m1 '^version:' "$d/SKILL.md" | sed 's/^version: *//' || true)"
+    val="$(grep -m1 '^version:' "${d%/}/SKILL.md" | sed 's/^version: *//' || true)"
     case "$val" in
       [0-9]*.[0-9]*.[0-9]*) ;;
       *) finding check_skill_frontmatter structural "skills/$name: version '$val' is not semver"; bad=1 ;;
     esac
-    val="$(grep -m1 '^class:' "$d/SKILL.md" | sed 's/^class: *//' || true)"
+    val="$(grep -m1 '^class:' "${d%/}/SKILL.md" | sed 's/^class: *//' || true)"
     case "$val" in
       review|authoring|workflow|pm|social|"") ;;
       *) finding check_skill_frontmatter structural "skills/$name: unknown class '$val'"; bad=1 ;;
@@ -150,8 +219,8 @@ check_class_conventions() {
   local d name class want bad=0
   for d in "$SKILLS_SRC"/*/; do
     name="$(basename "${d%/}")"
-    [ -f "$d/SKILL.md" ] || continue
-    class="$(grep -m1 '^class:' "$d/SKILL.md" | sed 's/^class: *//' || true)"
+    [ -f "${d%/}/SKILL.md" ] || continue
+    class="$(grep -m1 '^class:' "${d%/}/SKILL.md" | sed 's/^class: *//' || true)"
     [ -n "$class" ] || continue
     # Workflow class "sits between review and authoring" (CLAUDE.md): it borrows
     # §A3/§A5 from authoring and diff-reading from review, so either file is a
@@ -163,12 +232,12 @@ check_class_conventions() {
       workflow)         want="" ;;
       *) continue ;;
     esac
-    grep -q 'CONVENTIONS[a-z-]*\.md' "$d/SKILL.md" || {
+    grep -q 'CONVENTIONS[a-z-]*\.md' "${d%/}/SKILL.md" || {
       finding check_class_conventions referential "skills/$name (class: $class) cites no conventions file at all"
       bad=1; continue
     }
     [ -z "$want" ] && continue
-    grep -q "$want" "$d/SKILL.md" || {
+    grep -q "$want" "${d%/}/SKILL.md" || {
       finding check_class_conventions referential "skills/$name declares class: $class but never cites $want"
       bad=1
     }
@@ -214,12 +283,12 @@ check_conventions_reachable() {
 check_class_contract() {
   local d name class f sub bad=0
   for d in "$SKILLS_SRC"/*/; do
-    name="$(basename "${d%/}")"; f="$d/SKILL.md"
+    name="$(basename "${d%/}")"; f="${d%/}/SKILL.md"
     [ -f "$f" ] || continue
     class="$(grep -m1 '^class:' "$f" | sed 's/^class: *//' || true)"
     case "$class" in
       review)
-        grep -q 'NJ_AGENTS_CI\|CONVENTIONS\.md §5\|§5' "$f" || {
+        has "$f" 'NJ_AGENTS_CI\|CONVENTIONS\.md §5\|§5' || {
           finding check_class_contract referential \
             "skills/$name (review) defines no CI mode — needs NJ_AGENTS_CI or a CONVENTIONS.md §5 reference"
           bad=1
@@ -227,7 +296,7 @@ check_class_contract() {
         sub="$(grep -m1 '^subclass:' "$f" | sed 's/^subclass: *//' || true)"
         case "$sub" in
           gate)
-            grep -q 'BLOCK' "$f" || {
+            has "$f" 'BLOCK' || {
               finding check_class_contract referential \
                 "skills/$name (review/gate) never mentions a BLOCK verdict"
               bad=1
@@ -243,29 +312,29 @@ check_class_contract() {
             bad=1 ;;
         esac ;;
       authoring)
-        grep -q '§A3' "$f" || {
+        has "$f" '§A3' || {
           finding check_class_contract referential \
             "skills/$name (authoring) never cites §A3 — must propose the commit, never run git"
           bad=1
         }
-        grep -q '§A4' "$f" || {
+        has "$f" '§A4' || {
           finding check_class_contract referential \
             "skills/$name (authoring) never cites §A4 — must name where its artifact lands"
           bad=1
         } ;;
       pm)
-        grep -q '§P2' "$f" || {
+        has "$f" '§P2' || {
           finding check_class_contract referential \
             "skills/$name (pm) never cites §P2 — must use the neutral issue model"
           bad=1
         }
-        grep -qi 'paste-ready\|markdown fallback' "$f" || {
+        has "$f" 'paste-ready\|markdown fallback' i || {
           finding check_class_contract referential \
             "skills/$name (pm) has no paste-ready-markdown fallback (§P3/§P6)"
           bad=1
         } ;;
       workflow)
-        grep -qi 'never .*git\|never push\|never runs git' "$f" || {
+        has "$f" 'never .*git\|never push\|never runs git' i || {
           finding check_class_contract referential \
             "skills/$name (workflow) never states that it does not run git"
           bad=1
@@ -280,7 +349,7 @@ check_class_contract() {
 # box. Both checks below key off SPAWN DETECTION rather than a list of skill names:
 # a hardcoded list would silently exempt skill #24, which is the same failure this
 # validator exists to catch.
-spawns_agents() { grep -qi 'spawn' "$1"; }
+spawns_agents() { body "$1" | grep -qi 'spawn'; }
 
 # §C — the user should never discover the cost mid-run.
 check_cost_control() {
@@ -288,12 +357,12 @@ check_cost_control() {
   for f in "$SKILLS_SRC"/*/SKILL.md; do
     name="$(basename "$(dirname "$f")")"
     spawns_agents "$f" || continue
-    grep -q 'CONVENTIONS-orchestration\.md\|§C' "$f" || {
+    has "$f" 'CONVENTIONS-orchestration\.md\|§C' || {
       finding check_cost_control referential \
         "skills/$name spawns agents but never cites the cost rules (CONVENTIONS-orchestration.md §C)"
       bad=1
     }
-    grep -qi 'cost shape' "$f" || {
+    has "$f" 'cost shape' i || {
       finding check_cost_control referential \
         "skills/$name spawns agents but states no cost shape (how many agents / what loop)"
       bad=1
@@ -309,12 +378,12 @@ check_progress_reporting() {
   for f in "$SKILLS_SRC"/*/SKILL.md; do
     name="$(basename "$(dirname "$f")")"
     spawns_agents "$f" || continue
-    grep -q '§R' "$f" || {
+    has "$f" '§R' || {
       finding check_progress_reporting referential \
         "skills/$name spawns agents but never cites the progress-reporting rules (§R)"
       bad=1
     }
-    grep -qi 'roster\|announce' "$f" || {
+    has "$f" 'roster\|announce' i || {
       finding check_progress_reporting referential \
         "skills/$name spawns agents but never announces what it dispatched"
       bad=1

@@ -30,7 +30,7 @@ manifest or lockfile.** A repo-maintenance skill of the **review class** — fol
 > so `§C` (cost) and `§R` (progress reporting) apply. **Cost shape:** 1–2 agent calls.
 > State it and get a yes before the first dispatch; cap fix rounds at 2; halt on any
 > signal to stop. Announce the **pipeline** up front and each stage as it starts, so a stall is
-attributable to a named stage (`§R`).
+> attributable to a named stage (`§R`).
 
 > **How this differs from `/review-dependencies`.** `/review-dependencies` reviews the
 > dependency **changes in a diff** (a governance gate on what you just added/upgraded).

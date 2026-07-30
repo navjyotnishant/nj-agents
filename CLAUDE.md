@@ -150,11 +150,24 @@ generated from a small JSON model, not hand-placed.
 
 ## Adding a new skill/agent
 
-1. Skill → `skills/<name>/SKILL.md` (+ `scripts/` if needed); agent → `agents/<name>.md`.
-2. Use the frontmatter format above; reference the right conventions doc by class.
-3. `./install.sh` (globs automatically) → reload Claude Code.
-4. Update `README.md`'s tables and, if it's user-facing, `docs.html`.
-5. Add it to the right table in **`global/CLAUDE.md`** — that file is what makes the
-   skill discoverable in *other* repos, and it lists skills explicitly (no glob).
-   `./install.sh` (or `--check-only`) warns if you forget; the warning is advisory
-   and never fails the install.
+**Scaffold it — don't hand-write the frontmatter.** The template is correct by
+construction and the validator tells you what is still missing:
+
+```bash
+./check.sh --new-skill <name> --class review|authoring|workflow|pm|social
+./check.sh --new-agent <name>
+```
+
+1. Fill the ALL-CAPS placeholders and every section marked REQUIRED for the class.
+   A review skill must also pick `subclass: gate` (reviews a diff, returns
+   PASS/WARN/BLOCK) or `subclass: scan` (sweeps the repo, returns candidates).
+2. If it spawns agents, uncomment the `CONVENTIONS-orchestration.md` block and
+   replace `COST_SHAPE` with the real fleet. Leaving it commented is deliberate —
+   `check.sh` reports the gap rather than passing on placeholder text.
+3. `./install.sh` → reload Claude Code.
+4. **`./check.sh` must be clean.** It globs, so the new file is covered immediately.
+5. Update `README.md`, `docs.html`, and the right table in **`global/CLAUDE.md`** —
+   that file is hand-maintained and is what makes the skill discoverable in *other*
+   repos. `check.sh` flags it if you forget.
+
+`templates/` holds the sources; they are not skills themselves and are not globbed.

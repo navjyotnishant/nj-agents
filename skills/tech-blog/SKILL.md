@@ -41,7 +41,7 @@ grounding/safety §A6, non-clobber §A7).
 > so `§C` (cost) and `§R` (progress reporting) apply. **Cost shape:** a 6-agent pipeline (writer → fact-checker → reviewer → editor → final-polish → platform-lint).
 > State it and get a yes before the first dispatch; cap fix rounds at 2; halt on any
 > signal to stop. Announce the **pipeline** up front and each stage as it starts, so a stall is
-attributable to a named stage (`§R`).
+> attributable to a named stage (`§R`).
 
 ## Step 0 — Print the banner FIRST
 

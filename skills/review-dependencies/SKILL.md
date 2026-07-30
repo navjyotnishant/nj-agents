@@ -32,7 +32,7 @@ CI mode §5, report §6, safety §7).
 > so `§C` (cost) and `§R` (progress reporting) apply. **Cost shape:** 1–2 agent calls.
 > State it and get a yes before the first dispatch; cap fix rounds at 2; halt on any
 > signal to stop. Announce the **pipeline** up front and each stage as it starts, so a stall is
-attributable to a named stage (`§R`).
+> attributable to a named stage (`§R`).
 
 ## Step 0 — Print the warning banner FIRST
 
