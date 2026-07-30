@@ -3,6 +3,7 @@ name: pm-epic
 description: Use this skill when the user asks to "create an epic", "draft an epic in Linear/Jira", "write an epic for this initiative", or wants a well-formed Epic issue. Drafts one Epic — goal, problem, success measure, scope/out-of-scope — plus a SUGGESTED decomposition into candidate stories (as a list; it does not create them). On opt-in it creates the epic in whatever PM tracker is connected via MCP (Linear/Jira/Notion/GitHub Issues), else hands you paste-ready markdown. Never bulk-creates. To actually build the Epic→Stories→Tasks tree, use /pm-plan. Works with any connected tracker; nothing here is project-specific.
 version: 0.1.0
 class: pm
+author: Navjyot Nishant
 ---
 
 # PM Epic (PM-authoring)

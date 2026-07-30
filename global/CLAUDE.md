@@ -180,7 +180,10 @@ Apply these to related work even when no skill is invoked:
   the rule. If `git config user.name` is unset, ask rather than guessing. **Skip trivial
   files** (tiny components, generated files, one-off throwaways). A project whose own
   `CLAUDE.md` defines a different header format or authorship policy (e.g. EngageHub's
-  "actual owner — do not derive from git config") overrides this.
+  "actual owner — do not derive from git config") overrides this. **Skills and agents
+  carry the same stamp** as an `author:` frontmatter key rather than a comment header
+  — they install as symlinks and run from any repo, so at the point of use the file
+  is the only record of where it came from.
 - **Ground everything in the actual repo.** Read README/docs/code; never invent an
   API, file path, version, or benchmark. Unverifiable claims get cut or marked.
 - **Degrade, don't fail.** External tools and MCP connectors are detected at runtime,

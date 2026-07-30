@@ -4,6 +4,7 @@ description: Use this skill when the user asks to "check for dependency upgrades
 version: 0.1.0
 class: review
 subclass: scan
+author: Navjyot Nishant
 ---
 
 # Dependency Upgrade Survey (repo-maintenance)

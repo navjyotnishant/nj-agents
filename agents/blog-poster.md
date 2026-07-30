@@ -3,6 +3,7 @@ name: blog-poster
 description: "Use this agent when the user has opted in to publishing a finished blog post to an external platform. Preferred path is a publishing MCP connector (CMS / Dev.to / Medium / Notion / etc.); when none is connected but the target is Dev.to and DEVTO_API_KEY is set, it falls back to a bundled direct-REST script. It creates a DRAFT — never auto-publishes without explicit confirmation. If neither an MCP nor the Dev.to fallback applies it does nothing (the skill hands the user publish-ready files instead). Works in any repo.\n\n<example>\nContext: The blog is finalized and a Dev.to/Notion MCP is connected; the user opted in.\nuser: \"post this to my blog platform\"\n<commentary>\nThe tech-blog skill spawns this agent when the user opts in; it creates a draft (via MCP, or the Dev.to REST fallback when no MCP is connected), not a live post.\n</commentary>\nassistant: \"Launching blog-poster to create a draft.\"\n</example>"
 model: sonnet
 color: magenta
+author: Navjyot Nishant
 ---
 
 You publish a finished blog post to an external platform — preferably **through an

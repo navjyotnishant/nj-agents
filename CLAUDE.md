@@ -36,13 +36,15 @@ docs/architecture/          # generated diagrams + their JSON source models
 - **Skill frontmatter:** `name`, `description` (trigger-phrase style, "Use this skill
   when the user asks to…", states it works in any repo), `version`, `class`
   (`review|authoring|workflow|pm|social` — what `check.sh` keys its class-conditional
-  rules off; the prose class marker in the intro stays, for humans).
+  rules off; the prose class marker in the intro stays, for humans), `author`
+  (from `git config user.name` at creation — never hardcoded; skills install as
+  symlinks, so at the point of use the file is the only record of provenance).
   Review-class skills additionally declare `subclass`: **`gate`** reviews a *diff*
   and returns PASS/WARN/BLOCK (a hook can act on it), **`scan`** sweeps the *whole
   repo* for accumulated debt and returns candidates — there is no sensible BLOCK for
   "you have 12 unused exports". `check.sh` holds only gates to the verdict tokens.
 - **Agent frontmatter:** `name`, `description` (may embed `<example>`/`<commentary>`),
-  `model`, `color`; optional `memory: project`. Omitting `tools:` inherits all tools.
+  `model`, `color`, `author`; optional `memory: project`. Omitting `tools:` inherits all tools.
 - **kebab-case** names throughout. This layout matches the official Anthropic plugin
   convention (skill = dir + SKILL.md, agent = flat .md, `scripts/`/`references/` subdirs).
 

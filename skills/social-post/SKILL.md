@@ -3,6 +3,7 @@ name: social-post
 description: Use this skill when the user asks to "write a LinkedIn post", "draft a launch post", "promote this blog on X/Twitter", "share this on social", or wants promotional copy for a published article, project, or release. Given a published URL (blog, repo, demo) it drafts ready-to-paste social copy in short / medium / builder-story variants, gets the hook and links right for the platform's feed algorithm, and keeps hashtags clean. Grounds the copy in the actual linked content — never invents claims. Produces copy for the user to post; it does not auto-post.
 version: 0.1.0
 class: social
+author: Navjyot Nishant
 ---
 
 # Social post (LinkedIn / X promo)

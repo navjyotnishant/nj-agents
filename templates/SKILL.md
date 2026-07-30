@@ -3,6 +3,7 @@ name: SKILL_NAME
 description: Use this skill when the user asks to "…", "…", or wants …. <One or two sentences on what it actually does.> Works in any git repo; nothing here is project-specific.
 version: 0.1.0
 class: SKILL_CLASS
+author: AUTHOR_NAME
 ---
 
 <!--

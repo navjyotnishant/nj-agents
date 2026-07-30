@@ -3,6 +3,7 @@ name: AGENT_NAME
 description: "Use this agent to <what it does, in one sentence — the trigger>. It <how it works: what it reads, what it returns, what it refuses to do>. Works in any repo.\n\n<example>\nContext: <the situation where a skill would spawn this>.\nuser: \"<what the user said>\"\n<commentary>\n<which skill spawns this agent, at which step, and what happens with its output>\n</commentary>\nassistant: \"<the one line announcing the spawn>\"\n</example>"
 model: sonnet
 color: blue
+author: AUTHOR_NAME
 ---
 
 <!--

@@ -3,6 +3,7 @@ name: changelog
 description: Use this skill when the user asks to "update the changelog", "generate a CHANGELOG", "cut release notes", "summarize what changed since the last release/tag", or wants a human-readable record of changes in an industry-standard format. Generates or updates CHANGELOG.md using the Keep a Changelog format + Semantic Versioning, reading Conventional Commits as the input signal, then PROPOSES the commit (never commits, pushes, or tags). Works in any git repo; nothing here is project-specific.
 version: 0.1.0
 class: authoring
+author: Navjyot Nishant
 ---
 
 # Changelog (authoring)

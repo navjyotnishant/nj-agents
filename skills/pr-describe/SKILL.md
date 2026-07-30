@@ -3,6 +3,7 @@ name: pr-describe
 description: Use this skill when the user asks to "describe this PR", "write the PR description", "draft a pull request", "summarize this branch for a PR", or wants a clear PR title and body for the current branch. Reads the branch's whole delta versus its base (the PR view) plus its commit messages, and drafts a structured title + body (summary, what changed, why, test plan, related issues). Opens a DRAFT PR only if the user opts in and `gh` is present — otherwise it hands you the text. Never pushes, never opens a non-draft PR on its own. Works in any git repo; nothing here is project-specific.
 version: 0.1.0
 class: workflow
+author: Navjyot Nishant
 ---
 
 # PR Describe (workflow)

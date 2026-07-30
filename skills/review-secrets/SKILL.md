@@ -4,6 +4,7 @@ description: Use this skill when the user asks to "scan my changes for secrets",
 version: 0.4.0
 class: review
 subclass: gate
+author: Navjyot Nishant
 ---
 
 # Review: Secrets & Security

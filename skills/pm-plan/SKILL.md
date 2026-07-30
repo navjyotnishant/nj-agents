@@ -3,6 +3,7 @@ name: pm-plan
 description: Use this skill when the user asks to "plan out this feature", "break this epic into stories and tasks", "set up the whole initiative in Linear/Jira", or wants a feature-sized ask turned into a created Epic→Stories→Tasks tree. It decomposes the initiative (via the pm-decomposer agent), previews the WHOLE tree for one approval, then creates it in the connected PM tracker SEQUENTIALLY, parent-first — Epic, then Stories under it, then Tasks under each — wiring parent links as it goes. Stops and reports on any partial failure; never bulk-creates without preview + opt-in; else hands you the whole tree as markdown. Works with any connected tracker; nothing here is project-specific.
 version: 0.1.0
 class: pm
+author: Navjyot Nishant
 ---
 
 # PM Plan (PM-authoring — orchestrator)

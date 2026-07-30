@@ -3,6 +3,7 @@ name: screenshot-capturer
 description: "Use this agent to capture a screenshot from one of four sources — a running web app (Playwright), terminal/CLI output rendered as an image, a static HTML file or isolated component, or existing images the user provides. It writes the raw capture to a gitignored dir for the redaction pipeline; it never commits and never redacts (later agents do that). Works in any repo.\n\n<example>\nContext: The capture-screenshots skill resolved the source as the app's dashboard route.\nuser: \"screenshot the dashboard\"\n<commentary>\nThe skill spawns this agent to capture the raw image; the sensitive-data-reviewer and redactor process it next.\n</commentary>\nassistant: \"Launching screenshot-capturer to grab the dashboard.\"\n</example>"
 model: sonnet
 color: cyan
+author: Navjyot Nishant
 ---
 
 You capture raw screenshots for a documentation/blog pipeline. You get a clean, sharp

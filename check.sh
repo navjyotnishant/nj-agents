@@ -68,7 +68,11 @@ scaffold() {
   [ -e "$dst" ] && { echo "  ! ${dst#$REPO_DIR/} already exists — refusing to overwrite" >&2; exit 2; }
 
   mkdir -p "$(dirname "$dst")"
-  sed -e "s/SKILL_NAME/$name/g" -e "s/AGENT_NAME/$name/g" -e "s/SKILL_CLASS/$class/g" "$tmpl" > "$dst"
+  # author comes from git config, never hardcoded — a teammate's file records them.
+  local who; who="$(git config user.name 2>/dev/null || true)"
+  [ -n "$who" ] || { echo "  ! git config user.name is unset — set it so authorship is recorded" >&2; exit 2; }
+  sed -e "s/SKILL_NAME/$name/g" -e "s/AGENT_NAME/$name/g" -e "s/SKILL_CLASS/$class/g" \
+      -e "s/AUTHOR_NAME/$who/g" "$tmpl" > "$dst"
   # A review skill must pick gate or scan; seed the key so the author sees the choice.
   [ "$class" = "review" ] && sed -i.bak '/^class: review$/a\
 subclass: gate
@@ -175,6 +179,23 @@ check_agent_frontmatter() {
     }
   done
   [ "$bad" = "0" ] && ok "agent frontmatter ok ($(ls "$AGENTS_SRC"/*.md | wc -l | tr -d ' ') agents)"
+  return 0
+}
+
+# Provenance has to live in the file. Skills install as SYMLINKS into ~/.claude/ and
+# are invoked from any repo on the machine — at the point of use there is no git
+# history to consult, so the file is the only record of where it came from.
+check_authorship() {
+  local f name bad=0
+  for f in "$SKILLS_SRC"/*/SKILL.md "$AGENTS_SRC"/*.md; do
+    [ -f "$f" ] || continue
+    name="${f#$REPO_DIR/}"
+    grep -q '^author:' "$f" || {
+      finding check_authorship structural "$name declares no 'author:'"
+      bad=1
+    }
+  done
+  [ "$bad" = "0" ] && ok "authorship declared"
   return 0
 }
 
@@ -504,6 +525,7 @@ check_counts() {
 
 check_skill_frontmatter
 check_agent_frontmatter
+check_authorship
 check_agent_references
 check_class_conventions
 check_conventions_reachable
