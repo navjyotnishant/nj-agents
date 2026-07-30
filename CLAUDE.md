@@ -9,7 +9,7 @@ agents** for software-development workflows. Install it once (symlinks into `~/.
 and invoke the skills with `/name` in **any** git repo — nothing here is specific to one
 project, stack, or language.
 
-- **23 skills · 26 agents**, in four classes + a diagram-generation subsystem.
+- **23 skills · 25 agents**, in four classes + a diagram-generation subsystem.
 - Install: `./install.sh` (global) or `./install.sh --project DIR`. The installer **globs**
   `skills/*/` and `agents/*.md`, so new files are picked up automatically. Reload Claude
   Code after installing (skills/agents load at session start).
@@ -117,22 +117,30 @@ own text, so a new skill is bound the moment it says "spawn".
 
 ## Diagram subsystem (`/arch-diagram`) — read before touching diagrams
 
-The house style is **icon tiles** (crisp line icon + label + class-color stripe) with a
-subtle Excalidraw sketch texture (rough.js) and a hand-drawn black frame. It is
-generated from a small JSON model, not hand-placed.
+Diagrams are **authored directly as SVG**, not emitted from a renderer. That is what
+allows gradients, hexagons, legends and a takeaway row, and what lets a layout be
+*rearranged* when it reads badly rather than being stuck with a grid's output.
 
-- Renderers + QA in `skills/arch-diagram/scripts/`: `icon_diagram.js` (lane/tile),
-  `flow_diagram.js` (process flows), `qa_diagram.js` (deterministic checker),
-  `diagram_common.js` (shared palette + icon set + **semantic-color contract**).
-  Run `npm install` in that dir once (rough.js; `node_modules` gitignored).
-- **Enforced visual-QA loop (do not skip):** after every render, spawn the **`diagram-qa`**
-  agent → it runs `qa_diagram.js` + a visual PNG pass → returns a **BLOCKING** verdict.
-  Loop render → QA → fix until PASS. Mechanical issues (overflow/clip/missing-icon) the
-  renderer auto-fixes; layout/color issues go back to `diagram-architect`.
-- **Semantic color is enforced:** red = failure/block/stop, green = success/pass/output,
-  class color = ordinary steps, grey = neutral inputs. Never green a failure or red a
-  success (`diagram_common.js` documents it; `qa_diagram.js` flags violations).
-- SVG→PNG for the visual pass: `rsvg-convert` (ships with graphviz/cairo).
+- **Two styles, same layout.** `infographic` is the **default** — clean gradients,
+  system font, crisp connectors. `--sketch` swaps in flat paper fills, a handwriting
+  font and a subtle wobble on card borders. Only the finish differs, so switching
+  never invalidates a layout that already passed review.
+- **Enforced visual gate (do not skip):** render the SVG to PNG (`rsvg-convert`),
+  **look at it**, and critique it against the 15-second test — does the headline state
+  the outcome, do any arrows cross, is any text clipped, is every number right? Fix
+  and repeat, capped at 2 rounds. Source review cannot catch a label hidden behind a
+  frame stroke or an arrowhead eaten by a filter; only rendering it can.
+- **Semantic colour is absolute:** red = failure/block/stop, green = success/pass,
+  orange = AI agents, grey = neutral input. Never green a failure or red a success.
+  Hexagons are agents; rounded rectangles are stages. Only use a shape that has
+  something to represent on that diagram.
+- **Sketch gotcha:** a displacement filter on a `<path>` suppresses its arrowheads —
+  SVG markers are not rendered through a filter. Wobble the cards, never the
+  connectors.
+
+The previous rough.js renderer (`icon_diagram.js` / `flow_diagram.js` /
+`qa_diagram.js`) and the `diagram-qa` agent were removed in v0.4.0. The four diagrams
+it produced remain as committed SVGs and are now edited by hand.
 
 ## Editing gotchas
 

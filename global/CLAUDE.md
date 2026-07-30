@@ -55,7 +55,7 @@ whole manifest by definition.
 | Skill | What it does | Agents |
 |---|---|---|
 | `/changelog` | `CHANGELOG.md` in Keep a Changelog + SemVer from commit history. Merges into `[Unreleased]` without clobbering; suggests the bump. (For the GitHub **Release** object, see `/release-notes`.) | `changelog-writer` |
-| `/arch-diagram` | System/solution/sequence/data-flow/deployment/ER diagrams into `docs/architecture/`. | `diagram-architect`, `diagram-qa` |
+| `/arch-diagram` | Authors a presentation-quality SVG into `docs/architecture/` — infographic by default, `--sketch` on request. Renders and reviews it before shipping. | `diagram-architect` |
 | `/capture-screenshots` | Capture → detect PII/secrets → blur/mask → **verify coverage before writing**. | `screenshot-capturer`, `sensitive-data-reviewer`, `screenshot-redactor` |
 | `/docs-site` | Self-contained theme-aware `docs.html` from docs, code, an outline, or SKILL.md/OpenAPI/JSON-Schema. Auto-derives the menu; flags gaps rather than inventing. | `docs-architect`, `docs-designer` |
 | `/tech-blog` | writer → fact-checker → reviewer → editor → final-polish → platform-lint → optional poster. Generates its own diagrams/screenshots, then embeds them. | `blog-writer`, `blog-fact-checker`, `blog-reviewer`, `blog-editor`, `blog-final-polish`, `blog-platform-lint`, `blog-poster` |
@@ -68,7 +68,7 @@ Shared behavior lives in the repo's `CONVENTIONS-authoring.md` (§A1 repo-ingest
 
 Two gates worth knowing: `/tech-blog`'s **fact-checker BLOCKS** on any claim it
 can't verify against the repo, and `/arch-diagram` runs a mandatory
-**render → QA → fix loop** through `diagram-qa` until the diagram PASSES.
+**render → look → critique** loop until the diagram reads in 15 seconds.
 
 ## Workflow suite — reads the diff, drafts a change artifact, proposes (never auto-acts)
 
