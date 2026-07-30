@@ -310,6 +310,13 @@ for name in sorted(agents):
     write(page, out, a["path"])
     nav.append(f"    * [{name}]({page})")
 
+# ---- architecture diagrams: copied into the VIRTUAL tree at build time, never
+# onto disk. A real copy under docs_src/ would be a second file that can drift from
+# docs/architecture/, which is exactly what this build is meant to prevent.
+for svg in sorted((ROOT / "docs" / "architecture").glob("*.svg")):
+    with mkdocs_gen_files.open(f"assets/{svg.name}", "wb") as f:
+        f.write(svg.read_bytes())
+
 # ---- harness section
 nav.append("* Harness")
 for slug, title in [("overview", "Overview"), ("checks", "What is checked"),

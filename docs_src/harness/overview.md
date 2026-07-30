@@ -10,6 +10,8 @@ a diagram that coloured a failure state green.
 
 The harness closes it in four layers.
 
+![The verification harness](../assets/harness.svg)
+
 ## The layers
 
 | Layer | What it does | Deterministic? |

@@ -1,0 +1,182 @@
+{
+  "title": "The verification harness",
+  "subtitle": "Everything globs skills/*/ and agents/*.md rather than reading a registry, so a skill added tomorrow is covered the moment its directory exists. Layers 1\u20133 are deterministic text analysis; layer 4 needs a real run, which is why it splits into an expensive local generator and a free CI checker.",
+  "cols": 4,
+  "groups": [
+    {
+      "label": "check.sh \u2014 deterministic",
+      "role": "review",
+      "cols": [
+        1,
+        1
+      ],
+      "rows": [
+        0,
+        2
+      ]
+    },
+    {
+      "label": "tests/ \u2014 split by cost",
+      "role": "authoring",
+      "cols": [
+        1,
+        2
+      ],
+      "rows": [
+        3,
+        3
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "id": "src",
+      "label": "skills/ \u00b7 agents/",
+      "sub": "globbed, no registry",
+      "icon": "file",
+      "role": "neutral",
+      "col": 0,
+      "row": 1
+    },
+    {
+      "id": "struct",
+      "label": "structural",
+      "sub": "frontmatter",
+      "icon": "doclist",
+      "role": "review",
+      "col": 1,
+      "row": 0
+    },
+    {
+      "id": "ref",
+      "label": "referential",
+      "sub": "wiring \u00b7 citations",
+      "icon": "search",
+      "role": "review",
+      "col": 1,
+      "row": 1
+    },
+    {
+      "id": "contract",
+      "label": "class contract",
+      "sub": "class \u00b7 subclass",
+      "icon": "shield",
+      "role": "review",
+      "col": 1,
+      "row": 2
+    },
+    {
+      "id": "strict",
+      "label": "--strict",
+      "sub": "advisory by default",
+      "kind": "gate",
+      "role": "review",
+      "col": 2,
+      "row": 1
+    },
+    {
+      "id": "ci",
+      "label": "CI gate",
+      "sub": "exit 1 on a finding",
+      "kind": "gate",
+      "role": "success",
+      "col": 3,
+      "row": 1
+    },
+    {
+      "id": "hook",
+      "label": "pre-push hook",
+      "sub": "local \u00b7 bypassable",
+      "icon": "block",
+      "role": "danger",
+      "col": 3,
+      "row": 2
+    },
+    {
+      "id": "install",
+      "label": "install.sh",
+      "sub": "reports, never fails",
+      "icon": "download",
+      "role": "neutral",
+      "col": 3,
+      "row": 0
+    },
+    {
+      "id": "run",
+      "label": "run.sh",
+      "sub": "real agents \u00b7 costs money",
+      "icon": "robot",
+      "role": "authoring",
+      "col": 1,
+      "row": 3
+    },
+    {
+      "id": "assert",
+      "label": "assert.sh",
+      "sub": "no model \u00b7 free",
+      "icon": "check",
+      "role": "authoring",
+      "col": 2,
+      "row": 3
+    }
+  ],
+  "edges": [
+    {
+      "from": "src",
+      "to": "struct",
+      "role": "neutral"
+    },
+    {
+      "from": "src",
+      "to": "ref",
+      "role": "neutral"
+    },
+    {
+      "from": "src",
+      "to": "contract",
+      "role": "neutral"
+    },
+    {
+      "from": "struct",
+      "to": "strict",
+      "role": "review"
+    },
+    {
+      "from": "ref",
+      "to": "strict",
+      "role": "review"
+    },
+    {
+      "from": "contract",
+      "to": "strict",
+      "role": "review"
+    },
+    {
+      "from": "strict",
+      "to": "ci",
+      "role": "success"
+    },
+    {
+      "from": "strict",
+      "to": "hook",
+      "role": "danger"
+    },
+    {
+      "from": "strict",
+      "to": "install",
+      "role": "neutral"
+    },
+    {
+      "from": "run",
+      "to": "assert",
+      "label": "snapshots",
+      "role": "authoring",
+      "dashed": true
+    },
+    {
+      "from": "assert",
+      "to": "ci",
+      "role": "success"
+    }
+  ]
+}
