@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "silo": {
+      "command": "silo-mcp",
+      "env": {
+        "SILO_DAEMON_ADDR": "http://127.0.0.1:8500",
+        "SILO_PROJECT": "nj-agents",
+        "SILO_TOKEN": "${SILO_TOKEN}"
+      }
+    }
+  }
+}
