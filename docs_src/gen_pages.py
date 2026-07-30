@@ -32,12 +32,12 @@ CLASSES = {
     "review": (
         "Review",
         "Advise only. Reads changes, reports findings, and never writes a file or "
-        "commits. Shared rules: `CONVENTIONS.md`.",
+        "commits. Shared rules: [`CONVENTIONS.md`]({REPO_URL}/CONVENTIONS.md).",
     ),
     "authoring": (
         "Authoring",
         "Writes exactly one artifact into the repo, then **proposes** the commit — "
-        "never runs git itself. Shared rules: `CONVENTIONS-authoring.md`.",
+        "never runs git itself. Shared rules: [`CONVENTIONS-authoring.md`]({REPO_URL}/CONVENTIONS-authoring.md).",
     ),
     "workflow": (
         "Workflow",
@@ -47,7 +47,7 @@ CLASSES = {
     "pm": (
         "PM-authoring",
         "Writes a work item into whatever tracker is connected, then proposes the "
-        "create. Shared rules: `CONVENTIONS-pm.md`.",
+        "create. Shared rules: [`CONVENTIONS-pm.md`]({REPO_URL}/CONVENTIONS-pm.md).",
     ),
     "social": (
         "Social",
@@ -150,7 +150,15 @@ def summary(meta: dict) -> str:
     ("Use this skill when the user asks to ..."). A reader wants what it DOES, so
     drop that clause and keep the rest."""
     d = meta.get("description", "")
-    d = re.sub(r"^Use this (?:skill|agent) (?:when the user asks to|to)\s*", "", d)
+    # Drop the trigger clause — "Use this skill when the user asks to 'x', 'y', or
+    # wants z." is aimed at the model, not a reader. Cut through the first sentence
+    # that ends the trigger list rather than leaving a mid-sentence fragment.
+    d = re.sub(r"^Use this skill when the user asks to .*?\.\s*", "", d, flags=re.S)
+    d = re.sub(r"^Use this agent (?:when the user asks to |to )", "", d, flags=re.S)
+    d = d[:1].upper() + d[1:] if d else d
+    # Boilerplate repeated on all 49 files — true, but noise on every single page.
+    d = re.sub(r"\s*Works (?:in any|for any|with any)[^.]*\.\s*$", "", d)
+    d = re.sub(r"\s*(?:Read-only;|Works on any)[^.]*\.\s*$", "", d)
     d = re.sub(r'^[^.]*?[,.]\s*(?=[A-Z])', "", d, count=1) if d.startswith('"') else d
     return d.replace("\\n", " ").strip()
 
@@ -241,7 +249,7 @@ for cls, (title, blurb) in CLASSES.items():
     write(overview, [
         f"# {title} class",
         "",
-        blurb,
+        blurb.replace("{REPO_URL}", REPO_URL),
         "",
         f"**{len(members)} skill{'s' if len(members) != 1 else ''}**",
         "",
@@ -259,7 +267,7 @@ for cls, (title, blurb) in CLASSES.items():
             f"# `/{name}`",
             "",
             f"!!! abstract \"{title} class{' · ' + sub if sub else ''}\"",
-            f"    {blurb}",
+            "    " + blurb.replace("{REPO_URL}", REPO_URL),
             "",
             summary(m),
             "",
@@ -341,17 +349,29 @@ for svg in sorted((ROOT / "docs" / "architecture").glob("*.svg")):
 # Agents never spawn agents in this repo (verified: the only agent-to-agent mentions
 # are prose cross-references like "that's `dependency-reviewer`'s job"). The skill is
 # always the orchestrator, so the hierarchy is exactly one level deep.
-orchestrators = sorted(
-    ((n, spawns[n]) for n in skills if spawns[n]),
+# Only skills with a REAL pipeline (2+ agents) earn a group. Grouping all 17
+# orchestrators produced 17 sections, 10 of them holding a single agent — a wall of
+# expandable nodes for no benefit. The rest go in one flat list.
+#
+# No "Workflow" child link either: that page already lives under Skills, and listing
+# it twice under two labels is what made the nav feel like it jumped around. The
+# agent's own page links back to its spawner.
+pipelines = sorted(
+    ((n, spawns[n]) for n in skills if len(spawns[n]) > 1),
     key=lambda kv: (-len(kv[1]), kv[0]),
 )
+grouped = {a for _, members in pipelines for a in members}
 
-for skill_name, members in orchestrators:
+for skill_name, members in pipelines:
     ordered = pipeline_order(skill_name, members, skills)
-    label = f"/{skill_name}" + (f" ({len(ordered)})" if len(ordered) > 1 else "")
-    nav_agents.append(f"    * {label}")
-    nav_agents.append(f"        * [Workflow](skills/{skill_name}.md)")
+    nav_agents.append(f"    * [/{skill_name}](skills/{skill_name}.md)")
     for name in ordered:
+        nav_agents.append(f"        * [{name}](agents/{name}.md)")
+
+solo = sorted(a for a in agents if a not in grouped)
+if solo:
+    nav_agents.append("    * Single-agent skills")
+    for name in solo:
         nav_agents.append(f"        * [{name}](agents/{name}.md)")
 
 nav = ["* [Home](index.md)", "* Agents"] + nav_agents + ["* Skills"] + nav_skills
@@ -379,7 +399,7 @@ write("index.md", [
     "|---|---|---|",
 ] + [
     f"| [{CLASSES[c][0]}](skills/{sorted(by_class[c])[0]}.md) | {counts[c]} | "
-    f"{CLASSES[c][1].split('.')[0]}. |"
+    f"{CLASSES[c][1].replace(chr(123)+'REPO_URL'+chr(125), REPO_URL).split('. ')[0]}. |"
     for c in CLASSES if counts[c]
 ] + [
     "",

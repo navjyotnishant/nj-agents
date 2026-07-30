@@ -41,6 +41,12 @@ theme:
     - content.action.edit
     - toc.follow
 
+# gen_pages.py lives inside docs_dir so the gen-files plugin can find it, which
+# also means mkdocs treats it as a static file and publishes it. It is the build
+# script, not documentation — exclude it.
+exclude_docs: |
+  gen_pages.py
+
 plugins:
   - search
   # Writes pages into the VIRTUAL docs tree at build time. Nothing lands on disk, so
