@@ -2,6 +2,7 @@
 name: release-notes
 description: Use this skill when the user asks to "cut a GitHub release", "publish release notes", "draft a release for this version", or wants to turn a version's changes into a GitHub Release. It prefers an existing CHANGELOG.md section as the notes body (composing with /changelog) and otherwise summarizes the commit delta since the last tag, then drafts a `gh release create --draft` command — a DRAFT release, never published, no tag pushed on its own. Falls back to printing the notes + tag commands when `gh` is absent. Works in any git repo; nothing here is project-specific.
 version: 0.1.0
+class: workflow
 ---
 
 # Release Notes (workflow)
@@ -20,6 +21,18 @@ This is a **workflow-class** skill (see `/pr-describe`, `/commit-assistant`): re
 delta, drafts an artifact, and **proposes — never acts**. It creates a **draft**
 release only; it never publishes a release and never pushes a tag on its own
 (`CONVENTIONS-authoring.md §A3`). `gh` is **detected, never required** (§A5).
+
+> **Finding the conventions file.** It lives at the toolkit repo root, two levels
+> above this skill — not beside `SKILL.md`. Skills are usually installed as
+> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> *link* and misses it. Resolve the link first:
+>
+> ```bash
+> ROOT="$(dirname "$(readlink -f "<this skill's base directory>")")/.."
+> ```
+>
+> then read `$ROOT/CONVENTIONS-authoring.md`. If a file is genuinely absent, say so and continue
+> with the procedure below rather than stopping.
 
 ## Step 0 — Print the banner FIRST
 

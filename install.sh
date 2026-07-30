@@ -92,9 +92,32 @@ check_guidance_sync() {
   return 0
 }
 
+# A skill that cites CONVENTIONS*.md must also say how to FIND it. The files live
+# at the repo root, but skills are installed as symlinks into ~/.claude/skills/,
+# so a bare filename or a plain relative path resolves against the link and
+# misses — the skill then runs without its shared rules and nothing says why.
+# Advisory only, like the check above.
+check_conventions_reachable() {
+  local missing="" f name
+  for f in "$SKILLS_SRC"/*/SKILL.md; do
+    [ -f "$f" ] || continue
+    grep -q 'CONVENTIONS[a-z-]*\.md' "$f" || continue
+    grep -q 'readlink -f' "$f" || { name="$(basename "$(dirname "$f")")"; missing="$missing $name"; }
+  done
+  if [ -n "${missing// }" ]; then
+    echo "  ! these skills cite a conventions file but never say how to locate it:" >&2
+    echo "      $missing" >&2
+    echo "      (add the 'Finding the conventions file' note — see any review skill)" >&2
+    return 0
+  fi
+  echo "  conventions references resolvable"
+  return 0
+}
+
 if [ "$CHECK_ONLY" = "1" ]; then
   echo "Checking global/CLAUDE.md against skills/ and agents/ ..."
   check_guidance_sync
+  check_conventions_reachable
   exit 0
 fi
 
@@ -125,6 +148,7 @@ done
 link_one "$GLOBAL_MD_SRC" "$GLOBAL_MD_DST"
 
 check_guidance_sync
+check_conventions_reachable
 
 echo "Done. Restart Claude Code (or reload) to pick up the new skills/agents."
 echo "Try:  /pre-push-review   (or /review-secrets, /review-correctness, ...)"

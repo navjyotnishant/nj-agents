@@ -2,6 +2,7 @@
 name: docs-site
 description: Use this skill when the user asks to "generate a documentation site", "build docs for this project", "make a browsable reference/guide", "document these skills/API/modules", or wants a polished HTML documentation page from existing docs, the codebase, an outline, or structured definition files. Auto-derives the menu/sections from the content, grounds everything in the source (flags gaps rather than inventing), embeds auto-redacted screenshots via the capture-screenshots pipeline when needed, produces a self-contained theme-aware docs.html, and PROPOSES the commit. Works in any git repo; nothing here is project-specific.
 version: 0.1.0
+class: authoring
 ---
 
 # Docs Site (authoring, multi-agent)
@@ -16,6 +17,18 @@ and **proposes** the commit — it never commits.
 This is an **authoring-class** skill — follow `CONVENTIONS-authoring.md` (repo ingest
 §A1, scoped output §A2, propose-commit §A3, placement §A4, MCP/tool-detect §A5,
 grounding/safety §A6, non-clobber §A7).
+
+> **Finding the conventions file.** It lives at the toolkit repo root, two levels
+> above this skill — not beside `SKILL.md`. Skills are usually installed as
+> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> *link* and misses it. Resolve the link first:
+>
+> ```bash
+> ROOT="$(dirname "$(readlink -f "<this skill's base directory>")")/.."
+> ```
+>
+> then read `$ROOT/CONVENTIONS-authoring.md`. If a file is genuinely absent, say so and continue
+> with the procedure below rather than stopping.
 
 ## Step 0 — Print the banner FIRST
 

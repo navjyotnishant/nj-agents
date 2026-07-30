@@ -2,6 +2,7 @@
 name: dead-code-finder
 description: Use this skill when the user asks to "find dead code", "find unused code/exports/files", "what code is unreferenced", or wants a scan for unused functions, exports, files, and dependencies. Detects the repo's own dead-code tooling at runtime (ts-prune/knip, vulture, deadcode, cargo-udeps) and degrades to a manual export-vs-import cross-reference; reports candidates with a confidence level and never deletes anything. Whole-repo by default, or the changed set. Works in any git repo, any language; nothing here is project-specific.
 version: 0.1.0
+class: review
 ---
 
 # Dead Code Finder (repo-maintenance)
@@ -11,6 +12,18 @@ and reports candidates with a confidence signal. It **advises only: it never del
 comments out, or modifies anything.** A repo-maintenance skill of the **review class**
 — follow `CONVENTIONS.md` (snapshot scope §1, findings format §4, CI mode §5,
 report §6, safety §7).
+
+> **Finding the conventions file.** It lives at the toolkit repo root, two levels
+> above this skill — not beside `SKILL.md`. Skills are usually installed as
+> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> *link* and misses it. Resolve the link first:
+>
+> ```bash
+> ROOT="$(dirname "$(readlink -f "<this skill's base directory>")")/.."
+> ```
+>
+> then read `$ROOT/CONVENTIONS.md`. If a file is genuinely absent, say so and continue
+> with the procedure below rather than stopping.
 
 Unlike the diff-scoped review skills, dead code is a **whole-repo** concern, so this
 defaults to scanning the whole repo — but it also supports the changed set.

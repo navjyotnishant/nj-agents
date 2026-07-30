@@ -1,7 +1,8 @@
 ---
 name: pre-push-review
-description: Use this skill when the user asks to "review my changes before I push", "run the pre-push review", "check this diff before committing/pushing", "do a thorough review of the current changes", or wants an AI-assisted quality gate over the current commit or uncommitted work. Runs five review dimensions (secrets, correctness, tests/build, dependencies, style) — the secret scan first as a gate, then the rest in parallel — and aggregates one PASS / WARN / BLOCK verdict with a report artifact. Supports a non-interactive CI mode with an exit-code contract. Works in any git repo; nothing here is specific to one project, stack, or tool.
-version: 0.3.0
+description: Use this skill when the user asks to "review my changes before I push", "run the pre-push review", "check this diff before committing/pushing", "do a thorough review of the current changes", or wants an AI-assisted quality gate over the current commit or uncommitted work. Runs up to five review dimensions (secrets, correctness, tests/build, dependencies, style) — the secret scan first as a gate, then the rest in parallel — and aggregates one PASS / WARN / BLOCK verdict with a report artifact. Cost-aware: it states the scope and agent count and asks before spawning, skips dimensions with nothing to review, and on a re-run defaults to only the dimensions that still have findings. Supports a non-interactive CI mode with an exit-code contract. Works in any git repo; nothing here is specific to one project, stack, or tool.
+version: 0.4.0
+class: review
 ---
 
 # Pre-Push Review (umbrella)
@@ -21,6 +22,19 @@ layout, and tooling at runtime. It **advises only**: it never pushes, commits, o
 bypasses git hooks, and leaves no files in the repo. All shared behavior
 (snapshot scope, diff hygiene, findings format, CI mode, report artifact, safety)
 is defined once in **`CONVENTIONS.md`** — read it; the steps below reference it.
+
+> **Finding `CONVENTIONS.md`.** It lives at the toolkit repo root, two levels
+> above this skill — not beside `SKILL.md`. Skills are usually installed as
+> symlinks into `~/.claude/skills/`, so a plain relative path resolves against
+> the *link* and misses it. Resolve the link first:
+>
+> ```bash
+> CONV="$(dirname "$(readlink -f "<this skill's base directory>")")/../CONVENTIONS.md"
+> ```
+>
+> If it is genuinely absent, say so and continue with the procedure below rather
+> than stopping — the steps here are self-contained enough to run without it, but
+> the shared findings format and report layout will be approximated.
 
 ## Step 0 — Print the warning banner FIRST
 
@@ -99,10 +113,37 @@ lines, per `skills/review-secrets/SKILL.md` and `CONVENTIONS.md §3`:
 Non-negotiable ordering: handing the diff to any subagent counts as "sharing with
 AI," so secrets clears first.
 
-## Step 4 — Spawn the remaining dimensions in parallel
+## Step 3.5 — State the cost and confirm the fleet
 
-Once the snapshot is cleared, spawn the dimension agents **in a single message**
-(parallel), each receiving the cleared, hygiene-filtered snapshot:
+Five subagents is the most expensive operation in this toolkit, and a user
+iterating on findings will run it repeatedly. Before spawning anything, apply
+`CONVENTIONS.md §8`:
+
+1. **Decide which dimensions are worth running.** Skip any with nothing to
+   review — no manifest changes means no dependencies agent, no detected test
+   command means no tests/build agent. A `SKIP` with a reason is free and more
+   informative than an agent that spends tokens confirming there was nothing to do.
+2. **Print the scope and plan**, then get a yes (interactive mode only):
+
+```
+Scope: 12 files, 340 reviewable lines (2 lockfiles, 1 image excluded)
+Plan:  4 dimension agents in parallel
+       (secrets-semantic, correctness, tests/build, style)
+       SKIP dependencies — no manifest changes in this diff
+Proceed? [Y/n/pick dimensions]
+```
+
+3. **On a re-run**, default to the dimensions that last reported `WARN`/`BLOCK`
+   and say so; the user can ask for `--all`.
+
+In CI mode (`CONVENTIONS.md §5`) there is nobody to ask: skip the prompt, still
+apply the skip rules, and record the fleet size in the report.
+
+## Step 4 — Spawn the confirmed dimensions in parallel
+
+Once the snapshot is cleared **and the fleet is confirmed**, spawn the agreed
+dimension agents **in a single message** (parallel), each receiving the cleared,
+hygiene-filtered snapshot:
 
 - `correctness-reviewer` — bugs/regressions/edge cases/missing validation
 - `tests-build-runner` — auto-detect and run test/lint/build; report pass/fail
@@ -130,6 +171,15 @@ Style           WARN      leftover console.log (src/api.js:88)
 ─────────────   ───────
 OVERALL: BLOCK — fix the correctness blocker before pushing.
 (scope: 12 files, 340 lines · excluded: 2 lockfiles, 1 image · scanner: gitleaks 8.x)
+(agents: 4 spawned, 1 skipped — dependencies: no manifest changes)
+```
+
+Always report the fleet size and what was skipped, so the cost is visible and a
+`SKIP` is never mistaken for a clean pass. If findings remain, offer the scoped
+re-run (`CONVENTIONS.md §8`) rather than the full five:
+
+```
+To re-check after fixing: /pre-push-review — will re-run correctness + style only.
 ```
 
 Write the **report artifact** per `CONVENTIONS.md §6` (timestamped, outside the repo

@@ -1,7 +1,8 @@
 ---
 name: review-secrets
 description: Use this skill when the user asks to "scan my changes for secrets", "check the diff for leaked keys/credentials", "run the security review on this change", or wants a security-focused review of the current commit or uncommitted work before pushing. REQUIRES a dedicated secret scanner (gitleaks/trufflehog/detect-secrets) on PATH — runs it over the diff first as a HARD GATE (BLOCKs with install instructions if none is installed) — then a deeper semantic security pass. Works in any git repo; nothing here is project-specific.
-version: 0.3.0
+version: 0.4.0
+class: review
 ---
 
 # Review: Secrets & Security
@@ -20,6 +21,18 @@ layers:
 This is the dimension the umbrella `pre-push-review` runs **first**. Follow the
 shared rules in `CONVENTIONS.md` (snapshot scope §1, diff hygiene §2, secret
 handling §3, CI mode §5, report §6, safety §7).
+
+> **Finding the conventions file.** It lives at the toolkit repo root, two levels
+> above this skill — not beside `SKILL.md`. Skills are usually installed as
+> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> *link* and misses it. Resolve the link first:
+>
+> ```bash
+> ROOT="$(dirname "$(readlink -f "<this skill's base directory>")")/.."
+> ```
+>
+> then read `$ROOT/CONVENTIONS.md`. If a file is genuinely absent, say so and continue
+> with the procedure below rather than stopping.
 
 ## Step 0 — Print the warning banner FIRST
 
@@ -136,6 +149,14 @@ DB URLs with inline credentials, high-entropy assignments), as a **supplement** 
 never a replacement for — the mandatory scanner gate.
 
 ## Step 5 — Deeper semantic security pass
+
+**Cost check first (`CONVENTIONS.md §8`).** The scanner gate above is the mandatory
+part and has already run; this agent is the optional depth on top of it. Skip it
+when the diff cannot plausibly contain the classes it looks for — a docs-only or
+config-comment change has no endpoints, queries, or deserialization — and report
+`SKIP — no code paths in this diff` rather than spawning. Otherwise state the scope
+in one line and proceed. Never re-run more than twice on the same change without
+being asked.
 
 Spawn the `secrets-reviewer` agent with the cleared, hygiene-filtered snapshot. It
 reviews for security issues that aren't literal secrets: injection (SQL/command/

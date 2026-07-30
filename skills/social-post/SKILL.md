@@ -2,6 +2,7 @@
 name: social-post
 description: Use this skill when the user asks to "write a LinkedIn post", "draft a launch post", "promote this blog on X/Twitter", "share this on social", or wants promotional copy for a published article, project, or release. Given a published URL (blog, repo, demo) it drafts ready-to-paste social copy in short / medium / builder-story variants, gets the hook and links right for the platform's feed algorithm, and keeps hashtags clean. Grounds the copy in the actual linked content — never invents claims. Produces copy for the user to post; it does not auto-post.
 version: 0.1.0
+class: social
 ---
 
 # Social post (LinkedIn / X promo)
@@ -41,6 +42,18 @@ plausible-sounding summary. Pull the strongest one-line hook and 2–3 concrete
 benefits from the source. Never invent a metric, a feature, or a claim the source
 doesn't make (same grounding bar as the authoring skills, `CONVENTIONS-authoring.md
 §A6`).
+
+> **Finding the conventions file.** It lives at the toolkit repo root, two levels
+> above this skill — not beside `SKILL.md`. Skills are usually installed as
+> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> *link* and misses it. Resolve the link first:
+>
+> ```bash
+> ROOT="$(dirname "$(readlink -f "<this skill's base directory>")")/.."
+> ```
+>
+> then read `$ROOT/CONVENTIONS-authoring.md`. If a file is genuinely absent, say so and continue
+> with the procedure below rather than stopping.
 
 ## Step 2 — Confirm angle, length, CTA, style
 

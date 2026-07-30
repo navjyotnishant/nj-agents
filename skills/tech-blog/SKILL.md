@@ -2,6 +2,7 @@
 name: tech-blog
 description: Use this skill when the user asks to "write a technical blog about this project", "draft a blog post explaining the architecture", "write an engineering article about what we built", or wants an expert-level technical write-up of the project. Runs a multi-agent pipeline (writer → fact-checker → reviewer → editor → optional poster), grounds every claim in the actual repo (the fact-checker BLOCKS on anything it can't verify), embeds architecture diagrams if present, writes the post to docs/blog/, and produces publish-ready Markdown + HTML. Posts via an MCP only if one is connected and you opt in. Works in any git repo; nothing here is project-specific.
 version: 0.1.0
+class: authoring
 ---
 
 # Technical Blog (authoring, multi-agent)
@@ -23,6 +24,18 @@ copy. Every claim is grounded in the real repo. It writes the final post to the 
 This is an **authoring-class** skill — follow `CONVENTIONS-authoring.md` (repo
 ingest §A1, scoped output §A2, propose-commit §A3, placement §A4, MCP-detect §A5,
 grounding/safety §A6, non-clobber §A7).
+
+> **Finding the conventions file.** It lives at the toolkit repo root, two levels
+> above this skill — not beside `SKILL.md`. Skills are usually installed as
+> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> *link* and misses it. Resolve the link first:
+>
+> ```bash
+> ROOT="$(dirname "$(readlink -f "<this skill's base directory>")")/.."
+> ```
+>
+> then read `$ROOT/CONVENTIONS-authoring.md`. If a file is genuinely absent, say so and continue
+> with the procedure below rather than stopping.
 
 ## Step 0 — Print the banner FIRST
 

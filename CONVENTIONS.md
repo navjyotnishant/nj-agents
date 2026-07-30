@@ -174,3 +174,61 @@ credentials** (findings reference masked values only).
   reports; the human (or the hook's exit code) decides.
 - **Propose, don't silently add** any durable repo change — hook install, gitignore
   entry, a documented command note.
+
+---
+
+## 8. Cost control (every skill that spawns agents)
+
+Each dimension is a subagent, and each subagent costs real money against the
+user's plan. The review suite's default shape — five agents over a whole diff —
+is the most expensive thing in this toolkit, and it is easy to fire repeatedly
+while iterating on the same change. Treat spend as a budget to manage, not an
+implementation detail.
+
+**State the cost shape before spawning anything.** After the snapshot is built
+and secrets have cleared, print one line and — in interactive mode — get a yes:
+
+```
+Scope: 12 files, 340 reviewable lines (2 lockfiles, 1 image excluded)
+Plan:  5 dimension agents in parallel (secrets-semantic, correctness,
+       tests/build, dependencies, style)
+Proceed? [Y/n/pick dimensions]
+```
+
+The user can accept, decline, or name a subset. Skip the prompt only in CI mode
+(§5), where there is nobody to ask.
+
+**Scale the fleet to the diff.** Do not spawn a dimension that has nothing to
+review — a skipped agent is free, and a report that says `SKIP — no dependency
+manifests changed` is more informative than one that spent tokens confirming it.
+
+| Signal | Action |
+|---|---|
+| No dependency-manifest changes in the diff | `SKIP` the dependencies dimension |
+| No test/lint/build command detected | `SKIP` tests/build (report the miss) |
+| Docs-only diff (`*.md`, no source) | Offer style-only; skip correctness |
+| Trivial diff (< ~20 lines, 1–2 files) | Offer a single inline review, no fleet |
+| Very large diff (§2 cap applies) | Say the review is partial **and** that the
+  top-N scoping is what keeps the cost bounded |
+
+**Re-runs are the expensive case.** A user fixing findings will re-run this. On a
+re-run, default to only the dimensions that previously reported `WARN`/`BLOCK`,
+and say so:
+
+```
+Re-run: correctness + style only (the 2 dimensions with open findings).
+Add --all to re-review everything.
+```
+
+**Hard stops.**
+- **Never re-run a dimension more than twice** on the same change without being
+  asked. After two rounds, report what stands and let the human decide.
+- **Halt on any signal to stop** — "this is expensive", "that's taking a while",
+  a suggested change of approach, or an interrupt. Do not acknowledge and
+  continue.
+- **Never chain into another agent-spawning skill** because the review suggested
+  it. Report the finding; let the user invoke the fix.
+
+**Cheap path first.** If a scanner, a linter, or a single targeted read answers
+the question, do that and offer the fleet as the upgrade. A skill is not
+automatically the right tool because it matches the topic.

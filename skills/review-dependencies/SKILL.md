@@ -1,7 +1,8 @@
 ---
 name: review-dependencies
 description: Use this skill when the user asks to "check my dependency changes", "review new packages before I push", "did I add any risky dependencies", or wants a governance review of dependency and license changes in the current commit or uncommitted work. Flags added/removed/upgraded dependencies, license changes, and supply-chain risk signals in the diff. Works in any git repo and any package ecosystem; nothing here is project-specific.
-version: 0.2.0
+version: 0.3.0
+class: review
 ---
 
 # Review: Dependencies & Licenses
@@ -13,6 +14,18 @@ license and supply-chain risk signals.
 
 Follow the shared rules in `CONVENTIONS.md` (snapshot scope §1, findings format §4,
 CI mode §5, report §6, safety §7).
+
+> **Finding the conventions file.** It lives at the toolkit repo root, two levels
+> above this skill — not beside `SKILL.md`. Skills are usually installed as
+> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> *link* and misses it. Resolve the link first:
+>
+> ```bash
+> ROOT="$(dirname "$(readlink -f "<this skill's base directory>")")/.."
+> ```
+>
+> then read `$ROOT/CONVENTIONS.md`. If a file is genuinely absent, say so and continue
+> with the procedure below rather than stopping.
 
 ## Step 0 — Print the warning banner FIRST
 
@@ -54,6 +67,12 @@ the **human-authored** side, discovered per ecosystem:
 If the diff changes no manifests, report **SKIP — no dependency changes** and stop.
 
 ## Step 2 — Spawn the dependencies agent
+
+**Cost check first (`CONVENTIONS.md §8`).** Step 1 has already stopped if no
+manifest changed — that free, accurate skip is the main cost saving here. Before
+spawning, state the scope in one line — `Reviewing 2 manifest changes with 1
+dependency agent.` — and never re-run more than twice on the same change without
+being asked.
 
 Spawn `dependency-reviewer` with the manifest changes (and the corroborating
 lockfile deltas as context). It assesses:

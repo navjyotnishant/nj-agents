@@ -2,6 +2,7 @@
 name: scaffold-project
 description: Use this skill when the user asks to "scaffold a new project", "set up a new repo properly", "bootstrap a project to industry standards", "start a new service/library/app", or wants a greenfield repository laid out to a recognized baseline. Grounds the security/governance layer in the OpenSSF OSPS Baseline (cited by control ID, Level 1 by default) and delegates the stack-specific layout to the ecosystem's own generator (cargo new, uv init, npm create) rather than inventing one. Reads a supplied project doc first when there is one. Verifies the result against the baseline before reporting done, then PROPOSES the commit. Works for any stack; nothing here is project-specific.
 version: 0.1.0
+class: authoring
 ---
 
 # Scaffold Project (authoring)
@@ -14,6 +15,18 @@ nothing there yet, so its grounding rules are necessarily different — see
 Shared authoring rules: `CONVENTIONS-authoring.md` (§A2 scoped output, §A3
 propose-commit, §A4 placement, §A5 MCP-detect-never-require, §A6 grounding,
 §A7 idempotent). It **writes files but never commits** (§A3).
+
+> **Finding the conventions file.** It lives at the toolkit repo root, two levels
+> above this skill — not beside `SKILL.md`. Skills are usually installed as
+> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> *link* and misses it. Resolve the link first:
+>
+> ```bash
+> ROOT="$(dirname "$(readlink -f "<this skill's base directory>")")/.."
+> ```
+>
+> then read `$ROOT/CONVENTIONS-authoring.md`. If a file is genuinely absent, say so and continue
+> with the procedure below rather than stopping.
 
 ---
 

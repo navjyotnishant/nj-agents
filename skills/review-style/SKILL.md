@@ -1,7 +1,8 @@
 ---
 name: review-style
 description: Use this skill when the user asks to "review my changes for style", "check conventions before I push", "review my commit messages", or wants a consistency/hygiene review of the current commit or uncommitted work. Checks the diff against surrounding code conventions, commit-message hygiene, and leftover debug/TODO/console output. Works in any git repo; nothing here is project-specific.
-version: 0.2.0
+version: 0.3.0
+class: review
 ---
 
 # Review: Style & Conventions
@@ -13,6 +14,18 @@ not a hardcoded style guide, so it works in any repo.
 
 Follow the shared rules in `CONVENTIONS.md` (snapshot scope §1, diff hygiene §2,
 secret gate §3, findings format §4, CI mode §5, report §6, safety §7).
+
+> **Finding the conventions file.** It lives at the toolkit repo root, two levels
+> above this skill — not beside `SKILL.md`. Skills are usually installed as
+> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> *link* and misses it. Resolve the link first:
+>
+> ```bash
+> ROOT="$(dirname "$(readlink -f "<this skill's base directory>")")/.."
+> ```
+>
+> then read `$ROOT/CONVENTIONS.md`. If a file is genuinely absent, say so and continue
+> with the procedure below rather than stopping.
 
 ## Step 0 — Print the warning banner FIRST
 
@@ -41,6 +54,13 @@ for the commit-hygiene check. Apply diff hygiene (§2), then run the secret-scan
 proceeds.
 
 ## Step 2 — Spawn the style agent
+
+**Cost check first (`CONVENTIONS.md §8`).** If the repo has a formatter or linter
+that already covers the diff (`gofmt`, `prettier`, `ruff`, `eslint`), run it and
+report that result before spawning — a deterministic tool answers the mechanical
+half for free, leaving the agent for the judgement half (naming, comment density,
+leftover debug output). For a trivial diff, review inline instead. Never re-run
+more than twice on the same change without being asked.
 
 Spawn `style-reviewer` with the cleared snapshot. It checks: consistency with
 surrounding code (naming, formatting, idioms, error handling, comment density, reuse

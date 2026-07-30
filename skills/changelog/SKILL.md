@@ -2,6 +2,7 @@
 name: changelog
 description: Use this skill when the user asks to "update the changelog", "generate a CHANGELOG", "cut release notes", "summarize what changed since the last release/tag", or wants a human-readable record of changes in an industry-standard format. Generates or updates CHANGELOG.md using the Keep a Changelog format + Semantic Versioning, reading Conventional Commits as the input signal, then PROPOSES the commit (never commits, pushes, or tags). Works in any git repo; nothing here is project-specific.
 version: 0.1.0
+class: authoring
 ---
 
 # Changelog (authoring)
@@ -14,6 +15,18 @@ it never runs `git add`/`commit`/`push`/`tag`.
 This is an **authoring-class** skill — follow `CONVENTIONS-authoring.md` (repo
 ingest §A1, authoring output §A2, propose-commit §A3, placement §A4, MCP-detect §A5,
 grounding/safety §A6, idempotent/non-clobber §A7).
+
+> **Finding the conventions file.** It lives at the toolkit repo root, two levels
+> above this skill — not beside `SKILL.md`. Skills are usually installed as
+> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> *link* and misses it. Resolve the link first:
+>
+> ```bash
+> ROOT="$(dirname "$(readlink -f "<this skill's base directory>")")/.."
+> ```
+>
+> then read `$ROOT/CONVENTIONS-authoring.md`. If a file is genuinely absent, say so and continue
+> with the procedure below rather than stopping.
 
 ## Step 0 — Print the banner FIRST
 

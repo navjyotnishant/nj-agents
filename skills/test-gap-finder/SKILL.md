@@ -2,6 +2,7 @@
 name: test-gap-finder
 description: Use this skill when the user asks to "find test gaps", "what's not covered by tests", "which code paths lack tests", or wants uncovered functions and missing edge-case tests surfaced. Detects the repo's own test/coverage tooling at runtime (jest/vitest --coverage, pytest-cov, go test -cover, cargo tarpaulin) and, when none is configured, degrades to a static source-to-test heuristic — clearly labeled as a heuristic, not measured coverage. Never writes tests or coverage config. Changed set or whole repo. Works in any git repo, any language; nothing here is project-specific.
 version: 0.1.0
+class: review
 ---
 
 # Test Gap Finder (repo-maintenance)
@@ -11,6 +12,18 @@ and missing edge-case tests. It **advises only: it never writes a test file or
 coverage config, and never invents or installs a coverage tool** the repo doesn't
 already use. A repo-maintenance skill of the **review class** — follow `CONVENTIONS.md`
 (snapshot scope §1, findings format §4, CI mode §5, report §6, safety §7).
+
+> **Finding the conventions file.** It lives at the toolkit repo root, two levels
+> above this skill — not beside `SKILL.md`. Skills are usually installed as
+> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> *link* and misses it. Resolve the link first:
+>
+> ```bash
+> ROOT="$(dirname "$(readlink -f "<this skill's base directory>")")/.."
+> ```
+>
+> then read `$ROOT/CONVENTIONS.md`. If a file is genuinely absent, say so and continue
+> with the procedure below rather than stopping.
 
 ## Step 0 — Print the warning banner FIRST
 

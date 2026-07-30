@@ -2,6 +2,7 @@
 name: pm-plan
 description: Use this skill when the user asks to "plan out this feature", "break this epic into stories and tasks", "set up the whole initiative in Linear/Jira", or wants a feature-sized ask turned into a created Epic→Stories→Tasks tree. It decomposes the initiative (via the pm-decomposer agent), previews the WHOLE tree for one approval, then creates it in the connected PM tracker SEQUENTIALLY, parent-first — Epic, then Stories under it, then Tasks under each — wiring parent links as it goes. Stops and reports on any partial failure; never bulk-creates without preview + opt-in; else hands you the whole tree as markdown. Works with any connected tracker; nothing here is project-specific.
 version: 0.1.0
+class: pm
 ---
 
 # PM Plan (PM-authoring — orchestrator)
@@ -12,6 +13,18 @@ the whole tree, and — on one explicit opt-in — creates it **sequentially, pa
 in the connected tracker. Follow `CONVENTIONS-pm.md`, especially **§P5 (sequential
 parent-first creation, stop-on-partial-failure)**, plus §P1 ground, §P2 map, §P3
 propose, §P4 idempotence, §P6 MCP-detect, §P7 safety.
+
+> **Finding the conventions file.** It lives at the toolkit repo root, two levels
+> above this skill — not beside `SKILL.md`. Skills are usually installed as
+> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> *link* and misses it. Resolve the link first:
+>
+> ```bash
+> ROOT="$(dirname "$(readlink -f "<this skill's base directory>")")/.."
+> ```
+>
+> then read `$ROOT/CONVENTIONS-pm.md`. If a file is genuinely absent, say so and continue
+> with the procedure below rather than stopping.
 
 It reuses the leaf skills' concerns (`/pm-epic`, `/pm-story`, `/pm-task`) — same neutral
 model, same tracker mapping — but is the only PM skill that creates **many** items in

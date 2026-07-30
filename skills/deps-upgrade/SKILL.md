@@ -2,6 +2,7 @@
 name: deps-upgrade
 description: Use this skill when the user asks to "check for dependency upgrades", "what packages are outdated", "survey my dependencies for updates", or wants an upgrade plan for stale packages. Surveys the WHOLE current dependency manifest for available upgrades, flags each with a semver risk class and breaking-change signals, and proposes a prioritized upgrade plan — it never runs the upgrade or edits the manifest. Detects the repo's package manager at runtime; zero-network by default. Works in any git repo and any package ecosystem; nothing here is project-specific.
 version: 0.1.0
+class: review
 ---
 
 # Dependency Upgrade Survey (repo-maintenance)
@@ -11,6 +12,18 @@ each with a risk class and breaking-change signals, and proposes a prioritized
 **upgrade plan**. It **advises only: it never runs the upgrade, and never edits the
 manifest or lockfile.** A repo-maintenance skill of the **review class** — follow
 `CONVENTIONS.md` (findings format §4, CI mode §5, report §6, safety §7).
+
+> **Finding the conventions file.** It lives at the toolkit repo root, two levels
+> above this skill — not beside `SKILL.md`. Skills are usually installed as
+> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> *link* and misses it. Resolve the link first:
+>
+> ```bash
+> ROOT="$(dirname "$(readlink -f "<this skill's base directory>")")/.."
+> ```
+>
+> then read `$ROOT/CONVENTIONS.md`. If a file is genuinely absent, say so and continue
+> with the procedure below rather than stopping.
 
 > **How this differs from `/review-dependencies`.** `/review-dependencies` reviews the
 > dependency **changes in a diff** (a governance gate on what you just added/upgraded).

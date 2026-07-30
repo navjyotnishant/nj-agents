@@ -2,6 +2,7 @@
 name: capture-screenshots
 description: Use this skill when the user asks to "take screenshots for the blog/docs/README", "capture the app UI", "screenshot this page/component/terminal output", or wants images of the project with sensitive data redacted. Captures from a running web app, terminal/CLI output, a static HTML/component, or existing images, then runs a redaction pipeline (detect PII/secrets → blur/mask → verify) so nothing sensitive ships. Writes redacted images into docs and PROPOSES the commit; the un-redacted original never gets committed. Works in any git repo; nothing here is project-specific.
 version: 0.1.0
+class: authoring
 ---
 
 # Capture Screenshots (authoring, multi-agent)
@@ -16,6 +17,18 @@ This is an **authoring-class** skill — follow `CONVENTIONS-authoring.md` (repo
 §A1, scoped output §A2, propose-commit §A3, placement §A4, MCP/tool-detect §A5,
 grounding/safety §A6, non-clobber §A7). Redaction adds its own hard safety rules
 below.
+
+> **Finding the conventions file.** It lives at the toolkit repo root, two levels
+> above this skill — not beside `SKILL.md`. Skills are usually installed as
+> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> *link* and misses it. Resolve the link first:
+>
+> ```bash
+> ROOT="$(dirname "$(readlink -f "<this skill's base directory>")")/.."
+> ```
+>
+> then read `$ROOT/CONVENTIONS-authoring.md`. If a file is genuinely absent, say so and continue
+> with the procedure below rather than stopping.
 
 ## Step 0 — Print the banner FIRST
 

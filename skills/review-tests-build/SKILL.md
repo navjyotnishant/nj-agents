@@ -1,7 +1,8 @@
 ---
 name: review-tests-build
 description: Use this skill when the user asks to "run the tests before I push", "check the build", "run lint on my changes", or wants the project's test/lint/build commands run as a gate over the current changes. Auto-detects the right commands for whatever stack the repo uses (Node, Python, Go, Rust, JVM, Make/just, or commands documented in CLAUDE.md/AGENTS.md) — never hardcodes one project's stack. Works in any git repo.
-version: 0.2.0
+version: 0.3.0
+class: review
 ---
 
 # Review: Tests & Build
@@ -12,6 +13,18 @@ current changes, then reports pass/fail. The commands are **discovered per repo*
 philosophy and never hardcodes a stack, port, or command.
 
 Follow the shared rules in `CONVENTIONS.md` (CI mode §5, report §6, safety §7).
+
+> **Finding the conventions file.** It lives at the toolkit repo root, two levels
+> above this skill — not beside `SKILL.md`. Skills are usually installed as
+> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> *link* and misses it. Resolve the link first:
+>
+> ```bash
+> ROOT="$(dirname "$(readlink -f "<this skill's base directory>")")/.."
+> ```
+>
+> then read `$ROOT/CONVENTIONS.md`. If a file is genuinely absent, say so and continue
+> with the procedure below rather than stopping.
 
 ## Step 0 — Print the warning banner FIRST
 
@@ -69,8 +82,13 @@ Run the detected test / lint / build commands as-is. Rules:
 For each command: PASS (exit 0) / FAIL (non-zero, with the failing summary) /
 SKIP (not detected or tool absent). Dimension verdict: **BLOCK** if any detected
 command fails, **PASS** if all detected commands pass, **SKIP** if nothing was
-detected at all (never a false PASS). For deeper failure triage, spawn the
-`tests-build-runner` agent to analyze the output. Honor the CI-mode exit-code
+detected at all (never a false PASS).
+
+This dimension is the cheap one — running the repo's own commands costs no agent
+at all. Keep it that way: report the raw pass/fail first, and spawn the
+`tests-build-runner` agent **only** when a failure genuinely needs triage and the
+output does not already explain itself (`CONVENTIONS.md §8`). A compiler error
+naming a file and line needs no agent to interpret it. Honor the CI-mode exit-code
 contract (`CONVENTIONS.md §5`) and write the report artifact (§6) if run
 standalone. Advises only — never pushes, never installs, never modifies code.
 

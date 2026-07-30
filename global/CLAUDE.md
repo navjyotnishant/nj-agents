@@ -62,7 +62,7 @@ rather than diff gates, for accumulated maintenance debt.
 
 Shared behavior lives in the repo's `CONVENTIONS-authoring.md` (§A1 repo-ingest,
 §A2 scoped output, §A3 propose-commit, §A4 placement, §A5 MCP-detect-never-require,
-§A6 grounding/safety, §A7 idempotent).
+§A6 grounding/safety, §A7 idempotent, §A8 degrade-when-denied).
 
 Two gates worth knowing: `/tech-blog`'s **fact-checker BLOCKS** on any claim it
 can't verify against the repo, and `/arch-diagram` runs a mandatory
@@ -93,6 +93,39 @@ create the tracked item.
 | `/pm-story` | Drafts one **INVEST user story** ("As a … I want … so that …") + acceptance criteria; on opt-in creates it in the connected tracker, else paste-ready markdown. Optional parent Epic. | (no dedicated agent) |
 | `/pm-task` | Drafts one scoped, actionable **Task** (optionally under a Story/Epic); on opt-in creates it, else markdown. | (no dedicated agent) |
 | `/pm-plan` | **Orchestrator.** Decomposes a feature-sized ask into an Epic→Stories→Tasks tree (via `pm-decomposer`), previews the **whole tree** for one approval, then creates it **sequentially, parent-first**, wiring links. Stops-and-reports on any partial failure; reconciles a re-run so it never double-creates. | `pm-decomposer` |
+
+## Cost and loop control (applies to every skill and agent)
+
+Skills in this toolkit spawn subagents, and subagents cost real money. Several
+have render→QA→fix or find→verify loops that can run for many rounds. Treat
+spend as a budget you must manage, not an implementation detail.
+
+For the review suite specifically, these rules are made concrete in
+`CONVENTIONS.md` **§8 Cost control** — scope-and-confirm before spawning, skip
+dimensions with nothing to review, and re-run only the dimensions that still
+have findings.
+
+- **Say the cost shape before starting.** If a request will spawn subagents or
+  run a multi-round loop, say so in one line and get a yes — *"this runs a
+  render→QA loop, usually 2–4 agent calls"* — before firing it. Don't discover
+  the cost mid-run.
+- **Hard cap: 2 fix rounds.** After two failed QA/verify cycles on the same
+  artifact, **stop and report**: what's fixed, what still fails, the options. Do
+  not start a third round without being asked.
+- **A blocking verdict is a checkpoint, not a to-do.** When a QA/review agent
+  returns BLOCK, the default is to surface it — not to silently fix and re-run.
+  Say what it found and what fixing it would cost.
+- **Never chain skills unprompted.** "Do X and Y" authorizes X and Y, not the
+  agents each of them might spawn in turn. Finish X, report, then confirm Y.
+- **Cheap path first.** If a one-line flag, a manual edit, or plain prose gets
+  90% of the value, do that and offer the skill as the upgrade. A skill is not
+  automatically the right tool just because it matches the topic.
+- **Stop on any signal to stop.** "This is taking a while", "that's expensive",
+  a suggested change of approach, or an interrupt all mean **halt and check in**
+  — not "acknowledge and continue".
+- **Ship at good-enough.** An artifact that is correct and usable but missed a
+  final polish pass should be delivered with the gap stated plainly, not
+  perfected at 10× the cost.
 
 ## Standing rules
 

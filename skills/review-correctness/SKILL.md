@@ -1,7 +1,8 @@
 ---
 name: review-correctness
 description: Use this skill when the user asks to "review my changes for bugs", "check this diff for correctness", "did I introduce a regression", or wants a correctness-focused review of the current commit or uncommitted work before pushing. Reviews the changed lines and their blast radius for logic errors, regressions, unhandled edge cases, and missing validation. Works in any git repo; nothing here is project-specific.
-version: 0.2.0
+version: 0.3.0
+class: review
 ---
 
 # Review: Correctness & Bugs
@@ -13,6 +14,18 @@ code, changed contracts), not the whole repo.
 
 Follow the shared rules in `CONVENTIONS.md` (snapshot scope §1, diff hygiene §2,
 secret gate §3, findings format §4, CI mode §5, report §6, safety §7).
+
+> **Finding the conventions file.** It lives at the toolkit repo root, two levels
+> above this skill — not beside `SKILL.md`. Skills are usually installed as
+> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> *link* and misses it. Resolve the link first:
+>
+> ```bash
+> ROOT="$(dirname "$(readlink -f "<this skill's base directory>")")/.."
+> ```
+>
+> then read `$ROOT/CONVENTIONS.md`. If a file is genuinely absent, say so and continue
+> with the procedure below rather than stopping.
 
 ## Step 0 — Print the warning banner FIRST
 
@@ -41,6 +54,12 @@ secret hit is a hard stop — share nothing, tell the user (interactive) or BLOC
 exit 1 (CI). Only a clean scan proceeds.
 
 ## Step 2 — Spawn the correctness agent
+
+**Cost check first (`CONVENTIONS.md §8`).** One agent is cheap, but a trivial diff
+does not need one: for a change under ~20 lines across one or two files, review it
+inline and say so rather than spawning. For anything larger, state the scope in one
+line — `Reviewing 12 files / 340 lines with 1 correctness agent.` — and proceed.
+Never re-run more than twice on the same change without being asked.
 
 Spawn `correctness-reviewer` with the cleared, hygiene-filtered snapshot. It traces
 each hunk for: off-by-one/boundary errors, null/undefined/None dereferences,

@@ -2,6 +2,7 @@
 name: commit-assistant
 description: Use this skill when the user asks to "write a commit message", "help me commit this", "draft a conventional commit for these changes", or wants a clean commit message for the current diff. Reads the working-tree changes, groups them into logically distinct commits when they're unrelated, and drafts a Conventional Commits message for each — then prints the exact `git add` + `git commit` block for the user to run. It NEVER runs git itself: the human decides what gets committed. Works in any git repo; nothing here is project-specific.
 version: 0.1.0
+class: workflow
 ---
 
 # Commit Assistant (workflow)
@@ -14,6 +15,18 @@ each — rather than one grab-bag commit.
 This is a **workflow-class** skill (see `/pr-describe`). It reads a diff like the
 review class but invents nothing (`CONVENTIONS.md §1` scope, `CONVENTIONS-authoring.md
 §A6` grounding), and it **proposes, never acts** (§A3).
+
+> **Finding the conventions file.** It lives at the toolkit repo root, two levels
+> above this skill — not beside `SKILL.md`. Skills are usually installed as
+> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> *link* and misses it. Resolve the link first:
+>
+> ```bash
+> ROOT="$(dirname "$(readlink -f "<this skill's base directory>")")/.."
+> ```
+>
+> then read `$ROOT/CONVENTIONS-authoring.md` and `$ROOT/CONVENTIONS.md`. If a file is genuinely absent, say so and continue
+> with the procedure below rather than stopping.
 
 > **The one hard rule this skill lives on top of:** *the human decides what gets
 > committed.* This skill's entire output is the `git commit` block from §A3 — with a
