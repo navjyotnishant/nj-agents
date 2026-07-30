@@ -3,6 +3,7 @@ name: review-secrets
 description: Use this skill when the user asks to "scan my changes for secrets", "check the diff for leaked keys/credentials", "run the security review on this change", or wants a security-focused review of the current commit or uncommitted work before pushing. REQUIRES a dedicated secret scanner (gitleaks/trufflehog/detect-secrets) on PATH — runs it over the diff first as a HARD GATE (BLOCKs with install instructions if none is installed) — then a deeper semantic security pass. Works in any git repo; nothing here is project-specific.
 version: 0.4.0
 class: review
+subclass: gate
 ---
 
 # Review: Secrets & Security

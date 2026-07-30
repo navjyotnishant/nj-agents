@@ -3,6 +3,7 @@ name: review-correctness
 description: Use this skill when the user asks to "review my changes for bugs", "check this diff for correctness", "did I introduce a regression", or wants a correctness-focused review of the current commit or uncommitted work before pushing. Reviews the changed lines and their blast radius for logic errors, regressions, unhandled edge cases, and missing validation. Works in any git repo; nothing here is project-specific.
 version: 0.3.0
 class: review
+subclass: gate
 ---
 
 # Review: Correctness & Bugs

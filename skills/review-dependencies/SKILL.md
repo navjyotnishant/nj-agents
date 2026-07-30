@@ -3,6 +3,7 @@ name: review-dependencies
 description: Use this skill when the user asks to "check my dependency changes", "review new packages before I push", "did I add any risky dependencies", or wants a governance review of dependency and license changes in the current commit or uncommitted work. Flags added/removed/upgraded dependencies, license changes, and supply-chain risk signals in the diff. Works in any git repo and any package ecosystem; nothing here is project-specific.
 version: 0.3.0
 class: review
+subclass: gate
 ---
 
 # Review: Dependencies & Licenses

@@ -3,6 +3,7 @@ name: test-gap-finder
 description: Use this skill when the user asks to "find test gaps", "what's not covered by tests", "which code paths lack tests", or wants uncovered functions and missing edge-case tests surfaced. Detects the repo's own test/coverage tooling at runtime (jest/vitest --coverage, pytest-cov, go test -cover, cargo tarpaulin) and, when none is configured, degrades to a static source-to-test heuristic — clearly labeled as a heuristic, not measured coverage. Never writes tests or coverage config. Changed set or whole repo. Works in any git repo, any language; nothing here is project-specific.
 version: 0.1.0
 class: review
+subclass: scan
 ---
 
 # Test Gap Finder (repo-maintenance)

@@ -3,6 +3,7 @@ name: deps-upgrade
 description: Use this skill when the user asks to "check for dependency upgrades", "what packages are outdated", "survey my dependencies for updates", or wants an upgrade plan for stale packages. Surveys the WHOLE current dependency manifest for available upgrades, flags each with a semver risk class and breaking-change signals, and proposes a prioritized upgrade plan — it never runs the upgrade or edits the manifest. Detects the repo's package manager at runtime; zero-network by default. Works in any git repo and any package ecosystem; nothing here is project-specific.
 version: 0.1.0
 class: review
+subclass: scan
 ---
 
 # Dependency Upgrade Survey (repo-maintenance)

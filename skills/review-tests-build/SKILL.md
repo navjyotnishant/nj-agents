@@ -3,6 +3,7 @@ name: review-tests-build
 description: Use this skill when the user asks to "run the tests before I push", "check the build", "run lint on my changes", or wants the project's test/lint/build commands run as a gate over the current changes. Auto-detects the right commands for whatever stack the repo uses (Node, Python, Go, Rust, JVM, Make/just, or commands documented in CLAUDE.md/AGENTS.md) — never hardcodes one project's stack. Works in any git repo.
 version: 0.3.0
 class: review
+subclass: gate
 ---
 
 # Review: Tests & Build

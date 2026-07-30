@@ -3,6 +3,7 @@ name: dead-code-finder
 description: Use this skill when the user asks to "find dead code", "find unused code/exports/files", "what code is unreferenced", or wants a scan for unused functions, exports, files, and dependencies. Detects the repo's own dead-code tooling at runtime (ts-prune/knip, vulture, deadcode, cargo-udeps) and degrades to a manual export-vs-import cross-reference; reports candidates with a confidence level and never deletes anything. Whole-repo by default, or the changed set. Works in any git repo, any language; nothing here is project-specific.
 version: 0.1.0
 class: review
+subclass: scan
 ---
 
 # Dead Code Finder (repo-maintenance)

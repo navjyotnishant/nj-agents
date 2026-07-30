@@ -203,10 +203,16 @@ check_conventions_reachable() {
 #
 # Review skills may DELEGATE the shared rules ("follow CONVENTIONS.md §5") instead
 # of restating them; that is the intended design, so citing the section counts.
-# The repo-maintenance three (dead-code-finder/test-gap-finder/deps-upgrade) report
-# candidates rather than gating a push, so they are not held to the verdict tokens.
+#
+# The class splits in two: a `gate` reviews a DIFF and answers "is this safe to
+# push?" (PASS/WARN/BLOCK, honoured by a hook), while a `scan` sweeps the WHOLE
+# repo for accumulated debt and returns candidates — there is no sensible BLOCK
+# for "you have 12 unused exports". Only gates are held to the verdict tokens.
+# That split is read from `subclass:`, never from a list of skill names here: a
+# hardcoded allowlist would silently exempt skill #24, which is the exact
+# forget-to-update failure this validator exists to catch.
 check_class_contract() {
-  local d name class f bad=0
+  local d name class f sub bad=0
   for d in "$SKILLS_SRC"/*/; do
     name="$(basename "${d%/}")"; f="$d/SKILL.md"
     [ -f "$f" ] || continue
@@ -218,14 +224,23 @@ check_class_contract() {
             "skills/$name (review) defines no CI mode — needs NJ_AGENTS_CI or a CONVENTIONS.md §5 reference"
           bad=1
         }
-        case "$name" in
-          dead-code-finder|test-gap-finder|deps-upgrade) ;;
-          *)
+        sub="$(grep -m1 '^subclass:' "$f" | sed 's/^subclass: *//' || true)"
+        case "$sub" in
+          gate)
             grep -q 'BLOCK' "$f" || {
               finding check_class_contract referential \
-                "skills/$name (review) never mentions a BLOCK verdict"
+                "skills/$name (review/gate) never mentions a BLOCK verdict"
               bad=1
             } ;;
+          scan) ;;
+          "")
+            finding check_class_contract structural \
+              "skills/$name (review) declares no 'subclass:' — must be gate (reviews a diff) or scan (sweeps the repo)"
+            bad=1 ;;
+          *)
+            finding check_class_contract structural \
+              "skills/$name: unknown subclass '$sub' — expected gate or scan"
+            bad=1 ;;
         esac ;;
       authoring)
         grep -q '§A3' "$f" || {

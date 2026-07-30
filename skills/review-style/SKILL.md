@@ -3,6 +3,7 @@ name: review-style
 description: Use this skill when the user asks to "review my changes for style", "check conventions before I push", "review my commit messages", or wants a consistency/hygiene review of the current commit or uncommitted work. Checks the diff against surrounding code conventions, commit-message hygiene, and leftover debug/TODO/console output. Works in any git repo; nothing here is project-specific.
 version: 0.3.0
 class: review
+subclass: gate
 ---
 
 # Review: Style & Conventions
