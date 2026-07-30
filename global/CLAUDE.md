@@ -157,6 +157,13 @@ Apply these to related work even when no skill is invoked:
   declines, or it's a throwaway repo, note that and proceed — never hard-block coding
   on a ticket. A project whose own `CLAUDE.md` mandates a stricter gate (e.g. "no code
   without an issue") overrides this softer default.
+- **On finishing a tracked item, report the whole tree — not just that item.** End
+  the update with every sibling under the same parent: done ones first with `✅`, the
+  rest in dependency/priority order, aligned columns (`key · short title · priority ·
+  estimate`), `← new` on anything added this session. A bare "done ✅" says what
+  happened but not where the user now is, so they have to go look it up. Pair the tree
+  with the commit SHA and one line on anything surprising, and put the tree last.
+  Full rule and example: `CONVENTIONS-pm.md §P8`.
 - **Author header on new scripts and standalone modules.** For a new script, migration,
   or major standalone module, add a comment header at the top:
 

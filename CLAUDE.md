@@ -22,7 +22,7 @@ skills/<name>/scripts/      # optional bundled helper scripts (node_modules is g
 agents/<name>.md            # an agent is a FLAT .md file
 CONVENTIONS.md              # review-class shared rules
 CONVENTIONS-authoring.md    # authoring-class shared rules (§A1–A8)
-CONVENTIONS-pm.md           # PM-authoring-class shared rules (§P1–P7); skills in NAV-82..84
+CONVENTIONS-pm.md           # PM-authoring-class shared rules (§P1–P8); skills in NAV-82..84
 global/CLAUDE.md            # advisory guidance → symlinked to ~/.claude/CLAUDE.md
 install.sh                  # symlink installer (idempotent; safe uninstall; never clobbers)
 README.md                   # public overview
@@ -80,7 +80,7 @@ docs/architecture/          # generated diagrams + their JSON source models
   **tracker object, not a repo file**, so the §A2/§A4 placement rules don't apply.
   Shared rules: `CONVENTIONS-pm.md` (§P1 ground, §P2 neutral-model→per-tracker map,
   §P3 propose-the-create, §P4 tracker idempotence, §P5 sequential parent-first,
-  §P6 MCP-detect-never-require, §P7 safety). Leaf skills `/pm-epic`, `/pm-story`,
+  §P6 MCP-detect-never-require, §P7 safety, §P8 report-the-tree). Leaf skills `/pm-epic`, `/pm-story`,
   `/pm-task` + the `/pm-plan` orchestrator (decomposes via `pm-decomposer`, previews the
   whole tree, then creates it sequentially parent-first with stop-on-partial-failure).
   Motivated by the global "track work in a PM tool" rule.

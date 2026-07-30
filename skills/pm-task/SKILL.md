@@ -10,7 +10,7 @@ class: pm
 Drafts one scoped, actionable **Task** and, on opt-in, creates it in the connected PM
 tracker. A leaf skill of the **PM-authoring class** — follow `CONVENTIONS-pm.md`
 (§P1 ground, §P2 neutral-model→per-tracker map, §P3 propose-the-create, §P4 tracker
-idempotence, §P6 MCP-detect-never-require, §P7 safety).
+idempotence, §P6 MCP-detect-never-require, §P7 safety, §P8 report-the-tree).
 
 > **Finding the conventions file.** It lives at the toolkit repo root, two levels
 > above this skill — not beside `SKILL.md`. Skills are usually installed as

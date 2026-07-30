@@ -152,3 +152,30 @@ assume which tracker the project uses. If several are connected, ask which to us
   workspace is noise that's tedious to clean up — confirm the destination.
 - **Don't set status/assignee the user didn't ask for.** Default new items to the
   team's default state (or backlog); let the user drive workflow state.
+
+---
+
+## §P8 — Report the whole tree, not the finished item (shared)
+
+When a tracked item is completed, **end the update with the full parent tree** —
+every sibling, not just the one that closed. A bare "NAV-133 done ✅" tells the user
+what happened; it does not tell them where they are, so they go and look it up.
+
+Done items first with `✅`, the rest in dependency/priority order, columns aligned,
+`← new` on anything added this session. Short titles, not the full tracker title —
+this is a glance, not a report:
+
+```
+✅ NAV-133  Referential drift
+✅ NAV-134  class: frontmatter
+   NAV-137  bin/nj-agents-review       URGENT   5pt
+   NAV-143  Cost-control harness         High   5pt   ← new
+   NAV-141  Harness docs + diagram        Low   5pt
+```
+
+Each row: key · short title · priority · estimate. Pair the tree with the commit
+SHA and one line on anything surprising found along the way, then let the tree be
+the last thing on screen.
+
+Applies to any tracker and to work done **outside** a PM skill — if the session is
+executing a tracked plan, the completion report follows this shape.

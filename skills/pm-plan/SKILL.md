@@ -12,7 +12,7 @@ umbrella of the **PM-authoring class**: it decomposes (via `pm-decomposer`), pre
 the whole tree, and — on one explicit opt-in — creates it **sequentially, parent-first**
 in the connected tracker. Follow `CONVENTIONS-pm.md`, especially **§P5 (sequential
 parent-first creation, stop-on-partial-failure)**, plus §P1 ground, §P2 map, §P3
-propose, §P4 idempotence, §P6 MCP-detect, §P7 safety.
+propose, §P4 idempotence, §P6 MCP-detect, §P7 safety, §P8 report-the-tree.
 
 > **Finding the conventions file.** It lives at the toolkit repo root, two levels
 > above this skill — not beside `SKILL.md`. Skills are usually installed as
@@ -116,6 +116,11 @@ Skipped:  <assumption items the user cut>
 Status:   complete   |   HALTED after <KEY> — <what failed>; re-run to resume
 Epic URL: <url>
 ```
+
+Then print the **whole tree** per `CONVENTIONS-pm.md §P8` — done items first with
+`✅`, the rest in dependency/priority order, `← new` on anything added this run.
+This also applies later, whenever a story from this tree is completed: report the
+tree, not just the item that closed.
 
 ## Safety rails
 
