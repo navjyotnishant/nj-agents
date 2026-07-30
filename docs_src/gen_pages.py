@@ -145,11 +145,39 @@ def clip(text: str, limit: int = 185) -> str:
     return cut + "…"
 
 
+def example_block(meta: dict) -> list[str]:
+    """Agent descriptions embed an <example> block — a worked scenario aimed at the
+    model deciding whether to spawn it. Useful to a reader, but only as a clearly
+    marked example; inline it read as garbled prose with \" artifacts."""
+    d = meta.get("description", "").replace("\\n", "\n")
+    if "<example>" not in d:
+        return []
+    body = d.split("<example>", 1)[1].split("</example>", 1)[0]
+    ctx = re.search(r"Context:\s*(.+?)\n", body)
+    # The description is a JSON-ish string, so its inner quotes arrive as \" — the
+    # capture must exclude the backslashes or they render literally.
+    user = re.search(r'user:\s*\\?"(.*?)\\?"\s*(?:\n|$)', body, re.S)
+    why = re.search(r"<commentary>\s*(.+?)\s*</commentary>", body, re.S)
+    out = ["", "## When it runs", ""]
+    if ctx:
+        out.append(f"*{ctx.group(1).strip().rstrip('.')}.*")
+        out.append("")
+    if user:
+        q = user.group(1).strip().strip('\\').strip('"').strip('\\')
+        out += [f"> {q}", ""]
+    if why:
+        out.append(re.sub(r"\s+", " ", why.group(1)).strip())
+    return out
+
+
 def summary(meta: dict) -> str:
     """The frontmatter description opens with trigger phrases aimed at the model
     ("Use this skill when the user asks to ..."). A reader wants what it DOES, so
     drop that clause and keep the rest."""
-    d = meta.get("description", "")
+    # Everything from <example> on is a worked scenario for the model, not a
+    # description. Rendered separately by example_block(); inline it produced
+    # garbled prose full of escaped quotes.
+    d = meta.get("description", "").split("<example>")[0].replace("\\n", " ")
     # Drop the trigger clause — "Use this skill when the user asks to 'x', 'y', or
     # wants z." is aimed at the model, not a reader. Cut through the first sentence
     # that ends the trigger list rather than leaving a mid-sentence fragment.
@@ -320,6 +348,8 @@ for name in sorted(agents):
         f"| Model | `{m.get('model', '—')}` |",
         f"| Author | {m.get('author', '—')} |",
         f"| Source | [`agents/{name}.md`]({REPO_URL}/agents/{name}.md) |",
+        "",
+        *example_block(m),
         "",
         "## Spawned by",
         "",
