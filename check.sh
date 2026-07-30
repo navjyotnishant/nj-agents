@@ -441,6 +441,31 @@ check_guidance_sync() {
   return 0
 }
 
+# hooks/suggest-skills.sh hand-lists the skills it suggests, exactly like
+# global/CLAUDE.md does — so it has the same staleness bug. A skill it never names
+# is one the hook will never surface, which is the whole reason the hook exists.
+check_hook_sync() {
+  local hook="$REPO_DIR/hooks/suggest-skills.sh" listed actual missing stale bad=0
+  [ -f "$hook" ] || return 0
+  # Skills appear grouped inside one suggestion string — `add "/changelog and
+  # /release-notes"` — so scan for every /name, not just the first per line.
+  # A skill can only be flagged missing if the hook never names it anywhere, so
+  # match against the real skill list rather than trying to parse the script.
+  listed=""
+  for n in $(for d in "$SKILLS_SRC"/*/; do basename "${d%/}"; done); do
+    grep -q -- "/$n" "$hook" && listed="$listed$n
+"
+  done
+  listed="$(printf '%s' "$listed" | sort -u)"
+  actual="$(for d in "$SKILLS_SRC"/*/; do basename "${d%/}"; done | sort -u)"
+  missing="$(comm -13 <(echo "$listed") <(echo "$actual") | tr '\n' ' ')"
+  stale="$(comm -23 <(echo "$listed") <(echo "$actual") | tr '\n' ' ')"
+  [ -n "${missing// }" ] && { finding check_hook_sync doc-sync "hooks/suggest-skills.sh never suggests these skills: $missing"; bad=1; }
+  [ -n "${stale// }" ] && { finding check_hook_sync doc-sync "hooks/suggest-skills.sh suggests skills that no longer exist: $stale"; bad=1; }
+  [ "$bad" = "0" ] && ok "skill-suggestion hook in sync"
+  return 0
+}
+
 # An agent named in the docs but deleted from the repo — the half install.sh's
 # sync check never looked for.
 check_stale_agents() {
@@ -487,6 +512,7 @@ check_cost_control
 check_progress_reporting
 check_conventions_sections
 check_guidance_sync
+check_hook_sync
 check_stale_agents
 check_counts
 
