@@ -47,7 +47,8 @@ rails) lives once in [`CONVENTIONS.md`](CONVENTIONS.md).
 
 ### Repo-maintenance skills (review class)
 
-Also review-class (advise only, never modify), but **whole-repo scans** for accumulated
+Also review-class (advise only, never modify), but **debt scans** rather than pass/fail
+gates — changed-set by default, `--full` for the whole tree — for accumulated
 maintenance debt rather than diff gates. Each detects the repo's own tooling at runtime
 with a labeled zero-dependency fallback.
 

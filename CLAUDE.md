@@ -54,7 +54,8 @@ docs/architecture/          # generated diagrams + their JSON source models
   Shared rules: `CONVENTIONS.md`.
   Skills: `/pre-push-review` (umbrella) + `/review-secrets`, `/review-correctness`,
   `/review-tests-build`, `/review-dependencies`, `/review-style`.
-  **Repo-maintenance** sub-group (review-class too — whole-repo scans, not diff gates):
+  **Repo-maintenance** sub-group (review-class too — debt scans, not pass/fail gates;
+  changed-set by default, `--full` for the whole tree):
   `/dead-code-finder`, `/test-gap-finder`, `/deps-upgrade`. Same advise-only discipline
   (never delete, never write tests, never upgrade); detect the repo's own tooling at
   runtime with a labeled fallback. `/deps-upgrade` surveys the whole manifest for

@@ -39,8 +39,10 @@ repo's `CONVENTIONS.md`.
 instructions** if none is present — there is no heuristic-only fallback. On a hit the
 review **stops and shares nothing**. (`gitleaks` is installed on this machine.)
 
-**Repo-maintenance** (review-class too — advise only, never modify): whole-repo scans
-rather than diff gates, for accumulated maintenance debt.
+**Repo-maintenance** (review-class too — advise only, never modify): maintenance-debt
+scans rather than pass/fail gates. Like the gates they **default to your changed set**
+and take `--full` for the whole tree — except `/deps-upgrade`, whose subject is the
+whole manifest by definition.
 
 | Skill | What it does | Agent |
 |---|---|---|

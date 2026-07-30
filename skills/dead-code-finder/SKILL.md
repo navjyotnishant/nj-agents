@@ -1,7 +1,7 @@
 ---
 name: dead-code-finder
-description: Use this skill when the user asks to "find dead code", "find unused code/exports/files", "what code is unreferenced", or wants a scan for unused functions, exports, files, and dependencies. Detects the repo's own dead-code tooling at runtime (ts-prune/knip, vulture, deadcode, cargo-udeps) and degrades to a manual export-vs-import cross-reference; reports candidates with a confidence level and never deletes anything. Whole-repo by default, or the changed set. Works in any git repo, any language; nothing here is project-specific.
-version: 0.1.0
+description: Use this skill when the user asks to "find dead code", "find unused code/exports/files", "what code is unreferenced", or wants a scan for unused functions, exports, files, and dependencies. Detects the repo's own dead-code tooling at runtime (ts-prune/knip, vulture, deadcode, cargo-udeps) and degrades to a manual export-vs-import cross-reference; reports candidates with a confidence level and never deletes anything. Defaults to your uncommitted/unpushed changes to keep runs cheap; --full scans the whole tree. Works in any git repo, any language; nothing here is project-specific.
+version: 0.2.0
 class: review
 subclass: scan
 author: Navjyot Nishant
@@ -33,8 +33,11 @@ report §6, safety §7).
 > signal to stop. Announce the **pipeline** up front and each stage as it starts, so a stall is
 > attributable to a named stage (`§R`).
 
-Unlike the diff-scoped review skills, dead code is a **whole-repo** concern, so this
-defaults to scanning the whole repo — but it also supports the changed set.
+Dead code is ultimately a whole-repo concern, but a whole-repo cross-reference is the
+most expensive scan in this toolkit and most runs are asking about work in progress.
+So it **defaults to the changed set** (`CONVENTIONS.md §1`) and takes `--full` for the
+whole tree. Say which scope ran, and — when it was the changed set — say plainly that
+dead code elsewhere was not looked at.
 
 ## Step 0 — Print the warning banner FIRST
 
@@ -58,9 +61,22 @@ defaults to scanning the whole repo — but it also supports the changed set.
 
 ## Step 1 — Resolve scope
 
-- **Whole-repo** (default): the tracked source tree.
-- **Changed set**: if the user asks ("just my changes"), use the snapshot
-  (`CONVENTIONS.md §1`) — report only candidates touching changed files.
+- **Changed set** (default): the snapshot (`CONVENTIONS.md §1`) — report only
+  candidates in changed files. Cheap, and it answers the common question: *did the
+  work I just did leave anything unreferenced?*
+- **Whole-repo**: on `--full`, "scan everything", or when the snapshot is empty
+  (nothing changed → the changed set would be a no-op, so survey the tree and say so).
+
+**A changed-set result is not a clean bill of health.** Two things it cannot see, and
+the report must say so rather than implying the repo is clean:
+
+- Code elsewhere that became dead *because of* this change — deleting the last caller
+  of a helper in an untouched file leaves that helper orphaned, outside the diff.
+- Any pre-existing dead code in files you did not touch.
+
+When findings look suspicious for that reason — a changed file removed a call site,
+or an export lost its only import — say the whole-repo scan is worth running and
+offer `--full`.
 
 **State the scope used** in the report; don't silently pick one.
 

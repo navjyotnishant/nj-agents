@@ -79,6 +79,25 @@ at once:
 
 ---
 
+### Default to the changed set, offer the full scan
+
+Whole-repo work is the most expensive thing a skill can do, and most runs are asking
+about work in progress. **Default to the snapshot (§1); take `--full` for the whole
+tree.** This applies to the repo-maintenance scans as much as the diff gates.
+
+Two obligations come with a narrowed default:
+
+- **Say which scope ran.** A changed-set result that reads like a whole-repo result
+  is worse than no result.
+- **Say what it could not see.** A changed-set scan misses anything the change made
+  dead *elsewhere* — deleting the last caller of a helper in an untouched file leaves
+  it orphaned, outside the diff. Offer `--full` when findings suggest that happened.
+
+The exception is a skill whose subject genuinely is the whole thing: `/deps-upgrade`
+surveys the entire manifest because "what is outdated" scoped to touched packages is
+a misleading answer, and the manifest is one small file. Narrowing it would also
+duplicate `/review-dependencies`.
+
 ## 3. Secret handling (applies before any AI sharing)
 
 The secret scan is always the **first gate**. The diff is not handed to any
