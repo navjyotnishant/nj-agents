@@ -364,7 +364,11 @@ grouped = {a for _, members in pipelines for a in members}
 
 for skill_name, members in pipelines:
     ordered = pipeline_order(skill_name, members, skills)
-    nav_agents.append(f"    * [/{skill_name}](skills/{skill_name}.md)")
+    # A plain LABEL, not a link. Listing skills/<name>.md here as well as under
+    # Skills made mkdocs keep only the first occurrence and silently drop the page
+    # from Skills — which is what left "Authoring" showing bare "Workflow" entries
+    # with three of its six skills missing. The agent pages link back to the skill.
+    nav_agents.append(f"    * {skill_name}")
     for name in ordered:
         nav_agents.append(f"        * [{name}](agents/{name}.md)")
 
