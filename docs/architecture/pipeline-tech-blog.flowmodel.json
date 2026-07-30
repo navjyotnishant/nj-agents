@@ -1,0 +1,161 @@
+{
+  "title": "/tech-blog \u2014 a 7-stage pipeline with a blocking gate",
+  "subtitle": "Each stage feeds the next. The fact-checker is a hard gate: any claim it cannot verify against the repo sends the draft back to the writer rather than through. Diagrams and screenshots are generated first, in parallel, so the writer has something real to embed.",
+  "cols": 5,
+  "nodes": [
+    {
+      "id": "repo",
+      "label": "repo model",
+      "sub": "README \u00b7 docs \u00b7 code",
+      "icon": "file",
+      "role": "neutral",
+      "col": 0,
+      "row": 1
+    },
+    {
+      "id": "assets",
+      "label": "diagram-architect",
+      "sub": "visuals, before the draft",
+      "icon": "diagram",
+      "role": "authoring",
+      "col": 1,
+      "row": 0
+    },
+    {
+      "id": "writer",
+      "label": "blog-writer",
+      "sub": "draft + citation markers",
+      "icon": "pencil",
+      "role": "authoring",
+      "col": 1,
+      "row": 1
+    },
+    {
+      "id": "fact",
+      "label": "blog-fact-checker",
+      "sub": "unverifiable \u2192 BLOCK",
+      "kind": "gate",
+      "role": "danger",
+      "col": 2,
+      "row": 1
+    },
+    {
+      "id": "reviewer",
+      "label": "blog-reviewer",
+      "sub": "structure \u00b7 clarity",
+      "icon": "eye",
+      "role": "authoring",
+      "col": 3,
+      "row": 0
+    },
+    {
+      "id": "editor",
+      "label": "blog-editor",
+      "sub": "applies the notes",
+      "icon": "brush",
+      "role": "authoring",
+      "col": 3,
+      "row": 1
+    },
+    {
+      "id": "polish",
+      "label": "blog-final-polish",
+      "sub": "duplicate H1 \u00b7 ending",
+      "icon": "check",
+      "role": "authoring",
+      "col": 3,
+      "row": 2
+    },
+    {
+      "id": "lint",
+      "label": "blog-platform-lint",
+      "sub": "tags \u00b7 images \u00b7 draft flow",
+      "icon": "shield",
+      "role": "authoring",
+      "col": 4,
+      "row": 0
+    },
+    {
+      "id": "post",
+      "label": "docs/blog/",
+      "sub": "post written \u00b7 commit PROPOSED",
+      "kind": "gate",
+      "role": "success",
+      "col": 4,
+      "row": 1
+    },
+    {
+      "id": "poster",
+      "label": "blog-poster",
+      "sub": "opt-in \u00b7 draft only",
+      "icon": "send",
+      "role": "authoring",
+      "col": 4,
+      "row": 2
+    }
+  ],
+  "edges": [
+    {
+      "from": "repo",
+      "to": "assets",
+      "role": "neutral"
+    },
+    {
+      "from": "repo",
+      "to": "writer",
+      "role": "neutral"
+    },
+    {
+      "from": "assets",
+      "to": "writer",
+      "label": "embed",
+      "role": "authoring",
+      "dashed": true
+    },
+    {
+      "from": "writer",
+      "to": "fact",
+      "role": "authoring"
+    },
+    {
+      "from": "fact",
+      "to": "writer",
+      "label": "rewrite",
+      "role": "danger",
+      "dashed": true
+    },
+    {
+      "from": "fact",
+      "to": "reviewer",
+      "label": "clean",
+      "role": "authoring"
+    },
+    {
+      "from": "reviewer",
+      "to": "editor",
+      "role": "authoring"
+    },
+    {
+      "from": "editor",
+      "to": "polish",
+      "role": "authoring"
+    },
+    {
+      "from": "polish",
+      "to": "lint",
+      "role": "authoring"
+    },
+    {
+      "from": "lint",
+      "to": "post",
+      "role": "success"
+    },
+    {
+      "from": "post",
+      "to": "poster",
+      "label": "if you opt in",
+      "role": "authoring",
+      "dashed": true
+    }
+  ]
+}

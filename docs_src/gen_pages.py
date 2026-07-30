@@ -170,6 +170,27 @@ def example_block(meta: dict) -> list[str]:
     return out
 
 
+def returns_block(body: str) -> list[str]:
+    """What the agent hands back. 25 of 26 agents document this, but under a dozen
+    different headings — `Phase 4 — Return`, `Phase 5 — Return`, `Output`, `Report`.
+    Only 6 document their INPUT, so that half is deliberately not attempted rather
+    than shown for a quarter of the roster."""
+    m = re.search(
+        r"^## (?:Phase \d+ — )?(?:What you return|Return|Report|Output)\b[^\n]*\n(.*?)(?=\n## |\Z)",
+        strip_comments(body), re.S | re.M | re.I)
+    if not m:
+        return []
+    text = m.group(1).strip()
+    if not text:
+        return []
+    return ["", "## What it returns", "", text]
+
+
+# A pipeline diagram exists for some orchestrating skills; embed it on the pages of
+# the agents that take part, so an agent shows where it sits in the whole run.
+PIPELINE_DIAGRAMS = {"tech-blog": "pipeline-tech-blog.svg"}
+
+
 def summary(meta: dict) -> str:
     """The frontmatter description opens with trigger phrases aimed at the model
     ("Use this skill when the user asks to ..."). A reader wants what it DOES, so
@@ -313,6 +334,9 @@ for cls, (title, blurb) in CLASSES.items():
         out.append(
             f"| Source | [`skills/{name}/SKILL.md`]({REPO_URL}/skills/{name}/SKILL.md) |"
         )
+        if name in PIPELINE_DIAGRAMS:
+            out += ["", "## The pipeline", "",
+                    f"![/{name} pipeline](../assets/{PIPELINE_DIAGRAMS[name]})"]
         out += ["", "## Agents it spawns", ""]
         if spawns[name]:
             out += [f"- [`{a}`](../agents/{a}.md) — {clip(summary(agents[a]['meta']), 110)}"
@@ -350,6 +374,7 @@ for name in sorted(agents):
         f"| Source | [`agents/{name}.md`]({REPO_URL}/agents/{name}.md) |",
         "",
         *example_block(m),
+        *returns_block(a["body"]),
         "",
         "## Spawned by",
         "",
@@ -359,6 +384,10 @@ for name in sorted(agents):
         "",
     ]
     out += [f"- [`/{s}`](../skills/{s}.md)" for s in sorted(spawned_by[name])]
+    for sk in sorted(spawned_by[name]):
+        if sk in PIPELINE_DIAGRAMS:
+            out += ["", f"### Where it sits in `/{sk}`", "",
+                    f"![/{sk} pipeline](../assets/{PIPELINE_DIAGRAMS[sk]})"]
     out += ["", f"[Read `agents/{name}.md` →]({REPO_URL}/agents/{name}.md)"]
     write(page, out, a["path"])
 
