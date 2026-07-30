@@ -51,7 +51,8 @@ docs/architecture/          # generated diagrams + their JSON source models
 - **Authoring class** — *writes an artifact into the repo, then PROPOSES the commit.*
   **Never `git add`/`commit`/`push`/`tag` automatically.** Shared rules:
   `CONVENTIONS-authoring.md` (§A1 repo-ingest, §A2 scoped output, §A3 propose-commit,
-  §A4 placement, §A5 MCP-detect-never-require, §A6 grounding/safety, §A7 idempotent).
+  §A4 placement, §A5 MCP-detect-never-require, §A6 grounding/safety, §A7 idempotent,
+  §A8 degrade-when-denied).
   Skills: `/changelog`, `/arch-diagram`, `/capture-screenshots`, `/tech-blog`, `/docs-site`,
   `/scaffold-project`. The last is the one authoring skill that runs on a **greenfield**
   repo — with no repo to read, §A6 is satisfied by grounding in the **OpenSSF OSPS

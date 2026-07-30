@@ -2,6 +2,7 @@
 name: pr-describe
 description: Use this skill when the user asks to "describe this PR", "write the PR description", "draft a pull request", "summarize this branch for a PR", or wants a clear PR title and body for the current branch. Reads the branch's whole delta versus its base (the PR view) plus its commit messages, and drafts a structured title + body (summary, what changed, why, test plan, related issues). Opens a DRAFT PR only if the user opts in and `gh` is present — otherwise it hands you the text. Never pushes, never opens a non-draft PR on its own. Works in any git repo; nothing here is project-specific.
 version: 0.1.0
+class: workflow
 ---
 
 # PR Describe (workflow)
@@ -19,6 +20,18 @@ borrows the safe halves of each:
 - Like the **authoring class**, it **proposes and never auto-acts**
   (`CONVENTIONS-authoring.md §A3`): it never `git push`es, never opens a
   non-draft PR, never merges. `gh` is **detected, never required** (§A5).
+
+> **Finding the conventions file.** It lives at the toolkit repo root, two levels
+> above this skill — not beside `SKILL.md`. Skills are usually installed as
+> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> *link* and misses it. Resolve the link first:
+>
+> ```bash
+> ROOT="$(dirname "$(readlink -f "<this skill's base directory>")")/.."
+> ```
+>
+> then read `$ROOT/CONVENTIONS-authoring.md` and `$ROOT/CONVENTIONS.md`. If a file is genuinely absent, say so and continue
+> with the procedure below rather than stopping.
 
 **It does not write a file into the repo tree.** The artifact is a PR, so the
 authoring placement rules (§A2/§A4) don't apply — the output goes to GitHub (as a
@@ -89,7 +102,14 @@ Just enough to describe accurately and match the repo's conventions:
   convention (`Closes #123`) only when the change actually resolves the issue — never
   assert a close you can't support (§A6).
 
-## Step 4 — Draft the title and body
+## Step 4 — Spawn the pr-describer agent
+
+Spawn `pr-describer` with the branch delta from Step 1 (commits + diff), the repo
+context from Step 2, and any PR template / issue links from Step 3. It returns the
+title and body — de-duplicating commit noise, grouping bullets by concern rather
+than one-per-commit, and grounding every line in a real commit or hunk.
+
+The shape it returns, and the rules it works to:
 
 **Title** — one line, imperative, matching repo convention. If the repo uses
 Conventional Commits, prefix accordingly (`feat:`, `fix:`, …) inferred from the
