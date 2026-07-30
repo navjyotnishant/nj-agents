@@ -188,7 +188,11 @@ def returns_block(body: str) -> list[str]:
 
 # A pipeline diagram exists for some orchestrating skills; embed it on the pages of
 # the agents that take part, so an agent shows where it sits in the whole run.
-PIPELINE_DIAGRAMS = {"tech-blog": "pipeline-tech-blog.svg"}
+PIPELINE_DIAGRAMS = {
+    n: f"pipeline-{n}.svg"
+    for n in ("tech-blog", "pre-push-review", "capture-screenshots",
+              "docs-site", "deps-upgrade", "test-gap-finder")
+}
 
 # Shown once on the index: how skills and agents relate at all.
 OVERVIEW_DIAGRAM = "agents-overview.svg"
