@@ -145,6 +145,26 @@ generated from a small JSON model, not hand-placed.
   environment specifics, the EM-suite backlog, parked items). If present, read it for
   richer context; it is not shared via git.
 
+## Branches
+
+- **`main`** — the integration branch. Feature work merges here; CI runs on every
+  push and PR.
+- **`prod`** — what gets released and installed from. Fast-forwarded from `main`
+  once CI is green and the change has been used for real.
+
+```bash
+git checkout prod && git merge --ff-only main && git push origin prod
+```
+
+Fast-forward only, deliberately: `prod` should never contain a commit that was not
+first on `main` and green.
+
+**Enforcement is local, not server-side.** GitHub branch protection needs Pro on a
+private repo, so nothing on the remote rejects a bad push. `./install.sh --git-hooks`
+installs a `pre-push` hook running the same checks as CI — per-clone, and bypassable
+with `--no-verify`. Real protection becomes available if the repo goes public or the
+plan changes.
+
 ## Commit style
 
 - Conventional commits (`feat:`, `fix:`, `docs:`, `chore:`, `style:`). No `Co-Authored-By`.
