@@ -128,3 +128,28 @@
 @media screen and (max-width: 44rem) {
   .nj-grid { grid-template-columns: 1fr; }
 }
+
+/* Architecture diagrams -----------------------------------------------------
+   They are 1010-1200px wide against a ~976px column, so they arrive shrunk.
+   Let them span the full width, and make it obvious they open larger. */
+
+.md-typeset img[src*="/assets/"] {
+  width: 100%;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: .6rem;
+  cursor: zoom-in;
+  transition: box-shadow .18s ease, border-color .18s ease;
+}
+
+.md-typeset img[src*="/assets/"]:hover {
+  border-color: var(--md-accent-fg-color);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .12);
+}
+
+/* The diagrams are drawn on white; keep them legible in dark mode rather than
+   leaving dark text on a dark page background. */
+[data-md-color-scheme="slate"] .md-typeset img[src*="/assets/"] {
+  background: #fff;
+}
+
+.glightbox-clean .gslide-description { background: transparent; }

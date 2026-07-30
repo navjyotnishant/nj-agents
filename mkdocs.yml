@@ -58,6 +58,13 @@ plugins:
   # when a skill is added or removed.
   - literate-nav:
       nav_file: SUMMARY.md
+  # Diagrams are wider than the ~976px content column, so they render shrunk and
+  # unreadable. Click to open full-size with zoom and pan.
+  - glightbox:
+      touchNavigation: true
+      zoomable: true
+      draggable: true
+      auto_caption: true
 
 markdown_extensions:
   - admonition
