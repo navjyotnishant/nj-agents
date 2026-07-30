@@ -149,21 +149,24 @@ generated from a small JSON model, not hand-placed.
 
 - **`main`** — the integration branch. Feature work merges here; CI runs on every
   push and PR.
-- **`prod`** — what gets released and installed from. Fast-forwarded from `main`
+- **`PRD`** — what gets released and installed from. Fast-forwarded from `main`
   once CI is green and the change has been used for real.
 
 ```bash
-git checkout prod && git merge --ff-only main && git push origin prod
+git checkout PRD && git merge --ff-only main && git push origin PRD
 ```
 
-Fast-forward only, deliberately: `prod` should never contain a commit that was not
+Fast-forward only, deliberately: `PRD` should never contain a commit that was not
 first on `main` and green.
 
-**Enforcement is local, not server-side.** GitHub branch protection needs Pro on a
-private repo, so nothing on the remote rejects a bad push. `./install.sh --git-hooks`
-installs a `pre-push` hook running the same checks as CI — per-clone, and bypassable
-with `--no-verify`. Real protection becomes available if the repo goes public or the
-plan changes.
+**`PRD` is protected server-side.** A PR is required, the `check` status check must
+pass, and force-push and deletion are blocked. `enforce_admins=false` and
+`required_approving_review_count=0` keep self-merge possible for a solo maintainer —
+which also means the owner can override the gate, so it is a guard rail rather than a
+wall. `main` is deliberately unprotected: it is where work integrates.
+
+`./install.sh --git-hooks` additionally installs a local `pre-push` hook running the
+same checks, so problems surface before a push rather than after.
 
 ## Commit style
 
