@@ -1,0 +1,130 @@
+/* Card grid for the class index pages.
+ *
+ * Follows the reference layout: one card per skill, a stage-chip row showing the
+ * pipeline, small-caps section labels, and a footer strip listing what it uses.
+ *
+ * Colours respect the repo's semantic contract (diagram_common.js, enforced by
+ * qa_diagram.js): red means failure/block, green means success/pass. The chips are
+ * deliberately neutral class tints — a chip must never accidentally colour a failure
+ * state green, so only an actual BLOCK gets red.
+ */
+
+.nj-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: 1.1rem;
+  margin: 1.4rem 0;
+}
+
+.nj-card {
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: .7rem;
+  padding: 1.1rem 1.2rem .9rem;
+  background: var(--md-default-bg-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
+  transition: box-shadow .18s ease, transform .18s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.nj-card:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .10);
+  transform: translateY(-2px);
+}
+
+.nj-card__head {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  padding-bottom: .6rem;
+  margin-bottom: .8rem;
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+
+.nj-card__icon { font-size: 1.35rem; line-height: 1; }
+
+.nj-card__title {
+  font-weight: 700;
+  font-size: .95rem;
+  margin: 0;
+}
+
+.nj-card__title a { color: var(--md-default-fg-color); }
+.nj-card__title a:hover { color: var(--md-accent-fg-color); }
+
+/* Stage chips — the CREATE → REVIEW → REFINE row from the reference. */
+.nj-chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .3rem;
+  margin-bottom: .9rem;
+}
+
+.nj-chip {
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: .3rem .6rem;
+  border-radius: .3rem;
+  white-space: nowrap;
+}
+
+.nj-chip--1 { background: rgba(99, 102, 241, .13); color: #4f46e5; }
+.nj-chip--2 { background: rgba(139, 92, 246, .13); color: #7c3aed; }
+.nj-chip--3 { background: rgba(16, 185, 129, .13); color: #059669; }
+
+/* A gate can BLOCK — the one place red is correct under the semantic contract. */
+.nj-chip--block { background: rgba(239, 68, 68, .13); color: #dc2626; }
+
+.nj-arrow {
+  color: var(--md-default-fg-color--light);
+  font-size: .7rem;
+}
+
+.nj-label {
+  font-size: .63rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  margin: .7rem 0 .25rem;
+}
+
+.nj-label--does { color: #d97706; }
+.nj-label--impact { color: #059669; }
+
+.nj-card__body {
+  font-size: .78rem;
+  line-height: 1.5;
+  color: var(--md-default-fg-color--light);
+  margin: 0;
+}
+
+.nj-card__foot {
+  margin-top: auto;
+  padding-top: .8rem;
+  border-top: 1px solid var(--md-default-fg-color--lightest);
+  font-size: .68rem;
+  color: var(--md-default-fg-color--light);
+}
+
+.nj-card__foot code {
+  font-size: .68rem;
+  background: var(--md-code-bg-color);
+  padding: .1rem .3rem;
+}
+
+/* Dark mode: lift the chip tints so they stay legible on slate. */
+[data-md-color-scheme="slate"] .nj-chip--1 { background: rgba(129, 140, 248, .18); color: #a5b4fc; }
+[data-md-color-scheme="slate"] .nj-chip--2 { background: rgba(167, 139, 250, .18); color: #c4b5fd; }
+[data-md-color-scheme="slate"] .nj-chip--3 { background: rgba(52, 211, 153, .18); color: #6ee7b7; }
+[data-md-color-scheme="slate"] .nj-chip--block { background: rgba(248, 113, 113, .18); color: #fca5a5; }
+[data-md-color-scheme="slate"] .nj-label--does { color: #fbbf24; }
+[data-md-color-scheme="slate"] .nj-label--impact { color: #34d399; }
+[data-md-color-scheme="slate"] .nj-card { box-shadow: none; }
+[data-md-color-scheme="slate"] .nj-card:hover { box-shadow: 0 6px 18px rgba(0, 0, 0, .35); }
+
+@media screen and (max-width: 44rem) {
+  .nj-grid { grid-template-columns: 1fr; }
+}
