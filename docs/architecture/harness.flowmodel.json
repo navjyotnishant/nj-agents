@@ -2,32 +2,7 @@
   "title": "The verification harness",
   "subtitle": "Everything globs skills/*/ and agents/*.md rather than reading a registry, so a skill added tomorrow is covered the moment its directory exists. Layers 1\u20133 are deterministic text analysis; layer 4 needs a real run, which is why it splits into an expensive local generator and a free CI checker.",
   "cols": 4,
-  "groups": [
-    {
-      "label": "check.sh \u2014 deterministic",
-      "role": "review",
-      "cols": [
-        1,
-        1
-      ],
-      "rows": [
-        0,
-        2
-      ]
-    },
-    {
-      "label": "tests/ \u2014 split by cost",
-      "role": "authoring",
-      "cols": [
-        1,
-        2
-      ],
-      "rows": [
-        3,
-        3
-      ]
-    }
-  ],
+  "groups": [],
   "nodes": [
     {
       "id": "src",
