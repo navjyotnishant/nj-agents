@@ -166,6 +166,21 @@ Apply these to related work even when no skill is invoked:
   happened but not where the user now is, so they have to go look it up. Pair the tree
   with the commit SHA and one line on anything surprising, and put the tree last.
   Full rule and example: `CONVENTIONS-pm.md §P8`.
+- **Keep `CHANGELOG.md` current — don't reconstruct it later.** A repo with user-facing
+  changes should have one, in Keep a Changelog format with an `[Unreleased]` section.
+  Update it **when the work lands**, not at release time: a changelog written months
+  later from `git log` is a commit list with better formatting, because the reasons
+  are gone. Use `/changelog` rather than hand-writing entries — it merges into
+  `[Unreleased]` without clobbering and drops `wip`/`fixup`/merge noise.
+  **When to update it:** a feature, a fix, a breaking change, a deprecation, or
+  anything a user of this repo would want to know. **When not to:** refactors, test
+  changes, docs-only edits, internal tooling — those are in the git history and don't
+  belong in a user-facing record.
+  If a repo has no `CHANGELOG.md` and is accumulating real changes, **offer to start
+  one** rather than silently letting the gap grow. A throwaway repo, or one with no
+  users and no releases, doesn't need one — say so and move on rather than
+  hard-blocking. A project whose own `CLAUDE.md` sets a different policy overrides
+  this.
 - **Author header on new scripts and standalone modules.** For a new script, migration,
   or major standalone module, add a comment header at the top:
 

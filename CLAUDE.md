@@ -200,7 +200,9 @@ construction and the validator tells you what is still missing:
    `check.sh` reports the gap rather than passing on placeholder text.
 3. `./install.sh` → reload Claude Code.
 4. **`./check.sh` must be clean.** It globs, so the new file is covered immediately.
-5. Update `README.md`, `docs.html`, and the right table in **`global/CLAUDE.md`** —
+5. Add a `CHANGELOG.md` entry under `[Unreleased]` — a new skill is user-facing.
+   Use `/changelog`; see the standing rule in `global/CLAUDE.md`.
+6. Update `README.md`, `docs.html`, and the right table in **`global/CLAUDE.md`** —
    that file is hand-maintained and is what makes the skill discoverable in *other*
    repos. `check.sh` flags it if you forget.
 
