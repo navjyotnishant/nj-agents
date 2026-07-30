@@ -1,0 +1,6 @@
+contract=review-leaves-no-files
+skill=/review-style
+files_before=./calc.py 
+files_after=./calc.py 
+status_before= M calc.py 
+status_after= M calc.py 

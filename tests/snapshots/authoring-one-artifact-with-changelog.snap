@@ -1,0 +1,7 @@
+contract=authoring-one-artifact
+skill=/changelog
+fixture=with-changelog
+files_written=1
+written_paths=./CHANGELOG.md
+expected_path=./CHANGELOG.md
+preserved_existing=yes

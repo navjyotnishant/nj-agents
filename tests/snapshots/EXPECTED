@@ -1,0 +1,8 @@
+# One line per snapshot tests/run.sh must produce. assert.sh fails if any is
+# missing — otherwise deleting a snapshot silently shrinks the suite and CI still
+# reports green, which is the failure mode this whole epic exists to close.
+review-leaves-no-files
+no-commit
+secrets-no-scanner
+authoring-one-artifact-with-changelog
+authoring-one-artifact-without-changelog
