@@ -1,0 +1,61 @@
+name: pages
+
+# Builds the generated documentation site and deploys it to GitHub Pages.
+#
+# Deploys via Actions, not the gh-pages branch and not `mkdocs gh-deploy` — so the
+# built site is never committed and there is no branch to go stale.
+#
+# Kept separate from check.yml deliberately: that workflow is read-only and runs on
+# every branch, while this one needs pages:write + id-token:write and only makes
+# sense on main. check.yml already builds the site on every push, so a broken build
+# fails there first, before it can reach a deploy.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a running deploy finish rather than cancelling it — a half-finished deploy
+# would leave the published site in an inconsistent state.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install the docs toolchain
+        run: pip install -r requirements-docs.txt
+
+      # --strict: a broken internal link fails the build rather than publishing a
+      # dead page. gen_pages.py already fails on a dangling skill/agent reference.
+      - name: Build
+        run: mkdocs build --strict
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

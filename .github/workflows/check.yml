@@ -25,6 +25,19 @@ jobs:
       - name: Validate skills and agents
         run: ./check.sh --strict
 
+      # The docs site is generated from the source files, so a rename or a dangling
+      # agent reference breaks the build. Catch that here on every branch rather
+      # than letting it reach the deploy on main.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Build the docs site
+        run: |
+          pip install -r requirements-docs.txt
+          mkdocs build --strict
+
       # Committed snapshots, asserted without an LLM (NAV-138). Skipped with a loud
       # notice until that lands, so this workflow is useful now rather than red.
       - name: Assert behavioral contracts
