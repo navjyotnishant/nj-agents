@@ -3,7 +3,7 @@ name: arch-diagram
 description: Use this skill when the user asks to "generate an architecture diagram", "draw the system architecture", "create a solution/deployment/data-flow/sequence/ER diagram", or wants a visual of how the project fits together. Reads the project's README, architecture docs, and ADRs first to ground the diagram, then generates it (default Excalidraw + an exported SVG; hand-authored SVG for simple diagrams, draw.io, mermaid, or Figma-via-MCP on request), places it into the project docs, and PROPOSES the commit. Works in any git repo; nothing here is project-specific.
 version: 0.3.0
 class: authoring
-author: Navjyot Nishant
+author: navjyotnishant
 ---
 
 # Architecture Diagram (authoring)

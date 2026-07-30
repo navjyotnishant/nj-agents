@@ -4,7 +4,7 @@ description: Use this skill when the user asks to "review my changes before I pu
 version: 0.4.0
 class: review
 subclass: gate
-author: Navjyot Nishant
+author: navjyotnishant
 ---
 
 # Pre-Push Review (umbrella)

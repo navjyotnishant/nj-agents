@@ -3,7 +3,7 @@ name: pm-story
 description: Use this skill when the user asks to "write a user story", "create a story in Linear/Jira", "draft a story for this feature", or wants a well-formed Story issue. Drafts one INVEST-style user story ("As a … I want … so that …") with explicit acceptance criteria and an estimate hint, then — on opt-in — creates it in whatever PM tracker is connected via MCP (Linear/Jira/Notion/GitHub Issues), else hands you paste-ready markdown. Never bulk-creates; grounds scope in your intent, never invents. Optional parent Epic link. Works with any connected tracker; nothing here is project-specific.
 version: 0.1.0
 class: pm
-author: Navjyot Nishant
+author: navjyotnishant
 ---
 
 # PM Story (PM-authoring)

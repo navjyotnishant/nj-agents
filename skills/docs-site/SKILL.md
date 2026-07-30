@@ -3,7 +3,7 @@ name: docs-site
 description: Use this skill when the user asks to "generate a documentation site", "build docs for this project", "make a browsable reference/guide", "document these skills/API/modules", or wants a polished HTML documentation page from existing docs, the codebase, an outline, or structured definition files. Auto-derives the menu/sections from the content, grounds everything in the source (flags gaps rather than inventing), embeds auto-redacted screenshots via the capture-screenshots pipeline when needed, produces a self-contained theme-aware docs.html, and PROPOSES the commit. Works in any git repo; nothing here is project-specific.
 version: 0.1.0
 class: authoring
-author: Navjyot Nishant
+author: navjyotnishant
 ---
 
 # Docs Site (authoring, multi-agent)

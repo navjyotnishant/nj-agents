@@ -3,7 +3,7 @@ name: scaffold-project
 description: Use this skill when the user asks to "scaffold a new project", "set up a new repo properly", "bootstrap a project to industry standards", "start a new service/library/app", or wants a greenfield repository laid out to a recognized baseline. Grounds the security/governance layer in the OpenSSF OSPS Baseline (cited by control ID, Level 1 by default) and delegates the stack-specific layout to the ecosystem's own generator (cargo new, uv init, npm create) rather than inventing one. Reads a supplied project doc first when there is one. Verifies the result against the baseline before reporting done, then PROPOSES the commit. Works for any stack; nothing here is project-specific.
 version: 0.1.0
 class: authoring
-author: Navjyot Nishant
+author: navjyotnishant
 ---
 
 # Scaffold Project (authoring)

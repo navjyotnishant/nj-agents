@@ -3,7 +3,7 @@ name: pm-task
 description: Use this skill when the user asks to "create a task", "add a task/sub-task in Linear/Jira", "break this into a task", or wants a single well-formed Task issue. Drafts one scoped, actionable Task (optionally under a parent Story/Epic), then — on opt-in — creates it in whatever PM tracker is connected via MCP (Linear/Jira/Notion/GitHub Issues), else hands you paste-ready markdown. Never bulk-creates; grounds the task in your intent, never invents. Works with any connected tracker; nothing here is project-specific.
 version: 0.1.0
 class: pm
-author: Navjyot Nishant
+author: navjyotnishant
 ---
 
 # PM Task (PM-authoring)

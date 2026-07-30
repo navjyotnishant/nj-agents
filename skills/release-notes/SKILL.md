@@ -3,7 +3,7 @@ name: release-notes
 description: Use this skill when the user asks to "cut a GitHub release", "publish release notes", "draft a release for this version", or wants to turn a version's changes into a GitHub Release. It prefers an existing CHANGELOG.md section as the notes body (composing with /changelog) and otherwise summarizes the commit delta since the last tag, then drafts a `gh release create --draft` command — a DRAFT release, never published, no tag pushed on its own. Falls back to printing the notes + tag commands when `gh` is absent. Works in any git repo; nothing here is project-specific.
 version: 0.1.0
 class: workflow
-author: Navjyot Nishant
+author: navjyotnishant
 ---
 
 # Release Notes (workflow)

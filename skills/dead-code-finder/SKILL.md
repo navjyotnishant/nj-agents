@@ -4,7 +4,7 @@ description: Use this skill when the user asks to "find dead code", "find unused
 version: 0.2.0
 class: review
 subclass: scan
-author: Navjyot Nishant
+author: navjyotnishant
 ---
 
 # Dead Code Finder (repo-maintenance)

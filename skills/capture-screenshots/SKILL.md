@@ -3,7 +3,7 @@ name: capture-screenshots
 description: Use this skill when the user asks to "take screenshots for the blog/docs/README", "capture the app UI", "screenshot this page/component/terminal output", or wants images of the project with sensitive data redacted. Captures from a running web app, terminal/CLI output, a static HTML/component, or existing images, then runs a redaction pipeline (detect PII/secrets → blur/mask → verify) so nothing sensitive ships. Writes redacted images into docs and PROPOSES the commit; the un-redacted original never gets committed. Works in any git repo; nothing here is project-specific.
 version: 0.1.0
 class: authoring
-author: Navjyot Nishant
+author: navjyotnishant
 ---
 
 # Capture Screenshots (authoring, multi-agent)

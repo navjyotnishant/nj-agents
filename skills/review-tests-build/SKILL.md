@@ -4,7 +4,7 @@ description: Use this skill when the user asks to "run the tests before I push",
 version: 0.3.0
 class: review
 subclass: gate
-author: Navjyot Nishant
+author: navjyotnishant
 ---
 
 # Review: Tests & Build

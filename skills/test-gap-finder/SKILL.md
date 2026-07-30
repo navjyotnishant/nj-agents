@@ -4,7 +4,7 @@ description: Use this skill when the user asks to "find test gaps", "what's not 
 version: 0.1.0
 class: review
 subclass: scan
-author: Navjyot Nishant
+author: navjyotnishant
 ---
 
 # Test Gap Finder (repo-maintenance)

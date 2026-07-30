@@ -3,7 +3,7 @@ name: blog-platform-lint
 description: "Use this agent right before publishing a finished blog post to an external platform (Dev.to first; extensible to Medium/Hashnode/generic CMS) to catch platform-specific mechanics that silently break a post: too many tags, SVG/relative images that won't render, a missing or stale-cached cover image, and the draft→publish flow. It reviews the post against the target's rules and reports must-fix/warn findings; it does not publish (blog-poster does that). Works on any Markdown post.\n\n<example>\nContext: The post is finalized and the user wants to publish to Dev.to.\nuser: \"is this ready to post to dev.to?\"\n<commentary>\nThe tech-blog skill runs this before the poster (Step 8) when the target is external; it flags the platform gotchas up front instead of discovering them after a failed publish.\n</commentary>\nassistant: \"Launching blog-platform-lint to check it against Dev.to's rules first.\"\n</example>"
 model: sonnet
 color: orange
-author: Navjyot Nishant
+author: navjyotnishant
 ---
 
 You lint a finished post against a **specific publishing platform's** mechanics —
