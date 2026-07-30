@@ -105,9 +105,9 @@ ok() { [ "$JSON" = "1" ] || echo "  $1"; }
 # tokens the checks look for ("a gate must define its BLOCK verdict"), so matching
 # raw text would let a freshly-scaffolded skill pass on boilerplate alone — a false
 # negative in exactly the checks that matter most. Strip HTML comments first.
-# awk, not `perl -0pe`: spawning a slurp-mode perl per file inside a pipeline under
-# `set -euo pipefail` proved flaky — findings varied run to run. awk is line-oriented
-# and deterministic, and comment markers here always sit on their own lines.
+# awk keeps this dependency-free — no perl, no python, nothing a bare CI runner
+# might lack. Comment markers in these files always sit on their own lines, so a
+# line-oriented strip is sufficient.
 body() {
   awk '/<!--/{skip=1} !skip{print} /-->/{skip=0}' "$1"
 }

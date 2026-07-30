@@ -1,0 +1,36 @@
+name: check
+
+# Every contract in this repo is prose telling a model what to do. check.sh is what
+# verifies the model did it — but a validator nobody is forced to run is advisory.
+# This is what makes it a gate.
+#
+# Both steps are LLM-free and cost nothing. tests/run.sh is deliberately NOT here:
+# it spawns real agents and spends money, so it stays a local, deliberate step.
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # --strict turns findings into exit 1. Locally check.sh stays advisory so it
+      # can never break an install; here it is the whole point.
+      - name: Validate skills and agents
+        run: ./check.sh --strict
+
+      # Committed snapshots, asserted without an LLM (NAV-138). Skipped with a loud
+      # notice until that lands, so this workflow is useful now rather than red.
+      - name: Assert behavioral contracts
+        run: |
+          if [ -x tests/assert.sh ]; then
+            tests/assert.sh
+          else
+            echo "::notice::tests/assert.sh not present yet — behavioral suite pending (NAV-138)"
+          fi
