@@ -211,14 +211,22 @@ def card(name, s, cls, spawns_list, agents):
 </div>'''
 
 
-nav = ["* [Home](index.md)", "* Skills"]
+def agent_classes(name, skills_map):
+    """An agent has no class: of its own — it inherits from the skills that spawn
+    it. Derived like the wiring, so it cannot drift. A few agents span two classes
+    (social-post is spawned by /social-post AND /tech-blog); they appear under each.
+    """
+    return sorted({skills_map[s]["meta"].get("class", "") for s in spawned_by[name]} - {""})
+
+
+nav_skills, nav_agents = [], []
 
 # ---- one page per skill
 for cls, (title, blurb) in CLASSES.items():
     members = sorted(by_class.get(cls, []))
     if not members:
         continue
-    nav.append(f"    * {title}")
+    nav_skills.append(f"    * {title}")
     overview = f"skills/{cls}.md"
     cards = "\n".join(card(n, skills[n], cls, spawns[n], agents) for n in members)
     write(overview, [
@@ -232,7 +240,7 @@ for cls, (title, blurb) in CLASSES.items():
         cards,
         "</div>",
     ])
-    nav.append(f"        * [Overview]({overview})")
+    nav_skills.append(f"        * [Overview]({overview})")
     for name in members:
         s = skills[name]
         m = s["meta"]
@@ -277,10 +285,22 @@ for cls, (title, blurb) in CLASSES.items():
             f"[Read `{name}/SKILL.md` →]({REPO_URL}/skills/{name}/SKILL.md)",
         ]
         write(page, out, s["path"])
-        nav.append(f"        * [/{name}]({page})")
+        nav_skills.append(f"        * [/{name}]({page})")
 
-# ---- one page per agent
-nav.append("* Agents")
+# ---- agents, grouped by the class they serve
+agents_by_class = defaultdict(list)
+for name in agents:
+    for c in agent_classes(name, skills):
+        agents_by_class[c].append(name)
+
+for cls, (title, _) in CLASSES.items():
+    members = sorted(agents_by_class.get(cls, []))
+    if not members:
+        continue
+    nav_agents.append(f"    * {title}")
+    for name in members:
+        nav_agents.append(f"        * [{name}](agents/{name}.md)")
+
 for name in sorted(agents):
     a = agents[name]
     m = a["meta"]
@@ -308,7 +328,6 @@ for name in sorted(agents):
     out += [f"- [`/{s}`](../skills/{s}.md)" for s in sorted(spawned_by[name])]
     out += ["", f"[Read `agents/{name}.md` →]({REPO_URL}/agents/{name}.md)"]
     write(page, out, a["path"])
-    nav.append(f"    * [{name}]({page})")
 
 # ---- architecture diagrams: copied into the VIRTUAL tree at build time, never
 # onto disk. A real copy under docs_src/ would be a second file that can drift from
@@ -316,6 +335,9 @@ for name in sorted(agents):
 for svg in sorted((ROOT / "docs" / "architecture").glob("*.svg")):
     with mkdocs_gen_files.open(f"assets/{svg.name}", "wb") as f:
         f.write(svg.read_bytes())
+
+# ---- assemble the nav: agents first, then skills
+nav = ["* [Home](index.md)", "* Agents"] + nav_agents + ["* Skills"] + nav_skills
 
 # ---- harness section
 nav.append("* Harness")
