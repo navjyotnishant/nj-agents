@@ -151,3 +151,13 @@ never fail silently or stall.
   *safety* is a stop; a denial about *capability* is a detour.
 - **Say what you did.** Note in the summary that a step was degraded/manual so the
   result isn't mistaken for a full automated pass.
+
+---
+
+## Spawning subagents
+
+If a skill in this class spawns subagents, `CONVENTIONS-orchestration.md` also
+applies: **§C** (state the cost shape before spawning, cap fix rounds at 2, halt on
+any signal to stop) and **§R** (announce the agent roster before dispatch, mark each
+one as it lands). Those rules are class-agnostic — a six-agent pipeline costs the
+same whatever it produces.

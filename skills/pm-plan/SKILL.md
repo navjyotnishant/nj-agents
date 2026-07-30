@@ -26,6 +26,12 @@ propose, §P4 idempotence, §P6 MCP-detect, §P7 safety, §P8 report-the-tree.
 > then read `$ROOT/CONVENTIONS-pm.md`. If a file is genuinely absent, say so and continue
 > with the procedure below rather than stopping.
 
+> **Spawning subagents — `CONVENTIONS-orchestration.md`.** This skill spawns agents,
+> so `§C` (cost) and `§R` (progress reporting) apply. **Cost shape:** 1 decomposer agent, then N sequential tracker creates.
+> State it and get a yes before the first dispatch; cap fix rounds at 2; halt on any
+> signal to stop. Announce the **pipeline** up front and each stage as it starts, so a stall is
+attributable to a named stage (`§R`).
+
 It reuses the leaf skills' concerns (`/pm-epic`, `/pm-story`, `/pm-task`) — same neutral
 model, same tracker mapping — but is the only PM skill that creates **many** items in
 one run, so its guardrails are the strictest in the class.

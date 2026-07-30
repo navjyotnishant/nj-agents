@@ -36,6 +36,12 @@ user.
 > then read `$ROOT/CONVENTIONS-authoring.md` and `$ROOT/CONVENTIONS.md`. If a file is genuinely absent, say so and continue
 > with the procedure below rather than stopping.
 
+> **Spawning subagents — `CONVENTIONS-orchestration.md`.** This skill spawns agents,
+> so `§C` (cost) and `§R` (progress reporting) apply. **Cost shape:** render → QA → fix loop, usually 2–4 agent calls.
+> State it and get a yes before the first dispatch; cap fix rounds at 2; halt on any
+> signal to stop. Announce each stage as it starts and report the **round against the cap** (`round 2/2`)
+so the loop visibly shows its bound (`§R`).
+
 ## Step 0 — Print the banner FIRST
 
 ```

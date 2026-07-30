@@ -23,6 +23,7 @@ agents/<name>.md            # an agent is a FLAT .md file
 CONVENTIONS.md              # review-class shared rules
 CONVENTIONS-authoring.md    # authoring-class shared rules (§A1–A8)
 CONVENTIONS-pm.md           # PM-authoring-class shared rules (§P1–P8); skills in NAV-82..84
+CONVENTIONS-orchestration.md # ANY spawning skill: §C cost, §R progress reporting
 global/CLAUDE.md            # advisory guidance → symlinked to ~/.claude/CLAUDE.md
 install.sh                  # symlink installer (idempotent; safe uninstall; never clobbers)
 README.md                   # public overview
@@ -89,6 +90,12 @@ docs/architecture/          # generated diagrams + their JSON source models
 
 > The one rule both code-facing classes share: **the human decides what gets committed.**
 > (The user may explicitly say "commit and push" — then it's fine.)
+
+**Any skill that spawns subagents** — whatever its class — also follows
+`CONVENTIONS-orchestration.md`: **§C** state the cost shape before dispatch, cap fix
+rounds at 2, halt on any signal to stop; **§R** announce the agent roster before
+dispatch and mark each one as it lands. `check.sh` detects spawning from the skill's
+own text, so a new skill is bound the moment it says "spawn".
 
 ## Core conventions
 

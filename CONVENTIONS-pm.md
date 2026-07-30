@@ -179,3 +179,13 @@ the last thing on screen.
 
 Applies to any tracker and to work done **outside** a PM skill — if the session is
 executing a tracked plan, the completion report follows this shape.
+
+---
+
+## Spawning subagents
+
+If a skill in this class spawns subagents, `CONVENTIONS-orchestration.md` also
+applies: **§C** (state the cost shape before spawning, cap fix rounds at 2, halt on
+any signal to stop) and **§R** (announce the agent roster before dispatch, mark each
+one as it lands). Those rules are class-agnostic — a six-agent pipeline costs the
+same whatever it produces.

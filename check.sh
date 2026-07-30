@@ -276,6 +276,54 @@ check_class_contract() {
   return 0
 }
 
+# A skill that spawns agents spends the user's money and, while it runs, is a black
+# box. Both checks below key off SPAWN DETECTION rather than a list of skill names:
+# a hardcoded list would silently exempt skill #24, which is the same failure this
+# validator exists to catch.
+spawns_agents() { grep -qi 'spawn' "$1"; }
+
+# §C — the user should never discover the cost mid-run.
+check_cost_control() {
+  local f name bad=0
+  for f in "$SKILLS_SRC"/*/SKILL.md; do
+    name="$(basename "$(dirname "$f")")"
+    spawns_agents "$f" || continue
+    grep -q 'CONVENTIONS-orchestration\.md\|§C' "$f" || {
+      finding check_cost_control referential \
+        "skills/$name spawns agents but never cites the cost rules (CONVENTIONS-orchestration.md §C)"
+      bad=1
+    }
+    grep -qi 'cost shape' "$f" || {
+      finding check_cost_control referential \
+        "skills/$name spawns agents but states no cost shape (how many agents / what loop)"
+      bad=1
+    }
+  done
+  [ "$bad" = "0" ] && ok "spawning skills declare their cost"
+  return 0
+}
+
+# §R — a subagent cannot report mid-run, so the spawning skill must.
+check_progress_reporting() {
+  local f name bad=0
+  for f in "$SKILLS_SRC"/*/SKILL.md; do
+    name="$(basename "$(dirname "$f")")"
+    spawns_agents "$f" || continue
+    grep -q '§R' "$f" || {
+      finding check_progress_reporting referential \
+        "skills/$name spawns agents but never cites the progress-reporting rules (§R)"
+      bad=1
+    }
+    grep -qi 'roster\|announce' "$f" || {
+      finding check_progress_reporting referential \
+        "skills/$name spawns agents but never announces what it dispatched"
+      bad=1
+    }
+  done
+  [ "$bad" = "0" ] && ok "spawning skills report their progress"
+  return 0
+}
+
 # A skill citing "§A9" that does not exist reads as authoritative and is not.
 # Catches the drift in the direction install.sh never looked: the citation is
 # fine today, then someone renumbers the conventions file.
@@ -366,6 +414,8 @@ check_agent_references
 check_class_conventions
 check_conventions_reachable
 check_class_contract
+check_cost_control
+check_progress_reporting
 check_conventions_sections
 check_guidance_sync
 check_stale_agents
