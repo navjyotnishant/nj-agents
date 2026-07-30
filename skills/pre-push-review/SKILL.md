@@ -221,9 +221,11 @@ fi
 exit 0
 ```
 
-(The `nj-agents-review` wrapper is whatever headless entrypoint the user wires to
-run this skill in CI mode; the suite doesn't ship a binary — document the wrapper in
-the repo. The hook degrades to a no-op if it's absent, so it never blocks blindly.)
+(`nj-agents-review` ships with this toolkit at `bin/nj-agents-review`. It runs this
+skill headlessly and maps the verdict onto the §5 exit codes — 0 PASS/WARN, 1 BLOCK,
+2 harness error. `claude -p` alone always exits 0, so a hook wired straight to it
+would let a BLOCK through. Put `bin/` on PATH, or call it by full path. The hook
+degrades to a no-op if it's absent, so it never blocks blindly.)
 
 **Option B — project `.claude/settings.json` `PreToolUse` hook** matching
 `Bash(git push*)` — gates pushes made *through Claude*. Best for solo-Claude

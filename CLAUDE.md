@@ -26,6 +26,8 @@ CONVENTIONS-pm.md           # PM-authoring-class shared rules (§P1–P8); skill
 CONVENTIONS-orchestration.md # ANY spawning skill: §C cost, §R progress reporting
 global/CLAUDE.md            # advisory guidance → symlinked to ~/.claude/CLAUDE.md
 install.sh                  # symlink installer (idempotent; safe uninstall; never clobbers)
+check.sh                    # validator — frontmatter, refs, class contracts, cost/progress
+bin/nj-agents-review        # headless /pre-push-review → §5 exit codes (0 PASS/WARN, 1 BLOCK, 2 error)
 README.md                   # public overview
 docs.html                  # multi-page reference SITE (Home/Suites/Workflows/Reference)
 docs/architecture/          # generated diagrams + their JSON source models

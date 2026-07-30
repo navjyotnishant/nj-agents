@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+#
+# nj-agents-review — run /pre-push-review headlessly and turn its verdict into an
+# exit code, so a git hook or CI job can actually gate on it.
+#
+# Usage:
+#   nj-agents-review                  # review the current repo, exit on the verdict
+#   nj-agents-review --budget 5.00    # raise the spend cap (default 3.00 USD)
+#   nj-agents-review --model haiku    # cheaper model for the run
+#   nj-agents-review --dry-run        # print the command that would run, then stop
+#
+# Exit codes (CONVENTIONS.md §5):
+#   0  PASS or WARN — the push/pipeline may proceed
+#   1  BLOCK        — stop
+#   2  harness error — the review did not produce a verdict. Never treated as PASS.
+#
+# Why this exists: `claude -p` exits 0 whenever the model responds successfully. It
+# has no idea what PASS/WARN/BLOCK means, so without this wrapper the exit-code
+# contract in CONVENTIONS.md §5 is documented but unimplemented — a hook wired to
+# `claude -p` directly would let a BLOCK through silently.
+
+set -euo pipefail
+
+BUDGET="${NJ_AGENTS_BUDGET_USD:-3.00}"
+MODEL=""
+DRY_RUN=0
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --budget) BUDGET="$2"; shift 2 ;;
+    --model) MODEL="$2"; shift 2 ;;
+    --dry-run) DRY_RUN=1; shift ;;
+    -h|--help) grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) echo "Unknown arg: $1" >&2; exit 2 ;;
+  esac
+done
+
+command -v claude >/dev/null 2>&1 || {
+  echo "nj-agents-review: the 'claude' CLI is not on PATH — cannot run the review." >&2
+  exit 2
+}
+git rev-parse --git-dir >/dev/null 2>&1 || {
+  echo "nj-agents-review: not a git repository." >&2
+  exit 2
+}
+
+set -- -p "/pre-push-review" --output-format json --max-budget-usd "$BUDGET"
+[ -n "$MODEL" ] && set -- "$@" --model "$MODEL"
+
+if [ "$DRY_RUN" = "1" ]; then
+  echo "NJ_AGENTS_CI=1 claude $*"
+  exit 0
+fi
+
+# NJ_AGENTS_CI=1 puts the skill in non-interactive mode: it never prompts, and
+# resolves ambiguity to the safe outcome (CONVENTIONS.md §5).
+OUT="$(NJ_AGENTS_CI=1 claude "$@" 2>&1)" || {
+  echo "nj-agents-review: the claude CLI failed to run." >&2
+  printf '%s\n' "$OUT" >&2
+  exit 2
+}
+
+# jq if it's here, python3 if it isn't — detect, never require (§A5). Both extract
+# the same two fields; if neither is available we fall back to reading the raw text,
+# which is lossy but still finds an unambiguous verdict.
+if command -v jq >/dev/null 2>&1; then
+  IS_ERR="$(printf '%s' "$OUT" | jq -r '.is_error // empty' 2>/dev/null || true)"
+  RESULT="$(printf '%s' "$OUT" | jq -r '.result // empty' 2>/dev/null || true)"
+elif command -v python3 >/dev/null 2>&1; then
+  IS_ERR="$(printf '%s' "$OUT" | python3 -c 'import json,sys
+try: d=json.load(sys.stdin); print(str(d.get("is_error","")).lower())
+except Exception: print("")' 2>/dev/null || true)"
+  RESULT="$(printf '%s' "$OUT" | python3 -c 'import json,sys
+try: d=json.load(sys.stdin); print(d.get("result",""))
+except Exception: print("")' 2>/dev/null || true)"
+else
+  IS_ERR=""
+  RESULT="$OUT"
+fi
+
+if [ "$IS_ERR" = "true" ]; then
+  echo "nj-agents-review: the review did not complete (budget exhausted, or an API error)." >&2
+  printf '%s\n' "$OUT" | head -c 2000 >&2
+  exit 2
+fi
+
+# BLOCK wins over any other token: a report that says "2 PASS, 1 BLOCK" is a BLOCK.
+# An absent verdict is an error, never a pass — the whole point of the wrapper is
+# that silence must not read as approval.
+case "$RESULT" in
+  *BLOCK*)
+    printf '%s\n' "$RESULT"
+    echo "nj-agents-review: BLOCK" >&2
+    exit 1 ;;
+  *PASS*|*WARN*)
+    printf '%s\n' "$RESULT"
+    exit 0 ;;
+  *)
+    echo "nj-agents-review: no PASS/WARN/BLOCK verdict found in the review output." >&2
+    printf '%s\n' "$RESULT" | head -c 2000 >&2
+    exit 2 ;;
+esac
