@@ -160,15 +160,23 @@ it produced remain as committed SVGs and are now edited by hand.
 
 - **`main`** — the integration branch. Feature work merges here; CI runs on every
   push and PR.
-- **`PRD`** — what gets released and installed from. Fast-forwarded from `main`
+- **`PRD`** — what gets released and installed from. Promoted from `main` via a PR
   once CI is green and the change has been used for real.
 
 ```bash
-git checkout PRD && git merge --ff-only main && git push origin PRD
+gh pr create --draft --base PRD --head main --title "…" --body-file …
+gh pr merge <n> --merge          # after CI is green and you've marked it ready
 ```
 
-Fast-forward only, deliberately: `PRD` should never contain a commit that was not
-first on `main` and green.
+Promotion goes through a PR, not a local merge: `PRD` is protected, so a direct
+push is rejected and `git merge --ff-only` has nowhere to land. That leaves a merge
+commit on `PRD` — accepted deliberately. The guarantee that matters is *`PRD` never
+contains a commit that was not first on `main` and green*, and the required PR plus
+the `check` status enforce that on the server. A linear history would additionally
+need force-push, which protection blocks by design.
+
+Use `/pr-describe` to draft the promotion PR — it grounds the body in the real
+`PRD..main` delta rather than a hand-written commit list.
 
 **`PRD` is protected server-side.** A PR is required, the `check` status check must
 pass, and force-push and deletion are blocked. `enforce_admins=false` and
