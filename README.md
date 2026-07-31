@@ -26,7 +26,7 @@ visual-QA gate).
 
 ![Suite architecture](docs/architecture/suite-overview.svg)
 
-**25 skills · 25 agents · 6 classes · 24 checks.** Counts live here rather than in
+**26 skills · 25 agents · 6 classes · 24 checks.** Counts live here rather than in
 the image: a number drawn into an SVG goes stale silently and needs the diagram
 redrawn to correct, while a number in the text is one edit — and on the docs site,
 generated from the file tree on every build.
@@ -262,7 +262,7 @@ skill once and every runner sees it. There is nothing to sync.
 
 | | Claude Code | Codex | Cursor | Gemini |
 |---|---|---|---|---|
-| **25 skills** | yes | yes | yes | yes |
+| **26 skills** | yes | yes | yes | yes |
 | **25 agents** | yes | yes (generated) | not yet | yes |
 | **Guidance file** | `CLAUDE.md` | `AGENTS.md` | `.mdc` (generated) | `GEMINI.md` |
 

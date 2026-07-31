@@ -54,6 +54,9 @@ case "$prompt" in
   *upgrade*|*outdated*|*dependenc*) add "/deps-upgrade or /review-dependencies" ;;
 esac
 case "$prompt" in
+  # Triage first: "why did the e2e tests fail" is a triage question, not a run one.
+  *"why did"*test*fail*|*"why are"*test*fail*|*triage*|*"real bug or"*|*flake*)
+    add "/test-triage (defect · test-bug · env · flake · data, with evidence)" ;;
   *"e2e"*|*"end-to-end"*|*"browser test"*|*"playwright"*|*"cypress"*)
     add "/e2e-run (detects your runner; BLOCKs on a prod URL)" ;;
 esac

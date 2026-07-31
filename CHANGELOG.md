@@ -55,11 +55,19 @@ does as of this version, rather than how it was built.
   testable. **T14** puts the flake ledger at a *committed* `.nj-agents/flake-ledger.json`
   — gitignored it would start empty on every CI runner, which is exactly where
   intermittent failures accumulate and where the history is worth most.
-  First skill in the class: **`/e2e-run`** (25 skills now). Detects the repo's own
+  First skills in the class (26 skills now): **`/e2e-run`** and **`/test-triage`**. Detects the repo's own
   E2E runner — Playwright, Cypress, WebdriverIO, or whatever its config points at —
   BLOCKs unless the base URL is explicitly non-prod, runs the suite, and captures
   trace/HAR/video/console into a gitignored temp dir. It runs tests; it never writes
   or edits them, so there is no path on which it makes a suite green.
+  **`/test-triage`** explains a red build — classifying each failure as real defect,
+  test bug, environment, flake, or data, each with a confidence and cited evidence,
+  and blaming suspect commits. It is the skill the class lives or dies on: weak
+  triage teaches a team that red means "run it again", and once that habit forms
+  everything upstream is shelfware. It **never calls `flake` from a single run** —
+  timing-flavoured failure text looks identical to a real race condition in the
+  application, and calling that a flake is how a concurrency bug gets ignored for a
+  quarter. Advises only; hands defects to `/pm-task` on your say-so.
 - **`bin/nj-agents-review` drives any agent CLI** via `NJ_AGENT_CMD`
   (`NJ_AGENT_CMD="codex exec" nj-agents-review`). The verdict→exit-code mapping —
   0 PASS/WARN, 1 BLOCK, 2 harness error — is the value the wrapper adds, and it is
