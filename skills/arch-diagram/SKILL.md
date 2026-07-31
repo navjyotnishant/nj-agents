@@ -45,6 +45,15 @@ grounding/safety §A6, non-clobber §A7).
 > fix rounds at 2; halt on any signal to stop. Announce each stage as it starts and
 > report the **round against the cap** (`round 2/2`) so the loop shows its bound.
 
+
+## Dependencies
+
+Detected at runtime, never installed by this skill (`§A5`).
+
+| Tool | Used for | Without it |
+|---|---|---|
+| `rsvg-convert` (graphviz/cairo) | rasterising the SVG so it can be looked at | the visual pass is skipped — say so rather than implying it ran |
+
 ## Step 0 — Print the banner FIRST
 
 ```

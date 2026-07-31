@@ -44,6 +44,15 @@ So it **defaults to the changed set** (`CONVENTIONS.md §1`) and takes `--full` 
 whole tree. Say which scope ran, and — when it was the changed set — say plainly that
 dead code elsewhere was not looked at.
 
+
+## Dependencies
+
+Detected at runtime, never installed by this skill (`§A5`).
+
+| Tool | Used for | Without it |
+|---|---|---|
+| `knip` / `ts-prune` / `vulture` / `deadcode` / `cargo-udeps` | the repo's own dead-code analysis, if already installed | a grep-based export-vs-import cross-reference, marked lower-confidence |
+
 ## Step 0 — Print the warning banner FIRST
 
 ```

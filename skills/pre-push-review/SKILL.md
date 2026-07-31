@@ -50,6 +50,16 @@ is defined once in **`CONVENTIONS.md`** — read it; the steps below reference i
 > **roster** before dispatch — every agent and what it will do — then mark each one
 > `✓`/`✗` with its verdict as it lands (`§R`).
 
+
+## Dependencies
+
+Detected at runtime, never installed by this skill (`§A5`).
+
+| Tool | Used for | Without it |
+|---|---|---|
+| `gitleaks` *or* `trufflehog` *or* `detect-secrets` | the secret gate that runs first, alone | **BLOCK** — the gate cannot be skipped |
+| the repo's own test/lint/build commands | the tests-build dimension | `SKIP` that dimension and say so |
+
 ## Step 0 — Print the warning banner FIRST
 
 Before running any git command or reading any diff, print this banner verbatim:

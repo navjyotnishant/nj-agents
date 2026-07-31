@@ -42,6 +42,16 @@ grounding/safety §A6, non-clobber §A7).
 > signal to stop. Announce the **pipeline** up front and each stage as it starts, so a stall is
 > attributable to a named stage (`§R`).
 
+
+## Dependencies
+
+Detected at runtime, never installed by this skill (`§A5`).
+
+| Tool | Used for | Without it |
+|---|---|---|
+| `mkdocs` + `mkdocs-material` + `mkdocs-gen-files` + `mkdocs-literate-nav` | `--generated` mode only | Mode A (single `docs.html`) needs none of it |
+| `mkdocs-glightbox` | click-to-expand for wide diagrams | diagrams render inline, shrunk to the column |
+
 ## Step 0 — Print the banner FIRST
 
 ```

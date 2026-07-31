@@ -390,6 +390,26 @@ check_universal_rules() {
   return 0
 }
 
+# A skill that shells out to something must say so where a reader can SEE it, before
+# running it — not bury it in prose and not let them find out from an error. Keyed off
+# the tools actually named in the skill, never a list of skill names.
+check_dependencies() {
+  local d name bad=0 tools
+  tools='gitleaks\|trufflehog\|detect-secrets\|rsvg-convert\|playwright\|`sharp`\|`jimp`\|`gh`\|mkdocs\|`npx`'
+  for d in "$SKILLS_SRC"/*/; do
+    name="$(basename "${d%/}")"
+    [ -f "${d%/}/SKILL.md" ] || continue
+    has "${d%/}/SKILL.md" "$tools" || continue
+    grep -q '^## Dependencies' "${d%/}/SKILL.md" || {
+      finding check_dependencies referential \
+        "skills/$name names an external tool but has no '## Dependencies' table (what it needs, and what happens without it)"
+      bad=1
+    }
+  done
+  [ "$bad" = "0" ] && ok "external dependencies documented"
+  return 0
+}
+
 # §C — the user should never discover the cost mid-run.
 check_cost_control() {
   local f name bad=0
@@ -549,6 +569,7 @@ check_class_conventions
 check_conventions_reachable
 check_class_contract
 check_universal_rules
+check_dependencies
 check_cost_control
 check_progress_reporting
 check_conventions_sections

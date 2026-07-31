@@ -49,6 +49,16 @@ grounding/safety §A6, non-clobber §A7).
 > signal to stop. Announce the **pipeline** up front and each stage as it starts, so a stall is
 > attributable to a named stage (`§R`).
 
+
+## Dependencies
+
+Detected at runtime, never installed by this skill (`§A5`).
+
+| Tool | Used for | Without it |
+|---|---|---|
+| `rsvg-convert` | rasterising generated diagrams | embeds the SVG directly |
+| `DEVTO_API_KEY` or a publishing MCP | posting a draft, on opt-in | hands you the publish-ready files |
+
 ## Step 0 — Print the banner FIRST
 
 ```

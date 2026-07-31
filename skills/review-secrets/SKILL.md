@@ -47,6 +47,15 @@ handling §3, CI mode §5, report §6, safety §7).
 > signal to stop. Announce the **pipeline** up front and each stage as it starts, so a stall is
 > attributable to a named stage (`§R`).
 
+
+## Dependencies
+
+Detected at runtime, never installed by this skill (`§A5`).
+
+| Tool | Used for | Without it |
+|---|---|---|
+| `gitleaks` *or* `trufflehog` *or* `detect-secrets` | scanning the diff before anything is shared with an agent | **BLOCK** with install instructions — there is no heuristic fallback |
+
 ## Step 0 — Print the warning banner FIRST
 
 ```

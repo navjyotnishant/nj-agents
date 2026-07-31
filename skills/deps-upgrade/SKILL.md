@@ -44,6 +44,15 @@ manifest or lockfile.** A repo-maintenance skill of the **review class** — fol
 > not yet taken — a maintenance survey, not a diff review. Different question, different
 > scope. Don't conflate them.
 
+
+## Dependencies
+
+Detected at runtime, never installed by this skill (`§A5`).
+
+| Tool | Used for | Without it |
+|---|---|---|
+| the repo's package manager (`npm`, `pip`, `cargo`, `go`) | reading what is outstanding | manifest-only survey; say the data is from the manifest, not the registry |
+
 ## Step 0 — Print the warning banner FIRST
 
 ```

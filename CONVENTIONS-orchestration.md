@@ -45,6 +45,16 @@ tests, docs-only edits and internal tooling do **not** belong there: a changelog
 records everything records nothing. If the repo has no `CHANGELOG.md`, offer to start
 one rather than letting the gap grow — but never hard-block a throwaway repo over it.
 
+**Document every external dependency, with its fallback.** A skill that shells out to
+anything not in a POSIX base install states it in a `## Dependencies` table: the tool,
+what it is used for, and what happens without it. A reader must be able to see what a
+skill needs *before* running it, not discover it from an error. Buried in prose does
+not count — it has to be scannable.
+
+| Tool | Used for | Without it |
+|---|---|---|
+| `example` | what it does here | the documented fallback, or BLOCK if genuinely required |
+
 **Degrade, don't fail.** External tools and MCP connectors are detected at runtime,
 never required; every path has a zero-dependency fallback. The one exception is secret
 scanning, which genuinely blocks without a scanner.

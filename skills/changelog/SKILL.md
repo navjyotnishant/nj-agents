@@ -40,6 +40,15 @@ grounding/safety §A6, idempotent/non-clobber §A7).
 > signal to stop. Announce the **pipeline** up front and each stage as it starts, so a stall is
 > attributable to a named stage (`§R`).
 
+
+## Dependencies
+
+Detected at runtime, never installed by this skill (`§A5`).
+
+| Tool | Used for | Without it |
+|---|---|---|
+| `gh` | enriching entries with merged-PR titles | commit history alone — entries are still complete, just less context |
+
 ## Step 0 — Print the banner FIRST
 
 ```

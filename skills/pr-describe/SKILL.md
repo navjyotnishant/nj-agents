@@ -49,6 +49,15 @@ borrows the safe halves of each:
 authoring placement rules (§A2/§A4) don't apply — the output goes to GitHub (as a
 draft) or to your clipboard, never to `docs/`. Say so rather than forcing a file.
 
+
+## Dependencies
+
+Detected at runtime, never installed by this skill (`§A5`).
+
+| Tool | Used for | Without it |
+|---|---|---|
+| `gh` | opening a draft PR on opt-in | prints the title and body for you to paste |
+
 ## Step 0 — Print the banner FIRST
 
 ```

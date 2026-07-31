@@ -38,6 +38,15 @@ already use. A repo-maintenance skill of the **review class** — follow `CONVEN
 > signal to stop. Announce the **pipeline** up front and each stage as it starts, so a stall is
 > attributable to a named stage (`§R`).
 
+
+## Dependencies
+
+Detected at runtime, never installed by this skill (`§A5`).
+
+| Tool | Used for | Without it |
+|---|---|---|
+| the repo's coverage tool (`--coverage`, `pytest-cov`, `go test -cover`, `tarpaulin`) | measured coverage | a static source-to-test heuristic, **labelled as a heuristic** |
+
 ## Step 0 — Print the warning banner FIRST
 
 ```

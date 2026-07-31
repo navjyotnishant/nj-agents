@@ -42,6 +42,16 @@ below.
 > signal to stop. Announce the **pipeline** up front and each stage as it starts, so a stall is
 > attributable to a named stage (`§R`).
 
+
+## Dependencies
+
+Detected at runtime, never installed by this skill (`§A5`).
+
+| Tool | Used for | Without it |
+|---|---|---|
+| Playwright (via `npx`) | driving a browser to capture a web page | ask for an existing image, or capture terminal/component output instead |
+| `sharp` *or* `jimp` (via `npx`) | blurring and masking the flagged regions | **BLOCK** — an unredacted image must never be written |
+
 ## Step 0 — Print the banner FIRST
 
 ```
