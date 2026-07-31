@@ -657,6 +657,52 @@ check_diagram_counts() {
   return 0
 }
 
+# Codex reads agents as TOML, so install.sh generates them rather than linking.
+# A generator that emits malformed TOML fails silently — Codex just skips the
+# agent, exactly as it skipped the two skills with invalid YAML. Generate into a
+# temp dir and parse the result.
+check_codex_agent_generation() {
+  local tmp n_md n_toml bad=0
+  [ -x "$REPO_DIR/scripts/gen-codex-agents.sh" ] || return 0
+  command -v python3 >/dev/null 2>&1 || return 0
+  tmp="$(mktemp -d)" || return 0
+  # shellcheck disable=SC2064
+  trap "rm -rf '$tmp'" RETURN
+
+  if ! "$REPO_DIR/scripts/gen-codex-agents.sh" "$tmp" >/dev/null 2>&1; then
+    finding check_codex_agent_generation structural \
+      "scripts/gen-codex-agents.sh failed — Codex would get skills but no agents"
+    return 0
+  fi
+
+  n_md="$(ls "$AGENTS_SRC"/*.md 2>/dev/null | wc -l | tr -d ' ')"
+  n_toml="$(ls "$tmp"/*.toml 2>/dev/null | wc -l | tr -d ' ')"
+  [ "$n_md" = "$n_toml" ] || {
+    finding check_codex_agent_generation structural \
+      "Codex agent generation produced $n_toml .toml for $n_md agents"
+    bad=1
+  }
+
+  # Valid TOML, and every required Codex field present and non-empty.
+  python3 - "$tmp" <<'PY' || bad=1
+import sys, glob, os, tomllib
+bad = []
+for p in sorted(glob.glob(f"{sys.argv[1]}/*.toml")):
+    try:
+        d = tomllib.load(open(p, "rb"))
+    except Exception as e:
+        bad.append(f"{os.path.basename(p)}: {e}"); continue
+    for k in ("name", "description", "developer_instructions"):
+        if not d.get(k):
+            bad.append(f"{os.path.basename(p)}: missing or empty '{k}'")
+for b in bad:
+    print(f"  ! generated Codex agent {b}", file=sys.stderr)
+sys.exit(1 if bad else 0)
+PY
+  [ "$bad" = "0" ] && ok "Codex agent generation produces valid TOML ($n_toml agents)"
+  return 0
+}
+
 check_guidance_size() {
   local bytes limit=32768
   [ -f "$GLOBAL_MD_SRC" ] || return 0
@@ -758,6 +804,7 @@ check_conventions_sections
 check_guidance_sync
 check_hook_sync
 check_stale_agents
+check_codex_agent_generation
 check_guidance_size
 check_diagram_counts
 check_installer_runners

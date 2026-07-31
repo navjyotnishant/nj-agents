@@ -263,16 +263,26 @@ skill once and every runner sees it. There is nothing to sync.
 | | Claude Code | Codex | Cursor | Gemini |
 |---|---|---|---|---|
 | **24 skills** | yes | yes | yes | yes |
-| **25 agents** | yes | not yet | not yet | yes |
+| **25 agents** | yes | yes (generated) | not yet | yes |
 | **Guidance file** | `CLAUDE.md` | `AGENTS.md` | not yet | `GEMINI.md` |
 
-Codex reads agents as TOML and Cursor reads guidance as `.mdc` with frontmatter —
-both need a generator rather than a symlink, so the installer **skips them and
-says so** instead of leaving files those tools silently ignore.
+Codex reads agents as **TOML**, not markdown with YAML frontmatter — a different
+*format*, not a different path, so they cannot be symlinked. `--runner codex`
+**generates** them from the same `agents/*.md` instead, following the schema in
+Codex's own `migrate-to-codex` converter. Generated files are build artifacts:
+rewritten on every install, never committed, and they say so in their header.
 
-This is verified against the specs and by `check.sh`, which installs into a temp
-directory on every run and asserts the layout. It has **not** yet been verified by
-running a skill end to end on a non-Claude runner.
+Cursor guidance is the remaining gap (`.mdc` needs real frontmatter), so
+`--runner cursor` installs skills only and says so when it runs.
+
+**What is actually verified**, as distinct from inferred:
+
+- `gemini skills list` discovers all 24 skills through the symlinks, 0 errors.
+- `check.sh` installs into a temp directory on every run and asserts the layout,
+  and separately generates the Codex TOML and parses every file.
+- **Not** verified: Codex loading the generated agents, or any runner *executing*
+  a skill end to end. Codex is over its usage limit until Aug 7, and Gemini's free
+  tier no longer supports its CLI client.
 
 Uninstall (only removes symlinks pointing back into this repo):
 

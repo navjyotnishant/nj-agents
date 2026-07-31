@@ -24,12 +24,15 @@
 # runner: install for each one you use and they all read the same files. Edit a
 # skill once and every runner sees it — there is nothing to sync.
 #
-# Skills and agents are portable as-is. Two things are NOT, and are handled by
-# their own stories rather than silently half-working here:
-#   - Codex reads agents as TOML, not markdown (NAV-159)
-#   - Cursor reads guidance as .mdc with real frontmatter, not plain md (NAV-152)
-# Until those land, --runner codex installs skills + guidance but not agents, and
-# --runner cursor installs skills only. Both say so when they run.
+# Skills are portable as-is — SKILL.md is an open standard. Agents mostly are too,
+# with one exception: Codex reads them as TOML, not markdown with YAML frontmatter,
+# so for that runner they are GENERATED at install time from the same canonical
+# agents/*.md (scripts/gen-codex-agents.sh). Generated files are build artifacts:
+# rewritten on every install, never committed, and they say so in their header.
+#
+# Cursor guidance is the remaining gap — it needs .mdc with real frontmatter
+# rather than plain markdown (NAV-152), so --runner cursor installs skills only
+# and says so when it runs.
 #
 # Idempotent: re-running relinks. It only ever touches symlinks that point back
 # into THIS repo — it never deletes a real file or a link owned by something else.
@@ -80,8 +83,8 @@ case "$RUNNER" in
   agents) RUNNER_DIR=".agents"; GUIDANCE_NAME="AGENTS.md" ;;
 esac
 
-# Codex reads agents as TOML, not markdown, so symlinking .md files there would
-# create a directory of files it silently ignores. Skip until NAV-159 lands.
+# Codex reads agents as TOML, so its agents are generated rather than linked
+# (see the agents block below). Cursor registers subagents separately.
 INSTALL_AGENTS=1
 [ "$RUNNER" = "codex" ] && INSTALL_AGENTS=0
 [ "$RUNNER" = "cursor" ] && INSTALL_AGENTS=0
@@ -116,7 +119,7 @@ remove_if_ours() {
 
 # Tallies, so the summary can say what actually happened rather than scrolling 49
 # near-identical "linked ..." lines past the one line that mattered.
-N_NEW=0; N_SAME=0; N_REPAIRED=0; N_BLOCKED=0
+N_NEW=0; N_SAME=0; N_REPAIRED=0; N_BLOCKED=0; N_GENERATED=0
 BLOCKED_LIST=""
 
 link_one() {
@@ -201,6 +204,15 @@ if [ "$UNINSTALL" = "1" ]; then
   # an earlier install (or an earlier version of this script) may have left them,
   # and remove_if_ours only ever touches links pointing back into this repo.
   for f in "$AGENTS_SRC"/*.md; do remove_if_ours "$AGENTS_DST/$(basename "$f")"; done
+  # Generated Codex agents are real files, not symlinks, so remove_if_ours will
+  # not touch them. Only delete ones carrying our generated header — a .toml the
+  # user wrote by hand must survive an uninstall.
+  for f in "$AGENTS_SRC"/*.md; do
+    t="$AGENTS_DST/$(basename "$f" .md).toml"
+    [ -f "$t" ] && head -2 "$t" | grep -q "Source: agents/.* in the nj-agents repo" && {
+      rm "$t"; echo "  removed $t"
+    }
+  done
   for f in "$HOOKS_SRC"/*.sh; do [ -f "$f" ] && remove_if_ours "$HOOKS_DST/$(basename "$f")"; done
   [ -n "$GLOBAL_MD_DST" ] && remove_if_ours "$GLOBAL_MD_DST"
   echo "Done."
@@ -217,14 +229,23 @@ for d in "$SKILLS_SRC"/*/; do
   link_one "${d%/}" "$SKILLS_DST/$(basename "$d")"
 done
 
-# Agents: flat .md files — but only where the runner reads that format.
+# Agents. Markdown symlinks where the runner reads that format; generated TOML
+# for Codex, which does not. Generation is the exception, not the pattern — it
+# exists only because the FORMAT differs, and the generated files are build
+# artifacts that say so in their own header.
 if [ "$INSTALL_AGENTS" = "1" ]; then
   for f in "$AGENTS_SRC"/*.md; do
     link_one "$f" "$AGENTS_DST/$(basename "$f")"
   done
+elif [ "$RUNNER" = "codex" ]; then
+  mkdir -p "$AGENTS_DST"
+  if n_gen="$("$REPO_DIR/scripts/gen-codex-agents.sh" "$AGENTS_DST")"; then
+    N_GENERATED="$n_gen"
+  else
+    echo "  ! agent generation failed — Codex will have skills but no agents" >&2
+  fi
 else
   case "$RUNNER" in
-    codex)  echo "  - agents skipped: Codex reads agents as TOML, not markdown (NAV-159)" ;;
     cursor) echo "  - agents skipped: Cursor subagents are registered separately (NAV-152)" ;;
   esac
 fi
@@ -276,6 +297,9 @@ echo ""
 echo "Summary"
 echo "  runner        $RUNNER  ($TARGET_ROOT)"
 echo "  linked        $N_NEW new, $N_SAME already current$([ "$N_REPAIRED" -gt 0 ] && echo ", $N_REPAIRED repaired (were dangling)")"
+[ "$N_GENERATED" -gt 0 ] && \
+  echo "  generated     $N_GENERATED agent .toml files (Codex reads TOML, not markdown) —
+                build artifacts, rewritten every install; do not edit them"
 [ -n "$GLOBAL_MD_DST" ] && echo "  guidance      ${GLOBAL_MD_DST#$HOME/} -> ${GLOBAL_MD_SRC#$REPO_DIR/}"
 
 if [ "$N_BLOCKED" -gt 0 ]; then

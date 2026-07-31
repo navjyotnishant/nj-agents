@@ -36,6 +36,21 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- **Codex gets the agents too.** Codex reads agents as TOML rather than markdown
+  with YAML frontmatter — a different *format*, not a different path, so the 25
+  `agents/*.md` cannot be symlinked there the way skills can. `./install.sh
+  --runner codex` now **generates** them, following the schema in Codex's own
+  `migrate-to-codex` converter (`name` / `description` / `developer_instructions`).
+  Before this, Codex had skills but no agents, so the 17 skills that delegate
+  would have run everything inline there.
+  Generated files are build artifacts: rewritten on every install, never
+  committed, and each carries a header saying so. Uninstall removes them, but
+  leaves a `.toml` you wrote yourself alone. `check.sh` generates into a temp
+  directory and parses the result, so a broken generator fails the build rather
+  than silently producing agents Codex skips.
+  Note `tools:` becomes prompt guidance rather than a permission on Codex — the
+  vendor's own converter does the same, since Codex enforces via `sandbox_mode`
+  and `[permissions]`, which are a per-user decision this does not make for you.
 - **`/screenshot-docs-sync`** — keeps documentation and its embedded screenshots
   current as the UI drifts. Diffs since the last doc update, works out which doc
   sections went stale, re-captures only the affected screens, and edits in place.
