@@ -1,6 +1,7 @@
 ---
 name: pr-describer
 description: "Use this agent to turn a branch's commits and diff into a clean pull-request title and body — a reviewer-facing summary, grouped change bullets, the motivation, and a grounded test plan. It de-duplicates commit noise, groups by concern rather than one-bullet-per-commit, and invents nothing: every line traces to a real commit or diff hunk. Fills a repo's own PR template when one is supplied. Works in any repo.\n\n<example>\nContext: The pr-describe skill has resolved the base branch and collected the branch's commits + diff.\nuser: \"draft the PR description for this branch\"\n<commentary>\nThe pr-describe skill spawns this agent with the delta (and any PR template / recent-PR style); the agent returns the title + body and the skill presents it or opens a draft PR.\n</commentary>\nassistant: \"Launching pr-describer to draft the PR title and body from the branch delta.\"\n</example>"
+tools: Read, Grep, Glob, Bash
 color: green
 author: navjyotnishant
 ---

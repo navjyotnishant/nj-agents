@@ -21,7 +21,7 @@ below.
 
 > **Finding the conventions file.** It lives at the toolkit repo root, two levels
 > above this skill — not beside `SKILL.md`. Skills are usually installed as
-> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> symlinks into your runner's skills directory, so a plain relative path resolves against the
 > *link* and misses it. Resolve the link first:
 >
 > ```bash
@@ -77,7 +77,7 @@ Detected at runtime, never installed by this skill (`§A5`).
   (§A5), degrade: capture what's possible, or ask the user for an existing image.
 - **For web capture:** a way to reach the app (launch command + auth) — discovered
   per repo (Step 2). **Never fabricate credentials.**
-- **No external API.** All analysis is done by this Claude session + subagents.
+- **No external API.** All analysis is done by this AI session + subagents.
 
 ## Step 1 — Resolve what to capture
 

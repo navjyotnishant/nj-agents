@@ -18,7 +18,7 @@ Follow the shared rules in `CONVENTIONS.md` (CI mode §5, report §6, safety §7
 
 > **Finding the conventions file.** It lives at the toolkit repo root, two levels
 > above this skill — not beside `SKILL.md`. Skills are usually installed as
-> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> symlinks into your runner's skills directory, so a plain relative path resolves against the
 > *link* and misses it. Resolve the link first:
 >
 > ```bash
@@ -58,7 +58,7 @@ Follow the shared rules in `CONVENTIONS.md` (CI mode §5, report §6, safety §7
 - **Optional, auto-detected:** a test / lint / build command. If none is found,
   this dimension reports **SKIP** (not a false PASS) — it never invents one and
   never installs tooling.
-- **No external API key** — uses the current Claude session.
+- **No external API key** — uses the current AI session.
 
 ## Step 1 — Detect the commands (first hit per category; documented beats inferred)
 

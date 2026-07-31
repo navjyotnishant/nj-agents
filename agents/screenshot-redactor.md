@@ -1,6 +1,7 @@
 ---
 name: screenshot-redactor
 description: "Use this agent to redact sensitive regions in a screenshot — full blur / solid box for high-risk (tokens, keys, cards, SSNs) and partial mask for low-risk illustrative data (emails, names) — using sharp or jimp, then VERIFY that every flagged region is actually obscured. If coverage can't be verified it BLOCKS the write. Produces only the redacted image; the raw stays gitignored. Works for any screenshot.\n\n<example>\nContext: The sensitive-data-reviewer returned marked regions on a dashboard screenshot.\nuser: \"redact the flagged regions\"\n<commentary>\nThe capture-screenshots skill spawns this agent with the raw image + regions; it blurs, verifies coverage, and blocks the write if unsure.\n</commentary>\nassistant: \"Launching screenshot-redactor to blur the flagged regions and verify coverage.\"\n</example>"
+tools: Read, Grep, Glob, Bash, Write
 color: yellow
 author: navjyotnishant
 ---

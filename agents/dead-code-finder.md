@@ -1,6 +1,7 @@
 ---
 name: dead-code-finder
 description: "Use this agent to classify dead-code candidates in a repo — unused exports, unreachable functions, orphan files, unused dependencies — by confidence, screening out known false positives (dynamic dispatch, reflection, framework auto-wiring, re-exports, public API surface). It reviews tool output or an export/import cross-reference (no install, no delete) and reports candidates with a confidence level. Works in any repo, any language.\n\n<example>\nContext: The dead-code-finder skill detected the repo has no dedicated tool and produced an export/import cross-reference.\nuser: \"what code here is unused?\"\n<commentary>\nThe skill spawns this agent with the cross-reference; it classifies candidates by confidence and filters false positives, never deleting anything.\n</commentary>\nassistant: \"Launching dead-code-finder to classify the unreferenced-code candidates.\"\n</example>"
+tools: Read, Grep, Glob, Bash
 color: yellow
 author: navjyotnishant
 ---

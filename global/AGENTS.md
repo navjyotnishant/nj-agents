@@ -1,13 +1,15 @@
 # Global guidance — nj-agents SDLC toolkit
 
 <!--
-  Source of truth: <nj-agents repo>/global/CLAUDE.md
-  Installed to ~/.claude/CLAUDE.md as a SYMLINK by nj-agents/install.sh.
-  Edit it in the repo, not here. Repo: github.com/navjyotnishant/nj-agents
+  Source of truth: <nj-agents repo>/global/AGENTS.md
+  Installed as a SYMLINK by nj-agents/install.sh, under whichever filename the
+  runner reads — ~/.claude/CLAUDE.md, ~/.codex/AGENTS.md, ~/.gemini/GEMINI.md.
+  All of them point back HERE, so there is one copy and nothing to keep in sync.
+  Edit it in the repo, not through a link. Repo: github.com/navjyotnishant/nj-agents
 -->
 
 A personal toolkit of Claude Code **skills and agents** covering the software
-development lifecycle is installed globally on this machine — **23 skills, 26
+development lifecycle is installed globally on this machine — **24 skills, 25
 agents**. It is **project-agnostic**: every skill works in any git repo, any stack,
 any language, and discovers per-repo details at runtime rather than assuming a
 stack, path, port, or tool.
@@ -57,6 +59,7 @@ whole manifest by definition.
 | `/changelog` | `CHANGELOG.md` in Keep a Changelog + SemVer from commit history. Merges into `[Unreleased]` without clobbering; suggests the bump. (For the GitHub **Release** object, see `/release-notes`.) | `changelog-writer` |
 | `/arch-diagram` | Authors a presentation-quality SVG into `docs/architecture/` — infographic by default, `--sketch` on request. Renders and reviews it before shipping. | `diagram-architect` |
 | `/capture-screenshots` | Capture → detect PII/secrets → blur/mask → **verify coverage before writing**. | `screenshot-capturer`, `sensitive-data-reviewer`, `screenshot-redactor` |
+| `/screenshot-docs-sync` | Keeps docs and their embedded screenshots current as the UI drifts — diffs since the last doc update, re-captures only what changed, edits in place. The *maintenance* loop; `/capture-screenshots` is the one-shot. | (no dedicated agent) |
 | `/docs-site` | Self-contained theme-aware `docs.html` from docs, code, an outline, or SKILL.md/OpenAPI/JSON-Schema. Auto-derives the menu; flags gaps rather than inventing. | `docs-architect`, `docs-designer` |
 | `/tech-blog` | writer → fact-checker → reviewer → editor → final-polish → platform-lint → optional poster. Generates its own diagrams/screenshots, then embeds them. | `blog-writer`, `blog-fact-checker`, `blog-reviewer`, `blog-editor`, `blog-final-polish`, `blog-platform-lint`, `blog-poster` |
 | `/scaffold-project` | Lay out a **new** repo to the OpenSSF OSPS Baseline (Level 1 default), delegating stack layout to the ecosystem generator (`cargo new`/`uv init`/…). Cites each file by control ID; verifies before reporting done. | (no dedicated agent) |
@@ -75,7 +78,7 @@ can't verify against the repo, and `/arch-diagram` runs a mandatory
 | Skill | What it does | Agent |
 |---|---|---|
 | `/pr-describe` | Drafts a PR **title + body** from the branch's delta vs its base (the PR view). Fills the repo's own PR template when present; grounds every line in a real commit/hunk. Opens a **draft** PR only if you opt in and `gh` is present; else hands you the text. **Never pushes, never opens a non-draft PR, never merges.** | `pr-describer` |
-| `/commit-assistant` | Drafts Conventional Commits message(s) from the working-tree changes and prints the `git add` + `git commit` block. Splits unrelated changes into separate commits; respects existing staging. **Never runs git** — the human decides what gets committed. | (no dedicated agent) |
+| `/commit-assistant` | Drafts Conventional Commits message(s) from the working-tree changes and prints the `git add` + `git commit` block. Splits unrelated changes into separate commits; respects existing staging. Then **offers to run each one**, asking per commit and showing exactly what it would stage. **Never pushes or tags**; CI mode prints only. | (no dedicated agent) |
 | `/release-notes` | Turns a version's changes into a **draft GitHub Release** — reuses the `CHANGELOG.md` section as the body (composes with `/changelog`), else summarizes the commit delta. Drafts `gh release create --draft`; **never publishes, never pushes a tag.** | (no dedicated agent) |
 
 Reads a diff like the review class but invents nothing; proposes like the authoring

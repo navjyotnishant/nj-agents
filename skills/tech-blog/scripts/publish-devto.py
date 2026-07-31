@@ -42,8 +42,28 @@ ACCEPT = "application/vnd.forem.api-v1+json"
 # User-Agent with a 403; any conventional UA is accepted.
 USER_AGENT = "publish-devto/1.0 (+nj-agents)"
 
-STATE_PATH = Path.home() / ".claude" / "devto-state.json"
-ENV_PATH = Path.home() / ".claude" / ".env"
+# Runner-neutral first, with the legacy Claude-Code paths as a fallback so an
+# existing install keeps working untouched. A file that already exists wins over
+# the preferred-but-absent location; otherwise new state is written to the
+# runner-neutral path.
+_XDG = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+_NEUTRAL_DIR = _XDG / "nj-agents"
+_LEGACY_DIR = Path.home() / ".claude"
+
+
+def _resolve(filename):
+    """Prefer an existing file; else the runner-neutral path."""
+    legacy = _LEGACY_DIR / filename
+    neutral = _NEUTRAL_DIR / filename
+    if neutral.exists():
+        return neutral
+    if legacy.exists():
+        return legacy
+    return neutral
+
+
+STATE_PATH = _resolve("devto-state.json")
+ENV_PATH = _resolve(".env")
 
 # Inline markdown images: ![alt](path "optional title")
 IMG_RE = re.compile(r"!\[(?P<alt>[^\]]*)\]\((?P<path>[^)\s]+)(?P<rest>\s+[^)]*)?\)")

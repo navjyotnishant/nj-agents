@@ -9,7 +9,7 @@
 #   ./check.sh --strict          # same, but exit 1 if anything was found (CI)
 #   ./check.sh --json            # machine-readable findings on stdout
 #
-#   ./check.sh --new-skill NAME --class review|authoring|workflow|pm|social
+#   ./check.sh --new-skill NAME --class review|authoring|workflow|pm|social|testing
 #   ./check.sh --new-agent NAME
 #                                # scaffold from templates/, then validate it
 #
@@ -23,7 +23,7 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILLS_SRC="$REPO_DIR/skills"
 AGENTS_SRC="$REPO_DIR/agents"
-GLOBAL_MD_SRC="$REPO_DIR/global/CLAUDE.md"
+GLOBAL_MD_SRC="$REPO_DIR/global/AGENTS.md"
 REPO_MD_SRC="$REPO_DIR/CLAUDE.md"
 STRICT=0
 JSON=0
@@ -57,8 +57,8 @@ scaffold() {
   esac
   if [ "$kind" = "skill" ]; then
     case "$class" in
-      review|authoring|workflow|pm|social) ;;
-      *) echo "  ! --class must be one of: review authoring workflow pm social" >&2; exit 2 ;;
+      review|authoring|workflow|pm|social|testing) ;;
+      *) echo "  ! --class must be one of: review authoring workflow pm social testing" >&2; exit 2 ;;
     esac
     tmpl="$REPO_DIR/templates/SKILL.md"; dst="$SKILLS_SRC/$name/SKILL.md"
   else
@@ -154,11 +154,101 @@ check_skill_frontmatter() {
     esac
     val="$(grep -m1 '^class:' "${d%/}/SKILL.md" | sed 's/^class: *//' || true)"
     case "$val" in
-      review|authoring|workflow|pm|social|"") ;;
+      review|authoring|workflow|pm|social|testing|"") ;;
       *) finding check_skill_frontmatter structural "skills/$name: unknown class '$val'"; bad=1 ;;
     esac
   done
   [ "$bad" = "0" ] && ok "skill frontmatter ok ($(ls -d "$SKILLS_SRC"/*/ | wc -l | tr -d ' ') skills)"
+  return 0
+}
+
+# Frontmatter must be VALID YAML, not merely parseable by a lenient reader. An
+# unquoted scalar containing ": " is a mapping-value error: YAML reads it as a
+# nested key. Claude Code and Gemini shrug and load the skill anyway; Codex refuses
+# it outright —
+#   ERROR failed to load skill .../commit-assistant/SKILL.md: invalid YAML:
+#   mapping values are not allowed in this context
+# — which is how "It NEVER runs git itself: the human decides" silently made two
+# skills invisible on one runner. Quote the value and it is fine everywhere.
+# Model- and runner-agnosticism has to be ENFORCED, not just described, or it lasts
+# exactly as long as the next author who has not read the template. Three ways it
+# rots, all silent — nothing errors, the toolkit just quietly stops being portable:
+#
+#   1. `model:` in an agent — pins a tier and overrides the user's own choice. An
+#      Opus session silently gets Sonnet subagents (this was NAV-146).
+#   2. A vendor name in a user-facing banner — the privacy claim stays true, but it
+#      names a product that is not running (NAV-150).
+#   3. A model name in prose — "run this on haiku" is a recommendation that cannot
+#      be honoured off one vendor.
+#
+# The agent case is a hard failure. The prose cases are matched narrowly, since a
+# skill may legitimately *discuss* a runner: `check_frontmatter_yaml`'s comment
+# names Codex, and CLAUDE.md/AGENTS.md are real files skills read as input.
+check_vendor_neutral() {
+  local f name val bad=0 txt
+  for f in "$AGENTS_SRC"/*.md; do
+    [ -f "$f" ] || continue
+    name="$(basename "$f" .md)"
+    if grep -q '^model:' "$f"; then
+      val="$(grep -m1 '^model:' "$f" | sed 's/^model: *//')"
+      finding check_vendor_neutral structural \
+        "agents/$name.md pins 'model: $val' — omit it so the agent inherits the session's model, or an Opus session silently gets $val subagents"
+      bad=1
+    fi
+  done
+
+  # Banners are what the USER reads, so a vendor name there is a false statement
+  # about what is running. Skill bodies only; agent bodies are model-facing.
+  for f in "$SKILLS_SRC"/*/SKILL.md; do
+    [ -f "$f" ] || continue
+    name="$(basename "$(dirname "$f")")"
+    txt="$(body "$f")"
+    if printf '%s' "$txt" | grep -qiE '(this|the current) (claude|codex|cursor|gemini) session'; then
+      finding check_vendor_neutral structural \
+        "skills/$name names a specific vendor in a user-facing claim ('this <vendor> session') — say 'this session', which is true on every runner"
+      bad=1
+    fi
+    # A bare model name recommended for a run. Anchored on the recommendation, not
+    # the word: a skill may name a model when explaining what it does NOT assume.
+    if printf '%s' "$txt" | grep -qiE '(run|use|default)[a-z]* (it |this |them )?(on|with) (haiku|sonnet|opus|gpt-[0-9]|gemini-[0-9])'; then
+      finding check_vendor_neutral structural \
+        "skills/$name recommends a specific model — the session picks the model, not the skill"
+      bad=1
+    fi
+  done
+
+  [ "$bad" = "0" ] && ok "no pinned models, no vendor names in user-facing claims"
+  return 0
+}
+
+check_frontmatter_yaml() {
+  local f name key val bad=0
+  for f in "$SKILLS_SRC"/*/SKILL.md "$AGENTS_SRC"/*.md; do
+    [ -f "$f" ] || continue
+    case "$f" in
+      "$SKILLS_SRC"/*) name="skills/$(basename "$(dirname "$f")")" ;;
+      *)               name="agents/$(basename "$f")" ;;
+    esac
+    # Frontmatter only: everything between the first two --- lines.
+    while IFS= read -r line; do
+      case "$line" in
+        [a-z_]*": "*) ;;
+        *) continue ;;
+      esac
+      key="${line%%: *}"
+      val="${line#*: }"
+      case "$val" in
+        '"'*|"'"*) continue ;;   # quoted — a colon inside is safe
+      esac
+      case "$val" in
+        *": "*)
+          finding check_frontmatter_yaml structural \
+            "$name: '$key:' is an unquoted value containing ': ' — invalid YAML, and Codex refuses to load it. Wrap the value in double quotes."
+          bad=1 ;;
+      esac
+    done < <(awk '/^---$/{n++; next} n==1' "$f")
+  done
+  [ "$bad" = "0" ] && ok "frontmatter is valid YAML on every runner"
   return 0
 }
 
@@ -169,7 +259,12 @@ check_agent_frontmatter() {
     # No `model:` — an agent inherits the session's model, so an Opus session gets
     # Opus subagents. Pinning one in the file silently overrides the user's choice.
     # If an agent ever needs a specific tier, it states why in its own body.
-    for key in name description color; do
+    #
+    # `tools:` IS required, and the reason is portability rather than taste. Claude
+    # Code and Cursor read a missing key as inherit-all, but Gemini CLI reads it as
+    # *no tools* — the agent loads and then cannot do anything. An explicit list is
+    # the only spelling that means the same thing on every runner.
+    for key in name description tools color; do
       grep -q "^$key:" "$f" || {
         finding check_agent_frontmatter structural "agents/$name.md: frontmatter missing '$key:'"
         bad=1
@@ -180,6 +275,23 @@ check_agent_frontmatter() {
       finding check_agent_frontmatter structural "agents/$name.md: name: is '$val', must match the filename"
       bad=1
     }
+
+    # An agent whose own body says it is read-only must not hand itself a write
+    # tool. The prose and the tool list are two statements of the same contract,
+    # and a silent disagreement between them is exactly how an advise-only
+    # reviewer starts editing the repo it was asked to review.
+    val="$(grep -m1 '^tools:' "$f" | sed 's/^tools: *//' || true)"
+    if printf '%s' "$val" | grep -qE '\b(Write|Edit|NotebookEdit)\b'; then
+      # Anchor on the agent's own safety posture, not any mention of the words.
+      # "only safe, read-only/demo commands" describes what an agent may RUN and
+      # says nothing about whether it writes — matching it flagged an agent whose
+      # whole job is producing an image file.
+      if body "$f" | grep -qiE '^(Read-only\b|Do not write files|Never write files)'; then
+        finding check_agent_frontmatter contract \
+          "agents/$name.md: declares a write tool but its body says it is read-only"
+        bad=1
+      fi
+    fi
   done
   [ "$bad" = "0" ] && ok "agent frontmatter ok ($(ls "$AGENTS_SRC"/*.md | wc -l | tr -d ' ') agents)"
   return 0
@@ -207,7 +319,7 @@ check_authorship() {
 # happened to be in. An ORPHAN means an agent nothing spawns: dead weight that
 # still ships, and usually the sign a skill quietly stopped delegating.
 check_agent_references() {
-  local f name refs r bad=0
+  local f name refs r s flat bad=0
   for f in "$SKILLS_SRC"/*/SKILL.md; do
     name="$(basename "$(dirname "$f")")"
     # `|| true`: a skill with no backticked tokens is fine, but grep exits 1 on
@@ -225,10 +337,31 @@ check_agent_references() {
       esac
     done
   done
+  # Every SKILL.md with newlines flattened to spaces, so a dispatch that wraps
+  # across a line ("spawn the\n`tests-build-runner` agent") is still one match.
+  # Built once rather than per-agent.
+  flat="$(for s in "$SKILLS_SRC"/*/SKILL.md; do tr '\n' ' ' < "$s"; echo; done)"
+
+  # An orphan is an agent NOTHING SPAWNS — so look for a spawn, not a mention.
+  # A bare `grep -F "\`name\`"` is fooled by the four agents whose name matches a
+  # skill (dead-code-finder, deps-upgrade, test-gap-finder, social-post): the
+  # skill's own prose says `/deps-upgrade` and `deps-upgrade` constantly, so the
+  # agent looks referenced even if its spawn line is deleted. Verified: removing
+  # the only Spawn line from deps-upgrade left check.sh reporting no orphans.
   for f in "$AGENTS_SRC"/*.md; do
     name="$(basename "$f" .md)"
-    grep -rqF "\`$name\`" "$SKILLS_SRC"/ || {
-      finding check_agent_references referential "agents/$name.md is an orphan — no SKILL.md references it"
+    # Dispatch is written several ways across the suite, and some of them wrap
+    # across a line ("spawn the\n`tests-build-runner` agent"), so flatten the
+    # whitespace first and match the phrasings that actually occur:
+    #   Spawn `x` · spawn the `x` agent · run in parallel: `a`, `b` · the `x` agent
+    # A slash-command reference (`/deps-upgrade`) is deliberately NOT a match.
+    # NOT `printf | grep -q`: grep -q exits at the first match and closes the pipe,
+    # printf dies of SIGPIPE, and under `set -euo pipefail` the whole match reads as
+    # a failure — the same trap `has()` documents above. Count instead of -q.
+    [ "$(printf '%s' "$flat" | grep -ciE \
+      "(spawn|launch|dispatch)[a-z]*( +the)? +\`$name\`|\`$name\` +agent|\`$name\`[,)] *(and)? *\`" || true)" != "0" ] || {
+      finding check_agent_references referential \
+        "agents/$name.md is an orphan — no SKILL.md spawns it (a mention is not a spawn)"
       bad=1
     }
   done
@@ -357,12 +490,57 @@ check_class_contract() {
             "skills/$name (pm) has no paste-ready-markdown fallback (§P3/§P6)"
           bad=1
         } ;;
+      testing)
+        # This class writes source AND executes it against a running app — the only
+        # class that does either. T1/T2/T3 are what keep that safe, so they are
+        # asserted rather than left to prose (which is how `social` ended up with no
+        # enforced contract at all).
+        #
+        # A read-only testing skill (/test-plan, /test-report) has nothing to fence,
+        # so it opts out by SAYING it is read-only — never by omission, or the
+        # exemption becomes the default.
+        if ! has "$f" 'read-only\|writes nothing\|never writes' i; then
+          has "$f" 'test director\|only .*test dir\|§T1\|T1 ' i || {
+            finding check_class_contract referential \
+              "skills/$name (testing) never states the T1 source fence — writes only inside detected test directories, never app source"
+            bad=1
+          }
+        fi
+        # T2 binds anything that edits an existing spec. "Green by deletion" is the
+        # failure mode, and it is invisible in a passing suite.
+        if has "$f" 'repair\|fix the test\|edit.*spec' i; then
+          has "$f" 'weaken\|delete an assertion\|§T2\|T2 ' i || {
+            finding check_class_contract referential \
+              "skills/$name (testing) edits specs but never states T2 — may not weaken or delete an assertion, add a sleep, raise retries, or add a skip"
+            bad=1
+          }
+        fi
+        # T3 is the one clause whose blast radius is outside the repo.
+        if has "$f" 'base url\|run the suite\|execute' i; then
+          has "$f" 'non-prod\|§T3\|T3 ' i || {
+            finding check_class_contract referential \
+              "skills/$name (testing) runs against an app but never states the T3 non-prod gate"
+            bad=1
+          }
+        fi ;;
       workflow)
-        has "$f" 'never .*git\|never push\|never runs git' i || {
+        # A workflow skill must never push or tag — that half is absolute. Running
+        # `git commit` is allowed, but ONLY behind an explicit per-item approval:
+        # §U forbids acting on the skill's own initiative, not acting on a yes.
+        # So require both halves, or a skill could satisfy this by saying "never
+        # pushes" while committing silently.
+        has "$f" 'never push\|never .*push\|does not push\|stops at the commit' i || {
           finding check_class_contract referential \
-            "skills/$name (workflow) never states that it does not run git"
+            "skills/$name (workflow) never states that it does not push"
           bad=1
-        } ;;
+        }
+        if has "$f" 'git commit' i && ! has "$f" 'never runs? git\|print blocks only\|never execute' i; then
+          has "$f" 'ask.*per commit\|per commit\|explicit.*yes\|go-ahead\|opt-in\|only on.*approval' i || {
+            finding check_class_contract referential \
+              "skills/$name (workflow) may run git commit but names no approval gate — §U allows it only on an explicit go-ahead"
+            bad=1
+          }
+        fi ;;
     esac
   done
   [ "$bad" = "0" ] && ok "class contracts honoured"
@@ -479,7 +657,7 @@ check_conventions_sections() {
   return 0
 }
 
-# global/CLAUDE.md is what makes a skill discoverable in OTHER repos, and it lists
+# global/AGENTS.md is what makes a skill discoverable in OTHER repos, and it lists
 # them by hand. A skill missing from it ships but stays invisible. Moved from
 # install.sh; the agent scan is scoped to table column 3 here rather than every
 # backticked token in the file.
@@ -491,20 +669,20 @@ check_guidance_sync() {
   actual="$(for d in "$SKILLS_SRC"/*/; do basename "$d"; done | sort -u)"
   missing="$(comm -13 <(echo "$listed") <(echo "$actual") | tr '\n' ' ')"
   stale="$(comm -23 <(echo "$listed") <(echo "$actual") | tr '\n' ' ')"
-  [ -n "${missing// }" ] && { finding check_guidance_sync doc-sync "global/CLAUDE.md does not list these skills (invisible in other repos): $missing"; bad=1; }
-  [ -n "${stale// }" ] && { finding check_guidance_sync doc-sync "global/CLAUDE.md lists skills that no longer exist: $stale"; bad=1; }
+  [ -n "${missing// }" ] && { finding check_guidance_sync doc-sync "global/AGENTS.md does not list these skills (invisible in other repos): $missing"; bad=1; }
+  [ -n "${stale// }" ] && { finding check_guidance_sync doc-sync "global/AGENTS.md lists skills that no longer exist: $stale"; bad=1; }
 
   listed="$(awk -F'|' 'NF>3 {print $4}' "$GLOBAL_MD_SRC" | grep -o '`[a-z0-9-]*`' | tr -d '`' | sort -u || true)"
   actual="$(for f in "$AGENTS_SRC"/*.md; do basename "$f" .md; done | sort -u)"
   missing="$(comm -13 <(echo "$listed") <(echo "$actual") | tr '\n' ' ')"
-  [ -n "${missing// }" ] && { finding check_guidance_sync doc-sync "global/CLAUDE.md does not mention these agents: $missing"; bad=1; }
+  [ -n "${missing// }" ] && { finding check_guidance_sync doc-sync "global/AGENTS.md does not mention these agents: $missing"; bad=1; }
 
   [ "$bad" = "0" ] && ok "guidance file in sync"
   return 0
 }
 
 # hooks/suggest-skills.sh hand-lists the skills it suggests, exactly like
-# global/CLAUDE.md does — so it has the same staleness bug. A skill it never names
+# global/AGENTS.md does — so it has the same staleness bug. A skill it never names
 # is one the hook will never surface, which is the whole reason the hook exists.
 check_hook_sync() {
   local hook="$REPO_DIR/hooks/suggest-skills.sh" listed actual missing stale bad=0
@@ -536,7 +714,7 @@ check_stale_agents() {
   listed="$(awk -F'|' 'NF>3 {print $4}' "$GLOBAL_MD_SRC" | grep -o '`[a-z0-9-]*`' | tr -d '`' | sort -u || true)"
   for a in $listed; do
     [ -f "$AGENTS_SRC/$a.md" ] || {
-      finding check_stale_agents doc-sync "global/CLAUDE.md cites agent '$a' — no agents/$a.md"
+      finding check_stale_agents doc-sync "global/AGENTS.md cites agent '$a' — no agents/$a.md"
       bad=1
     }
   done
@@ -545,6 +723,213 @@ check_stale_agents() {
 }
 
 # Both CLAUDE.md files state the counts in prose. Prose drifts silently.
+# Codex TRUNCATES AGENTS.md past 32 KiB, and truncation is silent — the guidance
+# simply stops applying part-way through, with nothing to notice. The file is well
+# under today, so this is a tripwire for the edit that pushes it over rather than a
+# current problem.
+# A count drawn into an SVG goes stale the moment a skill is added, gives no
+# signal that it has, and needs the diagram redrawn to correct. The same number in
+# a caption is one edit — and on the docs site it is generated from the file tree.
+# So: tallies live under the image, never inside it. This catches the next diagram
+# that tries, by looking for the current skill/agent counts as rendered text.
+check_diagram_counts() {
+  local f bad=0 n_skills n_agents n_gates n_scans
+  n_skills="$(ls -d "$SKILLS_SRC"/*/ 2>/dev/null | wc -l | tr -d ' ')"
+  n_agents="$(ls "$AGENTS_SRC"/*.md 2>/dev/null | wc -l | tr -d ' ')"
+  n_gates="$(grep -l '^subclass: gate' "$SKILLS_SRC"/*/SKILL.md 2>/dev/null | wc -l | tr -d ' ')"
+  n_scans="$(grep -l '^subclass: scan' "$SKILLS_SRC"/*/SKILL.md 2>/dev/null | wc -l | tr -d ' ')"
+  for f in "$REPO_DIR"/docs/architecture/*.svg; do
+    [ -f "$f" ] || continue
+    # Only flag the two totals that track the file tree. Structural numbers a
+    # diagram legitimately states ("1 level deep", "0 commits", "caps at 2") are
+    # design facts, not tallies, and must not trip this.
+    if grep -qE ">($n_skills|$n_agents)<|\b$n_skills skills\b|\b$n_agents agents\b|\b$n_gates gates\b|\b$n_scans scans\b" "$f"; then
+      finding check_diagram_counts doc-sync \
+        "${f#$REPO_DIR/} has a skill/agent count drawn into it — put tallies in the caption, where they are generated and cannot go stale"
+      bad=1
+    fi
+  done
+  [ "$bad" = "0" ] && ok "diagrams carry no file-tree counts"
+  return 0
+}
+
+# Codex reads agents as TOML, so install.sh generates them rather than linking.
+# A generator that emits malformed TOML fails silently — Codex just skips the
+# agent, exactly as it skipped the two skills with invalid YAML. Generate into a
+# temp dir and parse the result.
+check_codex_agent_generation() {
+  local tmp n_md n_toml bad=0
+  [ -x "$REPO_DIR/scripts/gen-codex-agents.sh" ] || return 0
+  command -v python3 >/dev/null 2>&1 || return 0
+  tmp="$(mktemp -d)" || return 0
+  # shellcheck disable=SC2064
+  trap "rm -rf '$tmp'" RETURN
+
+  if ! "$REPO_DIR/scripts/gen-codex-agents.sh" "$tmp" >/dev/null 2>&1; then
+    finding check_codex_agent_generation structural \
+      "scripts/gen-codex-agents.sh failed — Codex would get skills but no agents"
+    return 0
+  fi
+
+  n_md="$(ls "$AGENTS_SRC"/*.md 2>/dev/null | wc -l | tr -d ' ')"
+  n_toml="$(ls "$tmp"/*.toml 2>/dev/null | wc -l | tr -d ' ')"
+  [ "$n_md" = "$n_toml" ] || {
+    finding check_codex_agent_generation structural \
+      "Codex agent generation produced $n_toml .toml for $n_md agents"
+    bad=1
+  }
+
+  # Valid TOML, and every required Codex field present and non-empty.
+  python3 - "$tmp" <<'PY' || bad=1
+import sys, glob, os, tomllib
+bad = []
+for p in sorted(glob.glob(f"{sys.argv[1]}/*.toml")):
+    try:
+        d = tomllib.load(open(p, "rb"))
+    except Exception as e:
+        bad.append(f"{os.path.basename(p)}: {e}"); continue
+    for k in ("name", "description", "developer_instructions"):
+        if not d.get(k):
+            bad.append(f"{os.path.basename(p)}: missing or empty '{k}'")
+for b in bad:
+    print(f"  ! generated Codex agent {b}", file=sys.stderr)
+sys.exit(1 if bad else 0)
+PY
+  [ "$bad" = "0" ] && ok "Codex agent generation produces valid TOML ($n_toml agents)"
+  return 0
+}
+
+# Cursor's own create-rule skill says rules should stay "under 50 lines" and be
+# "concise and to the point". Our rule is generated, so it can quietly grow past
+# that as skills are added — an always-on rule costs context on every request.
+# The wrapper exists to turn a verdict into an exit code, because `claude -p`
+# exits 0 whether the review passed or blocked. That mapping is the whole product
+# and it is runner-neutral, so assert it against stub CLIs rather than trusting it
+# — an absent verdict must read as error (2), never as pass.
+check_review_exit_codes() {
+  local tmp bad=0 v want got
+  [ -x "$REPO_DIR/bin/nj-agents-review" ] || return 0
+  tmp="$(mktemp -d)" || return 0
+  # shellcheck disable=SC2064
+  trap "rm -rf '$tmp'" RETURN
+
+  for v in "BLOCK:1" "PASS:0" "WARN:0" "NOVERDICT:2"; do
+    want="${v##*:}"; v="${v%%:*}"
+    if [ "$v" = "NOVERDICT" ]; then
+      printf '#!/bin/sh\necho "the review did not reach a verdict"\n' > "$tmp/stub"
+    else
+      printf '#!/bin/sh\necho "Overall: %s"\n' "$v" > "$tmp/stub"
+    fi
+    chmod +x "$tmp/stub"
+    got=0
+    NJ_AGENT_CMD="$tmp/stub" "$REPO_DIR/bin/nj-agents-review" >/dev/null 2>&1 || got=$?
+    [ "$got" = "$want" ] || {
+      finding check_review_exit_codes structural \
+        "bin/nj-agents-review: a '$v' verdict exited $got, expected $want (CONVENTIONS.md §5)"
+      bad=1
+    }
+  done
+  [ "$bad" = "0" ] && ok "review verdict maps to the right exit code on any runner"
+  return 0
+}
+
+check_cursor_rule() {
+  local tmp lines
+  [ -x "$REPO_DIR/scripts/gen-cursor-rule.sh" ] || return 0
+  tmp="$(mktemp -d)" || return 0
+  # shellcheck disable=SC2064
+  trap "rm -rf '$tmp'" RETURN
+
+  if ! "$REPO_DIR/scripts/gen-cursor-rule.sh" "$tmp" >/dev/null 2>&1; then
+    finding check_cursor_rule structural \
+      "scripts/gen-cursor-rule.sh failed — Cursor would not know the toolkit exists"
+    return 0
+  fi
+  [ -f "$tmp/nj-agents.mdc" ] || {
+    finding check_cursor_rule structural "gen-cursor-rule.sh wrote no nj-agents.mdc"
+    return 0
+  }
+  # Frontmatter must be real, or Cursor treats it as a plain file.
+  head -1 "$tmp/nj-agents.mdc" | grep -q '^---$' || {
+    finding check_cursor_rule structural "the generated Cursor rule has no YAML frontmatter"
+    return 0
+  }
+  lines="$(wc -l < "$tmp/nj-agents.mdc" | tr -d ' ')"
+  if [ "$lines" -gt 50 ]; then
+    finding check_cursor_rule structural \
+      "the generated Cursor rule is $lines lines — over Cursor's own 50-line guidance for an always-on rule. Make it point at more and state less."
+    return 0
+  fi
+  ok "Cursor rule generates and fits its 50-line budget ($lines lines)"
+  return 0
+}
+
+check_guidance_size() {
+  local bytes limit=32768
+  [ -f "$GLOBAL_MD_SRC" ] || return 0
+  bytes="$(wc -c < "$GLOBAL_MD_SRC" | tr -d ' ')"
+  if [ "$bytes" -gt "$limit" ]; then
+    finding check_guidance_size structural \
+      "global/AGENTS.md is ${bytes} bytes — over Codex's ${limit}-byte limit, so it will be silently truncated there"
+    return 0
+  fi
+  ok "guidance file fits Codex's 32 KiB limit ($((bytes / 1024)) KiB used)"
+  return 0
+}
+
+# The installer's whole premise is that ONE clone feeds every runner via symlinks.
+# That is cheap to assert for real — install into a temp dir and look — and it is
+# the kind of claim that rots silently, so assert it rather than trusting the docs.
+check_installer_runners() {
+  local tmp bad=0 r dir guide
+  command -v mktemp >/dev/null 2>&1 || return 0
+  tmp="$(mktemp -d)" || return 0
+  # shellcheck disable=SC2064
+  trap "rm -rf '$tmp'" RETURN
+
+  # install.sh runs check.sh when it finishes; without this guard that would
+  # recurse forever, since we are check.sh calling install.sh.
+  export NJ_AGENTS_NO_CHECK=1
+
+  for r in claude codex gemini agents; do
+    if ! "$REPO_DIR/install.sh" --runner "$r" --project "$tmp" >/dev/null 2>&1; then
+      finding check_installer_runners structural "install.sh --runner $r failed"
+      bad=1; continue
+    fi
+    dir="$tmp/.$r"
+    [ -L "$dir/skills/changelog" ] || {
+      finding check_installer_runners structural "install.sh --runner $r: skills not linked"
+      bad=1
+    }
+    # Every runner must resolve to the SAME source file — that is the property
+    # that makes one clone serve all of them.
+    if [ "$(readlink "$dir/skills/changelog" 2>/dev/null)" != "$SKILLS_SRC/changelog" ]; then
+      finding check_installer_runners structural \
+        "install.sh --runner $r: skill link does not point back into this repo"
+      bad=1
+    fi
+  done
+
+  # Guidance lands under the filename each runner actually reads.
+  for r in "claude:CLAUDE.md" "codex:AGENTS.md" "gemini:GEMINI.md" "agents:AGENTS.md"; do
+    dir="$tmp/.${r%%:*}"; guide="${r##*:}"
+    [ -L "$dir/$guide" ] || {
+      finding check_installer_runners structural \
+        "install.sh --runner ${r%%:*}: no $guide guidance link"
+      bad=1
+    }
+  done
+
+  # An unknown runner must fail loudly, not install somewhere nothing reads.
+  if "$REPO_DIR/install.sh" --runner nonesuch --project "$tmp" >/dev/null 2>&1; then
+    finding check_installer_runners structural "install.sh accepted an unknown --runner"
+    bad=1
+  fi
+
+  [ "$bad" = "0" ] && ok "installer serves every runner from one clone"
+  return 0
+}
+
 check_counts() {
   local s a f stated bad=0
   s="$(ls -d "$SKILLS_SRC"/*/ | wc -l | tr -d ' ')"
@@ -564,6 +949,8 @@ check_counts() {
 
 [ "$JSON" = "1" ] || echo "Checking nj-agents ..."
 
+check_vendor_neutral
+check_frontmatter_yaml
 check_skill_frontmatter
 check_agent_frontmatter
 check_authorship
@@ -579,6 +966,12 @@ check_conventions_sections
 check_guidance_sync
 check_hook_sync
 check_stale_agents
+check_codex_agent_generation
+check_review_exit_codes
+check_cursor_rule
+check_guidance_size
+check_diagram_counts
+check_installer_runners
 check_counts
 
 if [ "$JSON" = "1" ]; then

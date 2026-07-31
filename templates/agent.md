@@ -1,6 +1,7 @@
 ---
 name: AGENT_NAME
 description: "Use this agent to <what it does, in one sentence — the trigger>. It <how it works: what it reads, what it returns, what it refuses to do>. Works in any repo.\n\n<example>\nContext: <the situation where a skill would spawn this>.\nuser: \"<what the user said>\"\n<commentary>\n<which skill spawns this agent, at which step, and what happens with its output>\n</commentary>\nassistant: \"<the one line announcing the spawn>\"\n</example>"
+tools: Read, Grep, Glob
 color: blue
 author: AUTHOR_NAME
 ---
@@ -13,6 +14,18 @@ author: AUTHOR_NAME
   description  ONE double-quoted string with literal \n escapes, embedding an
                <example> block — this is what makes the agent discoverable
   color        green | red | teal | orange | magenta | yellow | blue | cyan
+  tools        REQUIRED. Comma-separated allowlist. The default above suits a
+               read-only agent; add Bash if it runs commands, WebFetch if it
+               reads a URL. Add Write ONLY if the agent itself produces a file —
+               most do not: they return content and the SKILL writes it.
+
+               Required for portability, not taste. Claude Code and Cursor read
+               a missing tools: as inherit-all, but Gemini CLI reads it as NO
+               tools, so the agent loads unable to act. An explicit list is the
+               only spelling that means the same thing on every runner.
+
+               An advise-only agent that declares Write/Edit fails check.sh —
+               the prose and the tool list must agree.
 
   NO model: key. Omitting it makes the agent inherit the session's model, so an
   Opus session gets Opus subagents. Pinning one here would silently override the

@@ -54,6 +54,10 @@ case "$prompt" in
   *upgrade*|*outdated*|*dependenc*) add "/deps-upgrade or /review-dependencies" ;;
 esac
 case "$prompt" in
+  # Order matters: "refresh the screenshots in the docs" is the sync case, not a
+  # one-shot capture, and the first match is the one that reads as the answer.
+  *"docs"*screenshot*|*screenshot*"docs"*|*"refresh the docs"*|*"sync the docs"*)
+    add "/screenshot-docs-sync (re-captures only what changed)" ;;
   *screenshot*) add "/capture-screenshots (auto-redacts PII)" ;;
 esac
 case "$prompt" in

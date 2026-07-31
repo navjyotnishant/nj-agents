@@ -19,7 +19,7 @@ secret gate §3, findings format §4, CI mode §5, report §6, safety §7).
 
 > **Finding the conventions file.** It lives at the toolkit repo root, two levels
 > above this skill — not beside `SKILL.md`. Skills are usually installed as
-> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> symlinks into your runner's skills directory, so a plain relative path resolves against the
 > *link* and misses it. Resolve the link first:
 >
 > ```bash
@@ -47,7 +47,7 @@ secret gate §3, findings format §4, CI mode §5, report §6, safety §7).
 ║  STYLE & CONVENTIONS REVIEW — AI-ASSISTED                        ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║  This shares a SNAPSHOT of your diff (and unpushed commit         ║
-║  messages) with AI (this Claude session + subagent) to review     ║
+║  messages) with AI (this session + subagent) to review            ║
 ║  style and hygiene. No external API is called; nothing leaves     ║
 ║  this machine. A secret scan runs before sharing. ADVISES only.   ║
 ╚══════════════════════════════════════════════════════════════════╝
@@ -57,7 +57,7 @@ secret gate §3, findings format §4, CI mode §5, report §6, safety §7).
 
 - **A git repository** (`git rev-parse --git-dir`); else stop and say so.
 - **A diff to review** (staged + unstaged + unpushed); if empty, report and stop.
-- **No external API key** — uses the current Claude session.
+- **No external API key** — uses the current AI session.
 
 ## Step 1 — Snapshot + hygiene + secret gate
 

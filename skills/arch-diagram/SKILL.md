@@ -23,7 +23,7 @@ grounding/safety §A6, non-clobber §A7).
 
 > **Finding the conventions file.** It lives at the toolkit repo root, two levels
 > above this skill — not beside `SKILL.md`. Skills are usually installed as
-> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> symlinks into your runner's skills directory, so a plain relative path resolves against the
 > *link* and misses it. Resolve the link first:
 >
 > ```bash
@@ -138,6 +138,17 @@ render pass keeps catching, and every one is avoidable up front:**
 - **Count first, draw second.** Get every number from the repo *before* laying out.
   If a band says 15, draw 15 shapes. A count that disagrees with the shapes beside it
   is the most visible error a diagram can carry, and it is pure carelessness.
+- **Never draw a tally into the image — put it in the caption.** "23 skills",
+  "6 gates", "25 agents": every one of these is wrong the moment a file is added,
+  it gives no signal that it has gone stale, and correcting it means *redrawing the
+  diagram*. The same number written under the image is a one-line edit, and in a
+  generated site it is read from the file tree on every build, so it cannot drift
+  at all. Draw the *shapes* — fifteen hexagons say "fifteen" without asserting it —
+  and let the caption carry the number.
+  A **structural fact** is different and belongs in the image: "1 level deep,
+  always", "0 commits made for you", "caps fix rounds at 2". Those describe the
+  design and stay true as the repo grows. The test is simple — if adding a file
+  would falsify it, it is a tally, not a fact.
 - **Reserve the space each element needs.** A card's tallest text decides its height;
   a label's length decides its width. Deciding this after placement is what produces
   clipped text and labels sitting on frame strokes.

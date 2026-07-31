@@ -9,8 +9,11 @@ agents** for software-development workflows. Install it once (symlinks into `~/.
 and invoke the skills with `/name` in **any** git repo — nothing here is specific to one
 project, stack, or language.
 
-- **23 skills · 25 agents**, in four classes + a diagram-generation subsystem.
-- Install: `./install.sh` (global) or `./install.sh --project DIR`. The installer **globs**
+- **24 skills · 25 agents**, in four classes + a diagram-generation subsystem.
+- Install: `./install.sh` (global, Claude Code), `./install.sh --runner gemini|codex|cursor|agents`
+  for another agent, or `--project DIR` for one repo. Everything is a **symlink back into
+  this clone**, so installing for several runners leaves them all reading the same files —
+  nothing to sync. The installer **globs**
   `skills/*/` and `agents/*.md`, so new files are picked up automatically. Reload Claude
   Code after installing (skills/agents load at session start).
 
@@ -24,7 +27,7 @@ CONVENTIONS.md              # review-class shared rules
 CONVENTIONS-authoring.md    # authoring-class shared rules (§A1–A8)
 CONVENTIONS-pm.md           # PM-authoring-class shared rules (§P1–P8); skills in NAV-82..84
 CONVENTIONS-orchestration.md # §U binds EVERY skill; §C cost + §R progress for spawning ones
-global/CLAUDE.md            # advisory guidance → symlinked to ~/.claude/CLAUDE.md
+global/AGENTS.md            # advisory guidance → symlinked per runner (see install.sh)
 install.sh                  # symlink installer (idempotent; safe uninstall; never clobbers)
 check.sh                    # validator — frontmatter, refs, class contracts, cost/progress
 bin/nj-agents-review        # headless /pre-push-review → §5 exit codes (0 PASS/WARN, 1 BLOCK, 2 error)
@@ -44,10 +47,22 @@ docs/architecture/          # generated diagrams + their JSON source models
   repo* for accumulated debt and returns candidates — there is no sensible BLOCK for
   "you have 12 unused exports". `check.sh` holds only gates to the verdict tokens.
 - **Agent frontmatter:** `name`, `description` (may embed `<example>`/`<commentary>`),
-  `color`, `author`; optional `memory: project`. Omitting `tools:` inherits all tools,
-  and **omitting `model:` inherits the session's model** — so an Opus session gets Opus
-  subagents. Do not pin a model unless there is a specific, stated reason: a hardcoded
-  tier silently overrides the user's own choice.
+  `tools`, `color`, `author`; optional `memory: project`. **Omitting `model:` inherits
+  the session's model** — so an Opus session gets Opus subagents. Do not pin a model
+  unless there is a specific, stated reason: a hardcoded tier silently overrides the
+  user's own choice.
+  **`tools:` is required, for portability rather than taste.** Claude Code and Cursor
+  read a missing key as inherit-all, but **Gemini CLI reads it as _no_ tools** — the
+  agent loads and then cannot act. An explicit allowlist is the only spelling that
+  means the same thing on every runner. Most agents need only `Read, Grep, Glob`
+  (+ `Bash` if they run commands): **23 of the 25 return content for the *skill* to
+  write**, and their bodies say so. Only an agent that genuinely produces a file
+  itself gets `Write` — today exactly two do, `screenshot-capturer` and
+  `screenshot-redactor`. `diagram-architect` looks like a third and is not: it
+  emits SVG *content* and the skill writes the file, which its body states
+  outright ("Do not write files").
+  `check.sh` fails an agent whose body claims read-only while its `tools:` declares
+  a write tool.
 - **kebab-case** names throughout. This layout matches the official Anthropic plugin
   convention (skill = dir + SKILL.md, agent = flat .md, `scripts/`/`references/` subdirs).
 
@@ -95,6 +110,16 @@ docs/architecture/          # generated diagrams + their JSON source models
   Motivated by the global "track work in a PM tool" rule.
 - **Social class** — produces paste-ready copy; never writes to the repo, never auto-posts.
   Skill: `/social-post`.
+- **Testing class** — *writes test source into the repo **and executes it** against a
+  running app.* The only class that does either, which is why it is its own class
+  rather than a squeeze into authoring: `/review-tests-build` runs commands but writes
+  nothing, `/test-gap-finder` explicitly never writes tests. Shared rules:
+  `CONVENTIONS-testing.md` (T1–T12). Three of those are enforced by `check.sh`:
+  **T1** writes only inside detected test directories, never app source · **T2** never
+  weakens or deletes an assertion, and no sleeps/retries/skips to force green ·
+  **T3** requires an explicit non-prod base URL, else BLOCK. A read-only testing
+  skill opts out of T1 by stating it is read-only, never by omission.
+  Skills land under NAV-161.
 
 > The one rule both code-facing classes share: **the human decides what gets committed.**
 > (The user may explicitly say "commit and push" — then it's fine.)
@@ -160,15 +185,23 @@ it produced remain as committed SVGs and are now edited by hand.
 
 - **`main`** — the integration branch. Feature work merges here; CI runs on every
   push and PR.
-- **`PRD`** — what gets released and installed from. Fast-forwarded from `main`
+- **`PRD`** — what gets released and installed from. Promoted from `main` via a PR
   once CI is green and the change has been used for real.
 
 ```bash
-git checkout PRD && git merge --ff-only main && git push origin PRD
+gh pr create --draft --base PRD --head main --title "…" --body-file …
+gh pr merge <n> --merge          # after CI is green and you've marked it ready
 ```
 
-Fast-forward only, deliberately: `PRD` should never contain a commit that was not
-first on `main` and green.
+Promotion goes through a PR, not a local merge: `PRD` is protected, so a direct
+push is rejected and `git merge --ff-only` has nowhere to land. That leaves a merge
+commit on `PRD` — accepted deliberately. The guarantee that matters is *`PRD` never
+contains a commit that was not first on `main` and green*, and the required PR plus
+the `check` status enforce that on the server. A linear history would additionally
+need force-push, which protection blocks by design.
+
+Use `/pr-describe` to draft the promotion PR — it grounds the body in the real
+`PRD..main` delta rather than a hand-written commit list.
 
 **`PRD` is protected server-side.** A PR is required, the `check` status check must
 pass, and force-push and deletion are blocked. `enforce_admins=false` and
@@ -204,8 +237,8 @@ construction and the validator tells you what is still missing:
 3. `./install.sh` → reload Claude Code.
 4. **`./check.sh` must be clean.** It globs, so the new file is covered immediately.
 5. Add a `CHANGELOG.md` entry under `[Unreleased]` — a new skill is user-facing.
-   Use `/changelog`; see the standing rule in `global/CLAUDE.md`.
-6. Update `README.md`, `docs.html`, and the right table in **`global/CLAUDE.md`** —
+   Use `/changelog`; see the standing rule in `global/AGENTS.md`.
+6. Update `README.md`, `docs.html`, and the right table in **`global/AGENTS.md`** —
    that file is hand-maintained and is what makes the skill discoverable in *other*
    repos. `check.sh` flags it if you forget.
 

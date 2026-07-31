@@ -10,6 +10,158 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Initial public release of the toolkit. Everything below describes what nj-agents
 does as of this version, rather than how it was built.
 
+### Fixed
+
+- **`/commit-assistant` and `/pre-push-review` would not load on Codex CLI.** Their
+  `description:` frontmatter was an unquoted YAML scalar containing `": "`, which
+  YAML reads as a nested mapping — so the frontmatter was invalid, and Codex
+  refused both skills outright (`invalid YAML: mapping values are not allowed in
+  this context`). Claude Code and Gemini parse them anyway, which is why it went
+  unnoticed: a lenient reader hid a genuine defect. Both values are now quoted.
+  `check.sh` fails any unquoted frontmatter value containing `": "`, so a strict
+  runner can no longer be the only thing that notices.
+
+### Changed
+
+- **Architecture diagrams no longer carry file-tree counts.** "23 skills",
+  "25 agents", "6 gates" and the like were drawn into the SVGs, which meant every
+  one went stale the moment a skill was added — silently, and correctable only by
+  redrawing the diagram. They now live in the caption underneath, where the README
+  needs a one-line edit and the docs site generates them from the source on every
+  build. The artwork keeps what it can state truthfully forever: the *shapes* (15
+  hexagons say "fifteen" without asserting it) and genuine structural facts like
+  "1 level deep, always" and "0 commits made for you".
+  `check.sh` enforces this going forward, and `/arch-diagram` documents the test:
+  if adding a file would falsify it, it is a tally and belongs in the caption.
+
+### Added
+
+- **`bin/nj-agents-review` drives any agent CLI** via `NJ_AGENT_CMD`
+  (`NJ_AGENT_CMD="codex exec" nj-agents-review`). The verdict→exit-code mapping —
+  0 PASS/WARN, 1 BLOCK, 2 harness error — is the value the wrapper adds, and it is
+  not Claude-specific: `claude -p` exits 0 whether the review passed or blocked, and
+  so does every other agent CLI. With a custom runner the Claude-only flags
+  (`--output-format json`, `--max-budget-usd`, `--model`) are dropped, since another
+  CLI would reject them, and the verdict is read from prose instead. `check.sh`
+  asserts all four exit codes against stub CLIs.
+  **Not yet verified against a real non-Claude runner** — Codex is over its usage
+  limit and Gemini's free tier refuses its CLI client. The plumbing is there; the
+  proof is not.
+- **`tests/run.sh` no longer defaults to `haiku`.** With `NJ_TEST_MODEL` unset it
+  uses the runner's own default. The old default meant every behavioural fixture was
+  verified on a model nobody actually runs the skills with — and a smaller model
+  follows a skill more literally, so a fixture could pass there and fail in use.
+  Setting `NJ_TEST_MODEL=haiku` for a cheap pass still works, now as a deliberate
+  choice rather than a silent one.
+  This generator stays Claude-Code-only by construction (it needs
+  `--output-format json`, `--permission-mode`, `--max-budget-usd`), and now says so
+  and exits rather than half-working if `NJ_AGENT_CMD` is set.
+- **Cursor knows the toolkit exists.** Cursor reads guidance as `.mdc` in
+  `.cursor/rules/` with real YAML frontmatter, so `global/AGENTS.md` cannot be
+  symlinked there the way `CLAUDE.md` and `GEMINI.md` can. `./install.sh --runner
+  cursor` generates the rule instead — deliberately a **pointer, not a copy**.
+  Cursor's own `create-rule` skill says rules should stay "under 50 lines" and be
+  "concise and to the point"; converting 240 lines of standing rules into an
+  always-on rule would cost context on every request. The generated rule names the
+  five classes, lists their skills, states the guarantees every skill makes, and
+  points at `global/AGENTS.md` for the rest — 33 lines. `check.sh` fails it if it
+  outgrows the budget, and the skill lists are read from the file tree so they
+  cannot drift.
+- **Codex gets the agents too.** Codex reads agents as TOML rather than markdown
+  with YAML frontmatter — a different *format*, not a different path, so the 25
+  `agents/*.md` cannot be symlinked there the way skills can. `./install.sh
+  --runner codex` now **generates** them, following the schema in Codex's own
+  `migrate-to-codex` converter (`name` / `description` / `developer_instructions`).
+  Before this, Codex had skills but no agents, so the 17 skills that delegate
+  would have run everything inline there.
+  Generated files are build artifacts: rewritten on every install, never
+  committed, and each carries a header saying so. Uninstall removes them, but
+  leaves a `.toml` you wrote yourself alone. `check.sh` generates into a temp
+  directory and parses the result, so a broken generator fails the build rather
+  than silently producing agents Codex skips.
+  Note `tools:` becomes prompt guidance rather than a permission on Codex — the
+  vendor's own converter does the same, since Codex enforces via `sandbox_mode`
+  and `[permissions]`, which are a per-user decision this does not make for you.
+- **`/screenshot-docs-sync`** — keeps documentation and its embedded screenshots
+  current as the UI drifts. Diffs since the last doc update, works out which doc
+  sections went stale, re-captures only the affected screens, and edits in place.
+  Where `/capture-screenshots` is the one-shot capture, this is the maintenance
+  loop. Same redaction discipline; proposes the commit. (24 skills now.)
+- `./install.sh` reports what it did instead of scrolling 50 near-identical link
+  lines past the one that mattered: how many links were new, already current, or
+  **repaired because they were dangling** — plus two things it deliberately does
+  not change. A real file where a symlink belongs means your copy has stopped
+  tracking the repo. A skill or hook sitting in the config directory that is not
+  in the repo is not version-controlled and not installed for any other runner.
+  Both are now listed rather than silently skipped.
+
+- The global guidance file is now **`global/AGENTS.md`** — one canonical copy that
+  every runner reads. `install.sh` symlinks it to `~/.claude/CLAUDE.md`,
+  `~/.codex/AGENTS.md`, or `~/.gemini/GEMINI.md` depending on `--runner`, so all
+  three resolve to the same bytes and there is no per-runner variant to keep in
+  sync. `AGENTS.md` is the name the ecosystem is converging on.
+  `check.sh` gained a size assertion: Codex silently truncates `AGENTS.md` past
+  32 KiB, and truncation gives no signal — the guidance just stops applying
+  part-way through. The file is 16 KiB today, so this is a tripwire for the edit
+  that would push it over.
+
+  **Upgrading:** the rename orphans an existing `~/.claude/CLAUDE.md` symlink,
+  which will point at a path that no longer exists. Re-run `./install.sh` to
+  repair it.
+- `./install.sh --runner claude|codex|cursor|gemini|agents` installs into that
+  agent's own config directory, with the global guidance file linked under the
+  name it reads (`CLAUDE.md` / `AGENTS.md` / `GEMINI.md`). `claude` remains the
+  default, so a bare `./install.sh` behaves exactly as before.
+  Because everything is a symlink back into the clone, **installing for several
+  runners leaves them all reading the same files** — edit a skill once and every
+  runner sees it, with nothing to sync. `--project DIR` honours the runner too.
+  Codex (agents are TOML) and Cursor (guidance is `.mdc`) need a generator rather
+  than a symlink; until those land the installer **skips those pieces and says
+  so** rather than leaving files the tool silently ignores.
+  `check.sh` gained a check that installs into a temp directory and asserts every
+  runner resolves back to this one clone, so the claim is tested rather than
+  documented.
+
+### Changed
+
+- **`/commit-assistant` now offers to run the commits it drafts.** It still prints
+  the `git add` + `git commit` block first, every time — that block stands on its
+  own and copying it works exactly as before. But re-typing a command you have just
+  read and approved is friction, not safety, so it then asks.
+  **Once per commit, never once for the batch**: splitting unrelated changes is the
+  skill's whole point, and a single yes covering three commits approves messages you
+  have not seen land. Each prompt shows the exact paths it would stage, because the
+  thing being approved is a set of files, not a sentence. `[y]` run · `[n]` skip ·
+  `[e]` edit the message · `[a]` stop.
+  It re-reads the tree between commits (committing changes what is staged), halts on
+  the first failure rather than retrying, and **never pushes, never tags, never
+  `--no-verify`**. In CI it prints and stops — there is nobody to ask.
+  This does not weaken §U's *the human decides what gets committed*: that rule
+  forbids running git on the skill's **own initiative** and explicitly allows an
+  explicit go-ahead. `check.sh` now enforces the distinction — a workflow skill that
+  runs `git commit` must name an approval gate, or it fails.
+- All 25 agents now declare an explicit `tools:` allowlist. Claude Code and Cursor
+  treat a missing key as inherit-all, but **Gemini CLI treats it as _no_ tools** —
+  the agent loads and then cannot act — so an explicit list is the only spelling
+  that means the same thing on every runner. The lists are derived per agent from
+  what its body actually does: 22 of the 25 need only read tools, because they
+  return content for the skill to write rather than writing anything themselves.
+  `check.sh` now requires the key and fails an agent whose body claims read-only
+  while its `tools:` declares a write tool.
+- Review-skill banners now say "this session" rather than "this Claude session".
+  **The privacy guarantee is unchanged** — the diff still goes only to the running
+  session and its subagents, no external API is called, and nothing leaves the
+  machine. Only the vendor name was removed, so the banner stays true whichever
+  agent runs the skill.
+- The note explaining where each skill finds `CONVENTIONS*.md` no longer claims
+  skills live in `~/.claude/skills/`. The `readlink -f` resolution it describes
+  already works from any install location — it follows the symlink back into the
+  clone — so only the path claim was wrong.
+- `/tech-blog`'s Dev.to publisher reads its API key and state from
+  `~/.config/nj-agents/` in preference to `~/.claude/`. An existing install is
+  unaffected: a file already present in the legacy location is still used, and
+  `$DEVTO_API_KEY` in the environment continues to take priority over both.
+
 ### Added
 
 **Review suite — advise only, never writes, never commits**

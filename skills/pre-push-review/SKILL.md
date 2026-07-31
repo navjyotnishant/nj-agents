@@ -1,6 +1,6 @@
 ---
 name: pre-push-review
-description: Use this skill when the user asks to "review my changes before I push", "run the pre-push review", "check this diff before committing/pushing", "do a thorough review of the current changes", or wants an AI-assisted quality gate over the current commit or uncommitted work. Runs up to five review dimensions (secrets, correctness, tests/build, dependencies, style) — the secret scan first as a gate, then the rest in parallel — and aggregates one PASS / WARN / BLOCK verdict with a report artifact. Cost-aware: it states the scope and agent count and asks before spawning, skips dimensions with nothing to review, and on a re-run defaults to only the dimensions that still have findings. Supports a non-interactive CI mode with an exit-code contract. Works in any git repo; nothing here is specific to one project, stack, or tool.
+description: "Use this skill when the user asks to \"review my changes before I push\", \"run the pre-push review\", \"check this diff before committing/pushing\", \"do a thorough review of the current changes\", or wants an AI-assisted quality gate over the current commit or uncommitted work. Runs up to five review dimensions (secrets, correctness, tests/build, dependencies, style) — the secret scan first as a gate, then the rest in parallel — and aggregates one PASS / WARN / BLOCK verdict with a report artifact. Cost-aware: it states the scope and agent count and asks before spawning, skips dimensions with nothing to review, and on a re-run defaults to only the dimensions that still have findings. Supports a non-interactive CI mode with an exit-code contract. Works in any git repo; nothing here is specific to one project, stack, or tool."
 version: 0.4.0
 class: review
 subclass: gate
@@ -27,7 +27,7 @@ is defined once in **`CONVENTIONS.md`** — read it; the steps below reference i
 
 > **Finding `CONVENTIONS.md`.** It lives at the toolkit repo root, two levels
 > above this skill — not beside `SKILL.md`. Skills are usually installed as
-> symlinks into `~/.claude/skills/`, so a plain relative path resolves against
+> symlinks into your runner's skills directory, so a plain relative path resolves against
 > the *link* and misses it. Resolve the link first:
 >
 > ```bash
@@ -70,7 +70,7 @@ Before running any git command or reading any diff, print this banner verbatim:
 ╠══════════════════════════════════════════════════════════════════╣
 ║  This generates a SNAPSHOT of your changes (git diff of staged,   ║
 ║  unstaged, and committed-but-unpushed work) and shares it with    ║
-║  AI (this Claude session + its subagents) for review. No external ║
+║  AI (this session + its subagents) for review. No external        ║
 ║  API is called and nothing leaves this machine — the current      ║
 ║  session does the analysis.                                       ║
 ║                                                                   ║
@@ -90,7 +90,7 @@ Before running any git command or reading any diff, print this banner verbatim:
 - **A git repository.** If `git rev-parse --git-dir` fails, stop and say so.
 - **A diff to review.** If staged + unstaged + unpushed is all empty, report
   "nothing to review" and stop.
-- **No external API key / no network.** Uses the current Claude session; never asks
+- **No external API key / no network.** Uses the current AI session; never asks
   for or requires any credential.
 - **REQUIRED:** a dedicated secret scanner on PATH (`gitleaks` / `trufflehog` /
   `detect-secrets` — any one). If none is installed, the review BLOCKs with install
@@ -243,13 +243,28 @@ skill headlessly and maps the verdict onto the §5 exit codes — 0 PASS/WARN, 1
 would let a BLOCK through. Put `bin/` on PATH, or call it by full path. The hook
 degrades to a no-op if it's absent, so it never blocks blindly.)
 
-**Option B — project `.claude/settings.json` `PreToolUse` hook** matching
-`Bash(git push*)` — gates pushes made *through Claude*. Best for solo-Claude
-workflows.
+**Option A is the portable one.** It is a plain git hook running a plain script, so
+it gates a push however that push happens — from a terminal, an IDE, or another
+agent. The wrapper drives `claude -p` by default and honours `NJ_AGENT_CMD` for a
+different CLI:
 
-Recommend A for team-wide gating, B for solo-Claude. Present the snippet; write it
-only on the user's go-ahead. Offer to add `.nj-agents-reports/` to `.gitignore` if
-the report dir lives under the repo.
+```bash
+NJ_AGENT_CMD="codex exec" nj-agents-review
+```
+
+(That override is **not yet verified against a non-Claude runner** — the plumbing
+exists, the proof does not. Say so rather than implying it is tested.)
+
+**Option B — project `.claude/settings.json` `PreToolUse` hook** matching
+`Bash(git push*)`. **Claude Code only**: `settings.json` and `PreToolUse` are its
+own mechanism, with no equivalent in Codex, Cursor or Gemini. It also gates only
+pushes made *through Claude* — a push typed into a terminal bypasses it entirely.
+
+Recommend A in almost every case: it is portable, and it catches every push rather
+than the subset that goes through one tool. B is worth it only for a solo
+Claude-Code workflow where the convenience of an in-session gate outweighs both.
+Present the snippet; write it only on the user's go-ahead. Offer to add
+`.nj-agents-reports/` to `.gitignore` if the report dir lives under the repo.
 
 ## Step 7 — Clean up
 

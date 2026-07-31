@@ -19,6 +19,25 @@ author: AUTHOR_NAME
     workflow   reads a diff, drafts a PR/commit, never runs git
     pm         writes a work item into a tracker, proposes the create → CONVENTIONS-pm.md
     social     paste-ready copy, never writes to the repo, never posts
+    testing    writes test source AND executes it  → CONVENTIONS-testing.md
+               The only class that does either, so it carries the T-clauses:
+               T1 writes only inside detected test directories, never app source
+               T2 never weakens or deletes an assertion (no sleeps, retries, skips)
+               T3 requires an explicit non-prod base URL, else BLOCK
+               check.sh asserts all three. A read-only testing skill opts out of
+               T1 by SAYING it is read-only — never by leaving it unmentioned.
+
+  RUNNER-NEUTRAL, and check.sh enforces it. This toolkit installs into Claude Code,
+  Codex, Cursor and Gemini from one clone, so a skill must not assume which one is
+  reading it:
+
+    - Say "this session", never "this <vendor> session". The privacy claim stays
+      true either way; naming a vendor makes it false on three runners out of four.
+    - Never recommend a model ("run this on haiku"). The session picks the model.
+    - Name a runner only when the difference is the point — "Option B is Claude
+      Code only" is correct and useful; "shares your diff with Claude" is not.
+    - `CLAUDE.md` / `AGENTS.md` / `GEMINI.md` are fine to READ as repo input. They
+      are real files in real repos, whatever tool you run.
 -->
 
 # SKILL TITLE

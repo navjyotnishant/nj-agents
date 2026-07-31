@@ -28,7 +28,7 @@ grounding/safety §A6, non-clobber §A7).
 
 > **Finding the conventions file.** It lives at the toolkit repo root, two levels
 > above this skill — not beside `SKILL.md`. Skills are usually installed as
-> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> symlinks into your runner's skills directory, so a plain relative path resolves against the
 > *link* and misses it. Resolve the link first:
 >
 > ```bash
@@ -194,9 +194,9 @@ depends on another's output:
   accessibility** (a body `# ` duplicates the front-matter title's H1), **ending is a
   takeaway + CTA** (not a bare link list), **no duplicated/leftover artifacts** (doubled
   CTA lines, stray `[src:]` markers), **emphasis sanity** (neither zero nor over-bolded).
-- `blog-platform-lint` (only if the target is external) — platform mechanics: **>4 tags**
-  (Dev.to hard-caps at 4), **SVG/relative images** that won't render, **missing/stale
-  cover**, the draft→publish flow.
+- Spawn `blog-platform-lint` (only if the target is external) — platform mechanics:
+  **>4 tags** (Dev.to hard-caps at 4), **SVG/relative images** that won't render,
+  **missing/stale cover**, the draft→publish flow.
 - **Cover generation** (only if `cover_image` is empty) — `scripts/make-cover.py` (a
   script, not an agent) can run concurrently; **view the rendered PNG** to verify.
 
@@ -250,7 +250,8 @@ on that platform (never auto-publish without explicit confirmation).
 If no MCP is connected but the target is **Dev.to** and the user opts in, `blog-poster`
 has a direct-REST fallback: `scripts/publish-devto.py <post.md>` creates a draft via
 the Dev.to API (uploads local images to Dev.to's CDN, forces `published: false`,
-idempotent re-runs). It needs a `DEVTO_API_KEY` — exported or in `~/.claude/.env`
+idempotent re-runs). It needs a `DEVTO_API_KEY` — exported, or in `~/.config/nj-agents/.env`
+(the legacy `~/.claude/.env` is still read for existing installs)
 (Dev.to → Settings → Extensions → "DEV Community API Keys"). If neither path applies,
 stop here and hand the user the publish-ready MD/HTML files with manual posting
 instructions.

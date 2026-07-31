@@ -11,8 +11,15 @@
 #   tests/run.sh --dry-run             # print what would run, spend nothing
 #
 # Env:
-#   NJ_TEST_MODEL      model for the runs (default: haiku — cheap on purpose)
+#   NJ_TEST_MODEL      model for the runs. Unset = the runner's own default.
+#                      Set it to something cheap (e.g. haiku) for a throwaway
+#                      pass, but be aware of what that measures: a smaller model
+#                      follows a skill more literally, so a fixture can pass on
+#                      haiku and fail on the model people actually use. The
+#                      default is now "whatever the session would use" for that
+#                      reason.
 #   NJ_TEST_BUDGET     per-run USD cap (default: 1.00)
+#   NJ_AGENT_CMD       agent CLI to drive (default: claude). See the note below.
 #
 # The generator/checker split is borrowed from the caveman evals harness: run the
 # expensive half locally and by hand, commit the result, and let CI assert it for
@@ -23,7 +30,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FIXTURES="$HERE/fixtures"
 SNAPS="$HERE/snapshots"
-MODEL="${NJ_TEST_MODEL:-haiku}"
+MODEL="${NJ_TEST_MODEL:-}"   # empty = the runner picks; see the header
 BUDGET="${NJ_TEST_BUDGET:-1.00}"
 DRY=0
 ONLY=""
@@ -36,6 +43,18 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+# This generator is Claude-Code-specific by construction, not by oversight: it
+# depends on --output-format json to parse a result, --permission-mode acceptEdits
+# so authoring skills can write at all, and --max-budget-usd to cap a runaway run.
+# Those are Claude Code flags with no portable equivalent. bin/nj-agents-review is
+# the piece that runs anywhere (NJ_AGENT_CMD); this one deliberately does not, and
+# says so rather than pretending.
+if [ -n "${NJ_AGENT_CMD:-}" ]; then
+  echo "tests/run.sh: NJ_AGENT_CMD is set, but this generator only drives Claude Code." >&2
+  echo "  It needs --output-format json / --permission-mode / --max-budget-usd." >&2
+  echo "  Use bin/nj-agents-review to exercise another runner (NAV-157)." >&2
+  exit 2
+fi
 command -v claude >/dev/null 2>&1 || { echo "the 'claude' CLI is not on PATH" >&2; exit 2; }
 mkdir -p "$SNAPS"
 "$FIXTURES/make.sh" >/dev/null
@@ -54,8 +73,10 @@ mkdir -p "$NJ_AGENTS_REPORT_DIR"
 # repos under tests/, so granting edits there costs nothing.
 run_skill() {
   local dir="$1" prompt="$2" extra="${3:-}"
+  local model_flag=()
+  [ -n "$MODEL" ] && model_flag=(--model "$MODEL")
   ( cd "$dir" && NJ_AGENTS_CI=1 claude -p "$prompt" \
-      --output-format json --model "$MODEL" --max-budget-usd "$BUDGET" \
+      --output-format json "${model_flag[@]}" --max-budget-usd "$BUDGET" \
       --permission-mode acceptEdits $extra 2>&1 )
 }
 
@@ -116,8 +137,10 @@ if wants secrets-no-scanner; then
     for c in gitleaks trufflehog detect-secrets; do
       printf '#!/bin/sh\nexit 127\n' > "$shim/$c"; chmod +x "$shim/$c"
     done
+    model_flag=()
+    [ -n "$MODEL" ] && model_flag=(--model "$MODEL")
     out="$( cd "$d" && PATH="$shim:$PATH" NJ_AGENTS_CI=1 claude -p "/review-secrets" \
-             --output-format stream-json --verbose --model "$MODEL" \
+             --output-format stream-json --verbose "${model_flag[@]}" \
              --max-budget-usd "$BUDGET" --permission-mode acceptEdits 2>&1 || true )"
     spawned="$(printf '%s' "$out" | grep -c '"name":"Task"' || true)"
     verdict=NONE

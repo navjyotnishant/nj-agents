@@ -26,6 +26,11 @@ visual-QA gate).
 
 ![Suite architecture](docs/architecture/suite-overview.svg)
 
+**24 skills · 25 agents · 5 classes · 24 checks.** Counts live here rather than in
+the image: a number drawn into an SVG goes stale silently and needs the diagram
+redrawn to correct, while a number in the text is one edit — and on the docs site,
+generated from the file tree on every build.
+
 ## Review suite (review class)
 
 A thorough, AI-assisted review of your *current commit or uncommitted changes* before
@@ -70,6 +75,7 @@ invented — and prints a banner before it starts.
 | `/arch-diagram` | Reads your README/docs/ADRs, then **authors a presentation-quality SVG** — infographic by default, `--sketch` for a hand-drawn finish. Renders it and **looks at it** against a 15-second readability test before shipping. Places it in `docs/architecture/` and proposes the commit. | `diagram-architect` |
 | `/docs-site` | **Multi-agent** universal documentation generator. Builds a self-contained, theme-aware `docs.html` from existing docs, the codebase, an outline, or structured definition files (SKILL.md/OpenAPI/JSON-Schema). Auto-derives the menu from the content, grounds everything in the source (flags gaps rather than inventing), and embeds **auto-redacted** screenshots via `/capture-screenshots`. Proposes the commit. | `docs-architect`, `docs-designer` |
 | `/capture-screenshots` | **Multi-agent** capture + **redaction** pipeline. Captures from a running web app (Playwright), terminal/CLI output, a static HTML/component, or existing images; then detects PII/secrets (emails, tokens, keys, phone, cards, names), blurs/masks them (full for high-risk, partial for illustrative), and **verifies coverage before writing** (blocks if unsure). Only the redacted image is committed — the raw stays gitignored. | `screenshot-capturer`, `sensitive-data-reviewer`, `screenshot-redactor` |
+| `/screenshot-docs-sync` | Keeps documentation **and its embedded screenshots** current as the UI drifts. Diffs since the last doc update, works out which doc sections went stale, re-captures only the affected screens with a headless browser, and edits the docs in place. Where `/capture-screenshots` is the one-shot capture, this is the maintenance loop you re-run after every UI change. Same redaction discipline; proposes the commit. | (no dedicated agent) |
 | `/tech-blog` | **Multi-agent** pipeline (writer → fact-checker → reviewer → editor → final-polish → platform-lint → optional poster) that writes an expert technical post about the project. The **fact-checker BLOCKS** on any claim it can't verify against the repo. **Generates** the visual assets it needs (arch diagrams via `/arch-diagram`, redacted screenshots via `/capture-screenshots`) alongside the writer, then embeds them; applies an emphasis/terminology/style pass, runs a pre-publish checklist (single-H1, ending, dupes) and a platform lint (Dev.to tags/SVG→PNG/cover), writes to `docs/blog/` + publish-ready MD/HTML, posts via a connected MCP you opt into — or, for Dev.to with no MCP, a direct-REST fallback (`DEVTO_API_KEY`, draft-first). | `blog-writer`, `blog-fact-checker`, `blog-reviewer`, `blog-editor`, `blog-final-polish`, `blog-platform-lint`, `blog-poster` |
 | `/scaffold-project` | Lays out a **new** repository to a recognized baseline — the **OpenSSF OSPS Baseline** (Level 1 by default; Level 2 for published/multi-maintainer projects). Grounds the security/governance layer in the baseline (each file cited by control ID, e.g. `OSPS-LE-03.01` → LICENSE) and delegates the stack layout to the ecosystem's own generator (`cargo new`, `uv init`, `npm create`) rather than inventing one. Reads a supplied project doc first. Verifies the result (OpenSSF Scorecard when present, else by-hand control check) before reporting done, then proposes the commit. | (no dedicated agent) |
 | `/social-post` | Drafts promo copy (LinkedIn / X) for a **published** post/repo/demo, grounded in the actual content. Short / medium / builder-story variants, hook-first, correct link-preview + first-comment strategy, clean hashtags. Honors style prefs (e.g. no em-dashes). Drafts only — never auto-posts. | `social-post` |
@@ -88,7 +94,7 @@ is a **PR, not a repo file**).
 | Skill | What it does | Agent it uses |
 |---|---|---|
 | `/pr-describe` | Drafts a **PR title + body** from the branch's whole delta versus its base (the PR view), grounded in the real commits and diff — every line traces to a change, nothing invented. Fills the repo's own `PULL_REQUEST_TEMPLATE.md` when present, else a sensible default (Summary / Changes / Why / Test plan / Related). Opens a **draft** PR only if you opt in and `gh` is present; otherwise hands you the text to paste. **Never pushes, never opens a non-draft PR, never merges.** | `pr-describer` |
-| `/commit-assistant` | Drafts **Conventional Commits** message(s) from the working-tree changes and prints the exact `git add` + `git commit` block to run. When the tree holds unrelated changes it proposes **splitting them into separate commits**, one message each; respects changes you've already staged as your stated intent. Matches the repo's own commit style (including a `no Co-Authored-By` rule). Grounded in the diff — no `fix bug` filler. **Never runs git** — the human decides what gets committed. | (no dedicated agent) |
+| `/commit-assistant` | Drafts **Conventional Commits** message(s) from the working-tree changes and prints the exact `git add` + `git commit` block to run. When the tree holds unrelated changes it proposes **splitting them into separate commits**, one message each; respects changes you've already staged as your stated intent. Matches the repo's own commit style (including a `no Co-Authored-By` rule). Grounded in the diff — no `fix bug` filler. Then **offers to run each commit**, asking one at a time and showing the exact paths it would stage — approving a set of files, not just a sentence. **Never pushes, never tags, never `--no-verify`**, and in CI it prints only. | (no dedicated agent) |
 | `/release-notes` | Turns a version's changes into a **draft GitHub Release** — the release object on the Releases page, the one release artifact `/changelog` doesn't produce. Prefers the existing `CHANGELOG.md` section as the notes body (composes with `/changelog`, doesn't duplicate it), else summarizes the commit delta since the last tag. Drafts `gh release create --draft`; falls back to printing the notes + tag commands when `gh` is absent. **Never publishes a release, never pushes a tag.** | (no dedicated agent) |
 
 `gh` is detected, never required (§A5); the print-and-paste path always works.
@@ -173,6 +179,28 @@ aggregate verdict — to `${NJ_AGENTS_REPORT_DIR:-<repo>/.nj-agents-reports}/` (
 temp dir). It is **never committed**; the umbrella offers to add
 `.nj-agents-reports/` to your `.gitignore`.
 
+## What an agent is allowed to do
+
+A skill orchestrates; an agent does one job and hands the result back.
+**23 of the 25 agents cannot write files at all** — they return their output and
+the *skill* writes it. Each agent's body says so, and its declared `tools:` match.
+
+Exactly two hold a write tool, because each genuinely produces a file itself:
+`screenshot-capturer` and `screenshot-redactor`.
+
+`diagram-architect` looks like a third and is not — it emits SVG *content* and the
+skill writes the file, which its body states outright.
+
+Every agent declares an explicit `tools:` allowlist. That is **required, for
+portability rather than taste**: Claude Code and Cursor read a missing key as
+*inherit every tool*, but Gemini CLI reads it as *no tools*, so the agent loads
+unable to act. An explicit list is the only spelling that means the same thing on
+every runner.
+
+`check.sh` enforces both halves — the key must be present, and an agent whose body
+claims to be read-only may not declare a write tool, so the prose and the tool list
+cannot drift apart.
+
 ## Install
 
 Global (all projects):
@@ -187,14 +215,88 @@ Per-project (into `DIR/.claude/`):
 ./install.sh --project /path/to/your/repo
 ```
 
+### Re-run `./install.sh` after every pull
+
+Not optional. The installer is what reconciles your config directory with the
+repo, and several things only get fixed by running it:
+
+- **A renamed source orphans its symlink.** `global/CLAUDE.md` became
+  `global/AGENTS.md`, so an older `~/.claude/CLAUDE.md` now points at a path that
+  does not exist. Nothing errors — the guidance simply stops applying. Re-running
+  repairs it and **says so** (`1 repaired (were dangling)`).
+- **New skills and agents are not picked up** until they are linked.
+- **It reports what it will not touch.** A real file where a symlink belongs
+  means your copy stopped tracking the repo; a skill in the config directory that
+  is not in the repo is not version-controlled and not installed for any other
+  runner. Both are listed, neither is changed for you.
+
+The output is a summary rather than a wall of link lines:
+
+```
+Summary
+  runner        claude  (/Users/you/.claude)
+  linked        2 new, 49 already current, 1 repaired (were dangling)
+  guidance      .claude/CLAUDE.md -> global/AGENTS.md
+
+  Present here but NOT in this repo — not version-controlled, and not
+  installed for any other runner. Move them into the repo to keep them:
+  skill  .claude/skills/my-local-skill
+```
+
+It is idempotent and never clobbers a real file, so re-running it is always safe.
+
+### Other agents
+
+`SKILL.md` is an open standard, so the skills run on more than Claude Code:
+
+```bash
+./install.sh --runner gemini     # ~/.gemini/   + GEMINI.md
+./install.sh --runner codex      # ~/.codex/    + AGENTS.md
+./install.sh --runner cursor     # ~/.cursor/
+./install.sh --runner agents      # ~/.agents/   + AGENTS.md  (vendor-neutral)
+```
+
+**You do not pick one.** Everything is a symlink back into this clone, so
+installing for several runners leaves them all reading the same files — edit a
+skill once and every runner sees it. There is nothing to sync.
+
+| | Claude Code | Codex | Cursor | Gemini |
+|---|---|---|---|---|
+| **24 skills** | yes | yes | yes | yes |
+| **25 agents** | yes | yes (generated) | not yet | yes |
+| **Guidance file** | `CLAUDE.md` | `AGENTS.md` | `.mdc` (generated) | `GEMINI.md` |
+
+Codex reads agents as **TOML**, not markdown with YAML frontmatter — a different
+*format*, not a different path, so they cannot be symlinked. `--runner codex`
+**generates** them from the same `agents/*.md` instead, following the schema in
+Codex's own `migrate-to-codex` converter. Generated files are build artifacts:
+rewritten on every install, never committed, and they say so in their header.
+
+Cursor reads guidance as `.mdc` with real frontmatter, so that is generated too —
+but as a **pointer**, not a copy. Cursor's own `create-rule` skill says rules
+should stay "under 50 lines"; an always-on 240-line rule would cost context on
+every request. The generated rule names the classes and the guarantees, and
+points at `global/AGENTS.md` for the rest. `check.sh` fails it if it outgrows
+the budget.
+
+**What is actually verified**, as distinct from inferred:
+
+- `gemini skills list` discovers all 24 skills through the symlinks, 0 errors.
+- `check.sh` installs into a temp directory on every run and asserts the layout,
+  and separately generates the Codex TOML and parses every file.
+- **Not** verified: Codex loading the generated agents, or any runner *executing*
+  a skill end to end. Codex is over its usage limit until Aug 7, and Gemini's free
+  tier no longer supports its CLI client.
+
 Uninstall (only removes symlinks pointing back into this repo):
 
 ```bash
 ./install.sh --uninstall
+./install.sh --runner gemini --uninstall
 ./install.sh --project /path/to/your/repo --uninstall
 ```
 
-Restart / reload Claude Code afterward, then run `/pre-push-review` in any repo.
+Restart / reload your agent afterward, then run `/pre-push-review` in any repo.
 The installer uses **symlinks**, so editing files here updates every install.
 
 ## Optional: gate on `git push`
@@ -220,7 +322,7 @@ nj-agents/
 ├── CONVENTIONS.md              # shared rules for the review class
 ├── CONVENTIONS-authoring.md    # shared rules for the authoring class
 ├── CONVENTIONS-pm.md           # shared rules for the PM-authoring class
-├── global/CLAUDE.md            # guidance installed to ~/.claude/CLAUDE.md
+├── global/AGENTS.md            # guidance; symlinked per runner (CLAUDE.md/AGENTS.md/GEMINI.md)
 ├── install.sh                  # symlinks skills/ + agents/ into a .claude/ dir
 └── README.md
 ```
@@ -228,8 +330,9 @@ nj-agents/
 ### Global guidance file
 
 Installing the skills makes them *available* everywhere; it doesn't tell Claude
-**when** to reach for them. [`global/CLAUDE.md`](global/CLAUDE.md) closes that gap —
-`install.sh` symlinks it to `~/.claude/CLAUDE.md`, so every session in every repo
+**when** to reach for them. [`global/AGENTS.md`](global/AGENTS.md) closes that gap —
+`install.sh` symlinks it under whichever name the runner reads — `~/.claude/CLAUDE.md`,
+`~/.codex/AGENTS.md`, `~/.gemini/GEMINI.md` — so every session in every repo
 starts knowing the suite exists, what each skill covers, and the standing rules
 (propose-commit, ground-in-repo, degrade-don't-fail, scoped output).
 
@@ -248,7 +351,7 @@ repos. So `install.sh` diffs the tables against what actually ships and warns:
 ```
 
 ```
-  ! global/CLAUDE.md is out of sync with skills/:
+  ! global/AGENTS.md is out of sync with skills/:
       not listed (invisible in other repos): commit-assistant
 ```
 

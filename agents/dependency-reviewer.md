@@ -1,6 +1,7 @@
 ---
 name: dependency-reviewer
 description: "Use this agent to review dependency-manifest and license changes in a code diff — added/removed/upgraded packages, license shifts, version-pinning risks, and supply-chain signals like typosquatting. It reviews the diff only (no network, no install) and reports high-confidence findings. Works in any repo and any package ecosystem.\n\n<example>\nContext: The diff changes package.json and the user wants a governance check before pushing.\nuser: \"review my dependency changes before I push\"\n<commentary>\n/review-dependencies (or the pre-push-review umbrella) spawns this agent with the manifest changes to flag risky additions and license shifts.\n</commentary>\nassistant: \"Launching dependency-reviewer on the manifest changes.\"\n</example>"
+tools: Read, Grep, Glob, Bash
 color: cyan
 author: navjyotnishant
 ---
