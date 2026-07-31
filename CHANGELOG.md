@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Initial public release of the toolkit. Everything below describes what nj-agents
 does as of this version, rather than how it was built.
 
+### Added
+
+- `./install.sh --runner claude|codex|cursor|gemini|agents` installs into that
+  agent's own config directory, with the global guidance file linked under the
+  name it reads (`CLAUDE.md` / `AGENTS.md` / `GEMINI.md`). `claude` remains the
+  default, so a bare `./install.sh` behaves exactly as before.
+  Because everything is a symlink back into the clone, **installing for several
+  runners leaves them all reading the same files** — edit a skill once and every
+  runner sees it, with nothing to sync. `--project DIR` honours the runner too.
+  Codex (agents are TOML) and Cursor (guidance is `.mdc`) need a generator rather
+  than a symlink; until those land the installer **skips those pieces and says
+  so** rather than leaving files the tool silently ignores.
+  `check.sh` gained a check that installs into a temp directory and asserts every
+  runner resolves back to this one clone, so the claim is tested rather than
+  documented.
+
 ### Changed
 
 - All 25 agents now declare an explicit `tools:` allowlist. Claude Code and Cursor

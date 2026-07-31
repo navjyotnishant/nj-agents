@@ -187,14 +187,44 @@ Per-project (into `DIR/.claude/`):
 ./install.sh --project /path/to/your/repo
 ```
 
+### Other agents
+
+`SKILL.md` is an open standard, so the skills run on more than Claude Code:
+
+```bash
+./install.sh --runner gemini     # ~/.gemini/   + GEMINI.md
+./install.sh --runner codex      # ~/.codex/    + AGENTS.md
+./install.sh --runner cursor     # ~/.cursor/
+./install.sh --runner agents      # ~/.agents/   + AGENTS.md  (vendor-neutral)
+```
+
+**You do not pick one.** Everything is a symlink back into this clone, so
+installing for several runners leaves them all reading the same files — edit a
+skill once and every runner sees it. There is nothing to sync.
+
+| | Claude Code | Codex | Cursor | Gemini |
+|---|---|---|---|---|
+| **23 skills** | yes | yes | yes | yes |
+| **25 agents** | yes | not yet | not yet | yes |
+| **Guidance file** | `CLAUDE.md` | `AGENTS.md` | not yet | `GEMINI.md` |
+
+Codex reads agents as TOML and Cursor reads guidance as `.mdc` with frontmatter —
+both need a generator rather than a symlink, so the installer **skips them and
+says so** instead of leaving files those tools silently ignore.
+
+This is verified against the specs and by `check.sh`, which installs into a temp
+directory on every run and asserts the layout. It has **not** yet been verified by
+running a skill end to end on a non-Claude runner.
+
 Uninstall (only removes symlinks pointing back into this repo):
 
 ```bash
 ./install.sh --uninstall
+./install.sh --runner gemini --uninstall
 ./install.sh --project /path/to/your/repo --uninstall
 ```
 
-Restart / reload Claude Code afterward, then run `/pre-push-review` in any repo.
+Restart / reload your agent afterward, then run `/pre-push-review` in any repo.
 The installer uses **symlinks**, so editing files here updates every install.
 
 ## Optional: gate on `git push`

@@ -1,16 +1,35 @@
 #!/usr/bin/env bash
 #
-# nj-agents installer — symlinks this repo's skills and agents into a Claude Code
-# config directory so editing the repo updates them everywhere.
+# nj-agents installer — symlinks this repo's skills and agents into an AI coding
+# agent's config directory so editing the repo updates them everywhere.
 #
 # Usage:
-#   ./install.sh                 # install globally into ~/.claude/
-#   ./install.sh --project DIR   # install into DIR/.claude/ (per-project)
+#   ./install.sh                 # install globally for Claude Code (~/.claude/)
+#   ./install.sh --runner NAME   # install for another runner (see below)
+#   ./install.sh --project DIR   # install into DIR/<runner-dir>/ (per-project)
 #   ./install.sh --uninstall     # remove symlinks this installer created (global)
 #   ./install.sh --project DIR --uninstall
 #   ./install.sh --check-only    # only check global/CLAUDE.md is in sync; install nothing
 #   ./install.sh --with-hooks    # ALSO register the skill-suggestion hook in settings.json
 #   ./install.sh --git-hooks     # install this repo's own .git/hooks (per-clone, not committed)
+#
+# Runners (--runner):
+#   claude   ~/.claude    CLAUDE.md   default; unchanged from before
+#   codex    ~/.codex     AGENTS.md
+#   cursor   ~/.cursor    (rules)     see the note below
+#   gemini   ~/.gemini    GEMINI.md
+#   agents   ~/.agents    AGENTS.md   the vendor-neutral path Codex and Gemini both read
+#
+# Because everything is a SYMLINK back into this clone, you do not pick one
+# runner: install for each one you use and they all read the same files. Edit a
+# skill once and every runner sees it — there is nothing to sync.
+#
+# Skills and agents are portable as-is. Two things are NOT, and are handled by
+# their own stories rather than silently half-working here:
+#   - Codex reads agents as TOML, not markdown (NAV-159)
+#   - Cursor reads guidance as .mdc with real frontmatter, not plain md (NAV-152)
+# Until those land, --runner codex installs skills + guidance but not agents, and
+# --runner cursor installs skills only. Both say so when they run.
 #
 # Idempotent: re-running relinks. It only ever touches symlinks that point back
 # into THIS repo — it never deletes a real file or a link owned by something else.
@@ -18,15 +37,21 @@
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TARGET_ROOT="$HOME/.claude"
+RUNNER="claude"
+PROJECT_DIR=""
 UNINSTALL=0
 CHECK_ONLY=0
 WITH_HOOKS=0
 GIT_HOOKS=0
 
+VALID_RUNNERS="claude codex cursor gemini agents"
+
 while [ $# -gt 0 ]; do
   case "$1" in
-    --project) TARGET_ROOT="$(cd "$2" && pwd)/.claude"; shift 2 ;;
+    --runner)
+      [ $# -ge 2 ] || { echo "--runner needs a value ($VALID_RUNNERS)" >&2; exit 2; }
+      RUNNER="$2"; shift 2 ;;
+    --project) PROJECT_DIR="$(cd "$2" && pwd)"; shift 2 ;;
     --uninstall) UNINSTALL=1; shift ;;
     --check-only) CHECK_ONLY=1; shift ;;
     --with-hooks) WITH_HOOKS=1; shift ;;
@@ -36,13 +61,44 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+# Validate before doing anything — a typo'd runner must not silently install to
+# a directory nothing reads.
+case " $VALID_RUNNERS " in
+  *" $RUNNER "*) ;;
+  *) echo "Unknown runner: $RUNNER" >&2
+     echo "Valid runners: $VALID_RUNNERS" >&2
+     exit 2 ;;
+esac
+
+# Per-runner layout. Only two things vary: the config directory name and the
+# filename the runner reads its global guidance from. Everything else derives.
+case "$RUNNER" in
+  claude) RUNNER_DIR=".claude"; GUIDANCE_NAME="CLAUDE.md" ;;
+  codex)  RUNNER_DIR=".codex";  GUIDANCE_NAME="AGENTS.md" ;;
+  cursor) RUNNER_DIR=".cursor"; GUIDANCE_NAME="" ;;   # .mdc — NAV-152
+  gemini) RUNNER_DIR=".gemini"; GUIDANCE_NAME="GEMINI.md" ;;
+  agents) RUNNER_DIR=".agents"; GUIDANCE_NAME="AGENTS.md" ;;
+esac
+
+# Codex reads agents as TOML, not markdown, so symlinking .md files there would
+# create a directory of files it silently ignores. Skip until NAV-159 lands.
+INSTALL_AGENTS=1
+[ "$RUNNER" = "codex" ] && INSTALL_AGENTS=0
+[ "$RUNNER" = "cursor" ] && INSTALL_AGENTS=0
+
+if [ -n "$PROJECT_DIR" ]; then
+  TARGET_ROOT="$PROJECT_DIR/$RUNNER_DIR"
+else
+  TARGET_ROOT="$HOME/$RUNNER_DIR"
+fi
+
 SKILLS_SRC="$REPO_DIR/skills"
 AGENTS_SRC="$REPO_DIR/agents"
 GLOBAL_MD_SRC="$REPO_DIR/global/CLAUDE.md"
 HOOKS_SRC="$REPO_DIR/hooks"
 SKILLS_DST="$TARGET_ROOT/skills"
 AGENTS_DST="$TARGET_ROOT/agents"
-GLOBAL_MD_DST="$TARGET_ROOT/CLAUDE.md"
+GLOBAL_MD_DST="${GUIDANCE_NAME:+$TARGET_ROOT/$GUIDANCE_NAME}"
 HOOKS_DST="$TARGET_ROOT/hooks"
 SETTINGS="$TARGET_ROOT/settings.json"
 
@@ -116,31 +172,48 @@ if [ "$CHECK_ONLY" = "1" ]; then
 fi
 
 if [ "$UNINSTALL" = "1" ]; then
-  echo "Uninstalling nj-agents symlinks from $TARGET_ROOT ..."
+  echo "Uninstalling nj-agents symlinks from $TARGET_ROOT (runner: $RUNNER) ..."
   for d in "$SKILLS_SRC"/*/; do remove_if_ours "$SKILLS_DST/$(basename "$d")"; done
+  # Agents are removed unconditionally, even for runners the installer now skips:
+  # an earlier install (or an earlier version of this script) may have left them,
+  # and remove_if_ours only ever touches links pointing back into this repo.
   for f in "$AGENTS_SRC"/*.md; do remove_if_ours "$AGENTS_DST/$(basename "$f")"; done
   for f in "$HOOKS_SRC"/*.sh; do [ -f "$f" ] && remove_if_ours "$HOOKS_DST/$(basename "$f")"; done
-  remove_if_ours "$GLOBAL_MD_DST"
+  [ -n "$GLOBAL_MD_DST" ] && remove_if_ours "$GLOBAL_MD_DST"
   echo "Done."
   exit 0
 fi
 
-echo "Installing nj-agents into $TARGET_ROOT ..."
-mkdir -p "$SKILLS_DST" "$AGENTS_DST"
+echo "Installing nj-agents into $TARGET_ROOT (runner: $RUNNER) ..."
+mkdir -p "$SKILLS_DST"
+[ "$INSTALL_AGENTS" = "1" ] && mkdir -p "$AGENTS_DST"
 
-# Skills: one directory per skill (each contains SKILL.md).
+# Skills: one directory per skill (each contains SKILL.md). SKILL.md is an open
+# standard, so this is the part that works unchanged on every runner.
 for d in "$SKILLS_SRC"/*/; do
   link_one "${d%/}" "$SKILLS_DST/$(basename "$d")"
 done
 
-# Agents: flat .md files.
-for f in "$AGENTS_SRC"/*.md; do
-  link_one "$f" "$AGENTS_DST/$(basename "$f")"
-done
+# Agents: flat .md files — but only where the runner reads that format.
+if [ "$INSTALL_AGENTS" = "1" ]; then
+  for f in "$AGENTS_SRC"/*.md; do
+    link_one "$f" "$AGENTS_DST/$(basename "$f")"
+  done
+else
+  case "$RUNNER" in
+    codex)  echo "  - agents skipped: Codex reads agents as TOML, not markdown (NAV-159)" ;;
+    cursor) echo "  - agents skipped: Cursor subagents are registered separately (NAV-152)" ;;
+  esac
+fi
 
-# Guidance file: tells Claude the suite exists and when to reach for it, in EVERY
-# repo. Never clobbers a hand-written CLAUDE.md (link_one guards that).
-link_one "$GLOBAL_MD_SRC" "$GLOBAL_MD_DST"
+# Guidance file: tells the agent the suite exists and when to reach for it, in
+# EVERY repo. Linked under whatever filename this runner reads. Never clobbers a
+# hand-written file (link_one guards that).
+if [ -n "$GLOBAL_MD_DST" ]; then
+  link_one "$GLOBAL_MD_SRC" "$GLOBAL_MD_DST"
+else
+  echo "  - guidance skipped: Cursor needs .mdc with frontmatter, not plain markdown (NAV-152)"
+fi
 
 # Hooks: shipped here so they survive a reinstall, but only WIRED on request —
 # registering one edits the user's settings.json, which the installer never does
@@ -154,7 +227,9 @@ if [ -d "$HOOKS_SRC" ]; then
 fi
 [ "$WITH_HOOKS" = "1" ] && register_hook
 
-"$REPO_DIR/check.sh" || true
+# check.sh itself installs into a temp dir to verify the runner layout, so it sets
+# NJ_AGENTS_NO_CHECK to stop us calling it straight back and recursing forever.
+[ -n "${NJ_AGENTS_NO_CHECK:-}" ] || "$REPO_DIR/check.sh" || true
 
-echo "Done. Restart Claude Code (or reload) to pick up the new skills/agents."
+echo "Done. Restart $RUNNER (or reload) to pick up the new skills/agents."
 echo "Try:  /pre-push-review   (or /review-secrets, /review-correctness, ...)"

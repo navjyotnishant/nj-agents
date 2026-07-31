@@ -10,7 +10,10 @@ and invoke the skills with `/name` in **any** git repo — nothing here is speci
 project, stack, or language.
 
 - **23 skills · 25 agents**, in four classes + a diagram-generation subsystem.
-- Install: `./install.sh` (global) or `./install.sh --project DIR`. The installer **globs**
+- Install: `./install.sh` (global, Claude Code), `./install.sh --runner gemini|codex|cursor|agents`
+  for another agent, or `--project DIR` for one repo. Everything is a **symlink back into
+  this clone**, so installing for several runners leaves them all reading the same files —
+  nothing to sync. The installer **globs**
   `skills/*/` and `agents/*.md`, so new files are picked up automatically. Reload Claude
   Code after installing (skills/agents load at session start).
 

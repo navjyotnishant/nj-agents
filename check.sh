@@ -567,6 +567,59 @@ check_stale_agents() {
 }
 
 # Both CLAUDE.md files state the counts in prose. Prose drifts silently.
+# The installer's whole premise is that ONE clone feeds every runner via symlinks.
+# That is cheap to assert for real — install into a temp dir and look — and it is
+# the kind of claim that rots silently, so assert it rather than trusting the docs.
+check_installer_runners() {
+  local tmp bad=0 r dir guide
+  command -v mktemp >/dev/null 2>&1 || return 0
+  tmp="$(mktemp -d)" || return 0
+  # shellcheck disable=SC2064
+  trap "rm -rf '$tmp'" RETURN
+
+  # install.sh runs check.sh when it finishes; without this guard that would
+  # recurse forever, since we are check.sh calling install.sh.
+  export NJ_AGENTS_NO_CHECK=1
+
+  for r in claude codex gemini agents; do
+    if ! "$REPO_DIR/install.sh" --runner "$r" --project "$tmp" >/dev/null 2>&1; then
+      finding check_installer_runners structural "install.sh --runner $r failed"
+      bad=1; continue
+    fi
+    dir="$tmp/.$r"
+    [ -L "$dir/skills/changelog" ] || {
+      finding check_installer_runners structural "install.sh --runner $r: skills not linked"
+      bad=1
+    }
+    # Every runner must resolve to the SAME source file — that is the property
+    # that makes one clone serve all of them.
+    if [ "$(readlink "$dir/skills/changelog" 2>/dev/null)" != "$SKILLS_SRC/changelog" ]; then
+      finding check_installer_runners structural \
+        "install.sh --runner $r: skill link does not point back into this repo"
+      bad=1
+    fi
+  done
+
+  # Guidance lands under the filename each runner actually reads.
+  for r in "claude:CLAUDE.md" "codex:AGENTS.md" "gemini:GEMINI.md" "agents:AGENTS.md"; do
+    dir="$tmp/.${r%%:*}"; guide="${r##*:}"
+    [ -L "$dir/$guide" ] || {
+      finding check_installer_runners structural \
+        "install.sh --runner ${r%%:*}: no $guide guidance link"
+      bad=1
+    }
+  done
+
+  # An unknown runner must fail loudly, not install somewhere nothing reads.
+  if "$REPO_DIR/install.sh" --runner nonesuch --project "$tmp" >/dev/null 2>&1; then
+    finding check_installer_runners structural "install.sh accepted an unknown --runner"
+    bad=1
+  fi
+
+  [ "$bad" = "0" ] && ok "installer serves every runner from one clone"
+  return 0
+}
+
 check_counts() {
   local s a f stated bad=0
   s="$(ls -d "$SKILLS_SRC"/*/ | wc -l | tr -d ' ')"
@@ -601,6 +654,7 @@ check_conventions_sections
 check_guidance_sync
 check_hook_sync
 check_stale_agents
+check_installer_runners
 check_counts
 
 if [ "$JSON" = "1" ]; then
