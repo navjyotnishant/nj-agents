@@ -322,6 +322,7 @@ nj-agents/
 ├── CONVENTIONS.md              # shared rules for the review class
 ├── CONVENTIONS-authoring.md    # shared rules for the authoring class
 ├── CONVENTIONS-pm.md           # shared rules for the PM-authoring class
+├── CONVENTIONS-testing.md      # shared rules for the testing class (T1–T12)
 ├── global/AGENTS.md            # guidance; symlinked per runner (CLAUDE.md/AGENTS.md/GEMINI.md)
 ├── install.sh                  # symlinks skills/ + agents/ into a .claude/ dir
 └── README.md

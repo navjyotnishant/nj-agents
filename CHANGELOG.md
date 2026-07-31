@@ -36,6 +36,21 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- **`CONVENTIONS-testing.md`** — the contract for a fifth skill class. It exists
+  because of blast radius, not taxonomy: a testing skill **writes test source into
+  the repo and then executes it against a running application**, and no existing
+  class does either. `/review-tests-build` runs commands but writes nothing;
+  `/test-gap-finder` reads coverage and never writes a test.
+  Twelve clauses, mostly prohibitions, because a suite that can edit and run itself
+  has two failure modes nobody notices for months: it goes green by weakening its
+  own assertions (**T2**), and it publishes a credential it captured from a real
+  session (**T4**). T1 (source fence), T2, and T3 (non-prod URL gate) are **enforced
+  by `check.sh`**, not merely stated — a skill that omits one is a finding.
+  T4 is deliberately *containment* rather than redaction: raw traces and HARs never
+  leave the gitignored temp dir, and text derived from them is scrubbed before it
+  reaches a report or ticket. Full artifact redaction is the unlock condition for
+  export, and is out of scope until someone actually needs a HAR on a ticket.
+  No skills in this class yet — the contract lands first so they inherit it.
 - **`bin/nj-agents-review` drives any agent CLI** via `NJ_AGENT_CMD`
   (`NJ_AGENT_CMD="codex exec" nj-agents-review`). The verdict→exit-code mapping —
   0 PASS/WARN, 1 BLOCK, 2 harness error — is the value the wrapper adds, and it is

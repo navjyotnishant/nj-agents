@@ -639,11 +639,12 @@ check_progress_reporting() {
 check_conventions_sections() {
   local f sec num doc bad=0
   for f in "$SKILLS_SRC"/*/SKILL.md "$AGENTS_SRC"/*.md; do
-    for sec in $(grep -o '§[AP]\{0,1\}[0-9]\{1,2\}' "$f" 2>/dev/null | sort -u); do
+    for sec in $(grep -o '§[APTU]\{0,1\}[0-9]\{1,2\}' "$f" 2>/dev/null | sort -u); do
       num="${sec#§}"
       case "$num" in
         A*) doc="CONVENTIONS-authoring.md" ;;
         P*) doc="CONVENTIONS-pm.md" ;;
+        T*) doc="CONVENTIONS-testing.md" ;;
         *)  doc="CONVENTIONS.md" ;;
       esac
       grep -q "^## §\{0,1\}$num[. ]\|^## $num\." "$REPO_DIR/$doc" || {
