@@ -50,6 +50,11 @@ does as of this version, rather than how it was built.
   leave the gitignored temp dir, and text derived from them is scrubbed before it
   reaches a report or ticket. Full artifact redaction is the unlock condition for
   export, and is out of scope until someone actually needs a HAR on a ticket.
+  Two clauses settle state: **T13** puts every skill behind a shared run manifest
+  rather than letting them call each other, so each stays independently runnable and
+  testable. **T14** puts the flake ledger at a *committed* `.nj-agents/flake-ledger.json`
+  — gitignored it would start empty on every CI runner, which is exactly where
+  intermittent failures accumulate and where the history is worth most.
   No skills in this class yet — the contract lands first so they inherit it.
 - **`bin/nj-agents-review` drives any agent CLI** via `NJ_AGENT_CMD`
   (`NJ_AGENT_CMD="codex exec" nj-agents-review`). The verdict→exit-code mapping —

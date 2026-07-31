@@ -272,6 +272,77 @@ In CI mode the log is **machine-readable**.
 
 ---
 
+## §T13 — The run manifest (shared)
+
+Testing skills **do not pass state to each other directly.** Each writes to, and reads
+from, a single **run manifest** — a JSON file under the run's temp dir.
+
+That indirection is the point: `/test-triage` consumes what `/e2e-run` recorded rather
+than being invoked by it, so each skill is independently runnable and independently
+testable. A skill that only works when called by another skill cannot be verified on
+its own, and the whole class becomes one untestable pipeline.
+
+Minimum fields:
+
+| Field | Why |
+|---|---|
+| `run_id` | correlates manifest, log and artifacts |
+| `commit` | the SHA under test — triage correlates failures to it |
+| `environment` | the resolved base URL and which §T3 rule allowed it |
+| `scope` | which specs/shards this run covered |
+| `artifacts_dir` | absolute path in the temp dir (§T4 — never exported) |
+| `verdicts` | per dimension, plus the aggregate |
+| `cost` | tokens and tool calls per skill and per agent, wall clock per phase (§T10) |
+| `subagents` | spawn/join records and the concurrency cap in force (§T11) |
+| `log` | pointer to the structured phase log (§T12) |
+
+Cost, subagent and log fields live **here**, not in each skill. They are cross-cutting,
+and an umbrella can only report them uniformly if they are recorded uniformly.
+
+The manifest is **run state, not history** — it lives and dies with the temp dir.
+Anything that must outlive the run goes in the ledger below.
+
+---
+
+## §T14 — The flake ledger (shared)
+
+Per-spec failure history: fail rate over the last N runs, per spec and assertion, plus
+quarantine state. This is what lets `/test-triage` say *"this spec fails 30% of the
+time regardless of the diff"* instead of guessing.
+
+**It is committed, at `.nj-agents/flake-ledger.json`.** Not gitignored, not under
+`.nj-agents-reports/`.
+
+> **Why committed, when every other artifact in this repo is not.** Report artifacts
+> are the output of one run — disposable by design, and `.nj-agents-reports/` is
+> gitignored accordingly. The ledger is the opposite: it is **only useful as
+> accumulated history**, and its value is proportional to how many runs it has seen.
+>
+> Gitignored, it starts **empty on every CI runner** — and CI is exactly where flake
+> detection matters most, because that is where the same spec fails intermittently
+> across a hundred runs nobody is watching. A ledger that resets each run cannot
+> distinguish a flake from a regression, which is the one thing it exists to do.
+>
+> Committed, it is also **reviewable in a PR**: a quarantine proposal shows up as a
+> diff someone approves, rather than a state change in a file nobody sees. Given
+> quarantine removes a spec from the gate, that visibility is a feature.
+>
+> The cost is a committed data file that changes on most runs. That is real churn, and
+> it is the honest price of the above. Mitigations: write it **only when a value
+> actually changes**, keep it sorted and one-record-per-line so diffs are readable,
+> and never store anything from an artifact in it — spec identity, counts and dates
+> only, so §T4's scrub has nothing to do here.
+
+**Ledger records survive a rename.** A spec that moves or is renamed keeps its
+history — key on a stable identifier plus a path fallback, not the path alone.
+Otherwise every refactor silently resets the flake data and a chronically unstable
+spec gets a clean slate it did not earn.
+
+**Quarantine is never silent.** A proposal carries an SLA and opens a tracking issue.
+A spec removed from the gate with no owner and no date is a spec deleted slowly.
+
+---
+
 ## Spawning subagents
 
 Skills in this class fan out by design, so `CONVENTIONS-orchestration.md` applies in
