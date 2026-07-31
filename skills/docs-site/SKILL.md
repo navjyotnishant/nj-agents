@@ -1,7 +1,7 @@
 ---
 name: docs-site
-description: Use this skill when the user asks to "generate a documentation site", "build docs for this project", "make a browsable reference/guide", "document these skills/API/modules", or wants a polished HTML documentation page from existing docs, the codebase, an outline, or structured definition files. Auto-derives the menu/sections from the content, grounds everything in the source (flags gaps rather than inventing), embeds auto-redacted screenshots via the capture-screenshots pipeline when needed, produces a self-contained theme-aware docs.html, and PROPOSES the commit. Works in any git repo; nothing here is project-specific.
-version: 0.1.0
+description: Use this skill when the user asks to "generate a documentation site", "build docs for this project", "make a browsable reference/guide", "document these skills/API/modules", or wants a polished HTML documentation page from existing docs, the codebase, an outline, or structured definition files. Auto-derives the menu/sections from the content, grounds everything in the source (flags gaps rather than inventing), embeds auto-redacted screenshots via the capture-screenshots pipeline when needed, produces a self-contained theme-aware docs.html by default, or --generated for a multi-page site rebuilt from the source files on every commit so it cannot drift, and PROPOSES the commit. Works in any git repo; nothing here is project-specific.
+version: 0.2.0
 class: authoring
 author: navjyotnishant
 ---
@@ -108,7 +108,12 @@ the raw original never lands in the repo. Place the redacted images under the do
 image dir and reference them from the doc model. If capture isn't possible (no running
 app, no auth — never fabricate credentials), skip the image and note it as a gap.
 
-## Step 5 — Design and build the page
+## Step 5 — Design and build
+
+Two modes. **Mode A is the default**; reach for B when the docs describe files that
+change often.
+
+### Mode A — one self-contained page (default)
 
 Spawn `docs-designer` with the doc model (+ image paths). It produces a **single
 self-contained `docs.html`**: a sidebar menu derived from the sections, tiered content
@@ -116,6 +121,43 @@ self-contained `docs.html`**: a sidebar menu derived from the sections, tiered c
 external dependencies (all CSS/JS inline; images embedded or referenced by relative
 path). It reuses the source's design system if one exists; otherwise it makes clean,
 restrained, accessible choices.
+
+### Mode B — a generated multi-page site (`--generated`)
+
+When the docs must **never drift from the source** — a toolkit, an API, a set of
+definition files — build a site that is regenerated from those files on every commit
+rather than written once. MkDocs Material with `mkdocs-gen-files` and
+`mkdocs-literate-nav` is the path with the least ceremony.
+
+**The rule that makes it worth doing:** pages are written into the *virtual* docs tree
+at build time. Nothing generated lands on disk, so a page **cannot** disagree with the
+file it documents. If a page can go stale, the build is wrong.
+
+Hard-won specifics, each of which cost a broken build or a broken page:
+
+- **`docs_dir` must not be a directory that already holds artifacts.** Pointing MkDocs
+  at an existing `docs/` sweeps diagrams, JSON and stray files into the nav. Use a
+  separate source dir.
+- **The generator script lives inside `docs_dir`,** so MkDocs treats it as a static
+  file and *publishes it*. Exclude it explicitly (`exclude_docs`).
+- **Never list the same page twice in the nav.** MkDocs keeps the first occurrence and
+  silently **drops** the rest — a whole section can vanish while the build stays green.
+  If two places need to reference one page, make one of them a link, not a nav entry.
+- **The nav label becomes the page title.** A generic label like "Workflow" repeated
+  across entries produces a set of identically-titled pages.
+- **Generate in dependency order.** A page linking to one that has not been written
+  yet fails under `--strict`, which is exactly what you want it to do.
+- **Derive cross-references, never retype them.** Recover them from the source and
+  **fail the build** on one that does not resolve. A dead link that ships is worse
+  than a build that stops.
+- **Diagrams are wider than the content column.** Add a lightbox (`mkdocs-glightbox`)
+  so they can be opened full-size, and give them a white background in dark mode if
+  they are drawn on white.
+- **Verify in a browser, not by grepping the built HTML.** Material loads the nav via
+  JS, so `curl` sees a shell — a nav can be visibly broken while every grep passes.
+
+Pin the toolchain in `requirements-docs.txt` and deploy from CI. **GitHub Pages needs
+a public repo on a free plan** — check before promising a URL.
 
 ## Step 6 — Placement + write
 

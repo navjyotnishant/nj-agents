@@ -49,6 +49,17 @@ one rather than letting the gap grow — but never hard-block a throwaway repo o
 never required; every path has a zero-dependency fallback. The one exception is secret
 scanning, which genuinely blocks without a scanner.
 
+**Verify a visual artifact by looking at it.** For anything rendered — a diagram, a
+page, a screenshot — reading the source is not verification. A label hidden behind a
+frame stroke, an arrowhead removed by a filter, a nav that a JS-loaded theme breaks:
+all invisible in the source and obvious the moment it is rendered and viewed. Grepping
+the built output is not looking at it.
+
+**A number in an artifact is a claim.** Count it from the source before writing it
+down. A diagram saying "7 agents" beside nine shapes, or a page claiming 12 skills
+when there are 23, discredits everything around it — and the reader has no way to
+know which other facts to distrust.
+
 **Say what you did not do.** A skipped step, a partial scope, an unavailable tool —
 state it plainly. An artifact that implies more coverage than it has is worse than one
 that admits the gap.
