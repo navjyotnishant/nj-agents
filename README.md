@@ -209,6 +209,10 @@ Per-project (into `DIR/.claude/`):
 ./install.sh --project /path/to/your/repo
 ```
 
+> **Upgrading from before `global/AGENTS.md`?** The guidance file was renamed from
+> `global/CLAUDE.md`, which orphans an existing `~/.claude/CLAUDE.md` symlink — it
+> will point at a path that no longer exists. Re-run `./install.sh` to repair it.
+
 ### Other agents
 
 `SKILL.md` is an open standard, so the skills run on more than Claude Code:
@@ -272,7 +276,7 @@ nj-agents/
 ├── CONVENTIONS.md              # shared rules for the review class
 ├── CONVENTIONS-authoring.md    # shared rules for the authoring class
 ├── CONVENTIONS-pm.md           # shared rules for the PM-authoring class
-├── global/CLAUDE.md            # guidance installed to ~/.claude/CLAUDE.md
+├── global/AGENTS.md            # guidance; symlinked per runner (CLAUDE.md/AGENTS.md/GEMINI.md)
 ├── install.sh                  # symlinks skills/ + agents/ into a .claude/ dir
 └── README.md
 ```
@@ -280,8 +284,9 @@ nj-agents/
 ### Global guidance file
 
 Installing the skills makes them *available* everywhere; it doesn't tell Claude
-**when** to reach for them. [`global/CLAUDE.md`](global/CLAUDE.md) closes that gap —
-`install.sh` symlinks it to `~/.claude/CLAUDE.md`, so every session in every repo
+**when** to reach for them. [`global/AGENTS.md`](global/AGENTS.md) closes that gap —
+`install.sh` symlinks it under whichever name the runner reads — `~/.claude/CLAUDE.md`,
+`~/.codex/AGENTS.md`, `~/.gemini/GEMINI.md` — so every session in every repo
 starts knowing the suite exists, what each skill covers, and the standing rules
 (propose-commit, ground-in-repo, degrade-don't-fail, scoped output).
 
@@ -300,7 +305,7 @@ repos. So `install.sh` diffs the tables against what actually ships and warns:
 ```
 
 ```
-  ! global/CLAUDE.md is out of sync with skills/:
+  ! global/AGENTS.md is out of sync with skills/:
       not listed (invisible in other repos): commit-assistant
 ```
 

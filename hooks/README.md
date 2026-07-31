@@ -13,7 +13,7 @@ A `UserPromptSubmit` hook. Matches the prompt against the skills that ship here 
 adds a one-line note naming the ones that fit. It only **adds context** — it never
 blocks a prompt and never runs a skill.
 
-Why it exists: `global/CLAUDE.md` already says "prefer the matching skill over
+Why it exists: `global/AGENTS.md` already says "prefer the matching skill over
 improvising the same task by hand," but that relies on the model remembering, and in
 a long build/test/PR loop it quietly stops happening.
 

@@ -23,7 +23,7 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILLS_SRC="$REPO_DIR/skills"
 AGENTS_SRC="$REPO_DIR/agents"
-GLOBAL_MD_SRC="$REPO_DIR/global/CLAUDE.md"
+GLOBAL_MD_SRC="$REPO_DIR/global/AGENTS.md"
 REPO_MD_SRC="$REPO_DIR/CLAUDE.md"
 STRICT=0
 JSON=0
@@ -501,7 +501,7 @@ check_conventions_sections() {
   return 0
 }
 
-# global/CLAUDE.md is what makes a skill discoverable in OTHER repos, and it lists
+# global/AGENTS.md is what makes a skill discoverable in OTHER repos, and it lists
 # them by hand. A skill missing from it ships but stays invisible. Moved from
 # install.sh; the agent scan is scoped to table column 3 here rather than every
 # backticked token in the file.
@@ -513,20 +513,20 @@ check_guidance_sync() {
   actual="$(for d in "$SKILLS_SRC"/*/; do basename "$d"; done | sort -u)"
   missing="$(comm -13 <(echo "$listed") <(echo "$actual") | tr '\n' ' ')"
   stale="$(comm -23 <(echo "$listed") <(echo "$actual") | tr '\n' ' ')"
-  [ -n "${missing// }" ] && { finding check_guidance_sync doc-sync "global/CLAUDE.md does not list these skills (invisible in other repos): $missing"; bad=1; }
-  [ -n "${stale// }" ] && { finding check_guidance_sync doc-sync "global/CLAUDE.md lists skills that no longer exist: $stale"; bad=1; }
+  [ -n "${missing// }" ] && { finding check_guidance_sync doc-sync "global/AGENTS.md does not list these skills (invisible in other repos): $missing"; bad=1; }
+  [ -n "${stale// }" ] && { finding check_guidance_sync doc-sync "global/AGENTS.md lists skills that no longer exist: $stale"; bad=1; }
 
   listed="$(awk -F'|' 'NF>3 {print $4}' "$GLOBAL_MD_SRC" | grep -o '`[a-z0-9-]*`' | tr -d '`' | sort -u || true)"
   actual="$(for f in "$AGENTS_SRC"/*.md; do basename "$f" .md; done | sort -u)"
   missing="$(comm -13 <(echo "$listed") <(echo "$actual") | tr '\n' ' ')"
-  [ -n "${missing// }" ] && { finding check_guidance_sync doc-sync "global/CLAUDE.md does not mention these agents: $missing"; bad=1; }
+  [ -n "${missing// }" ] && { finding check_guidance_sync doc-sync "global/AGENTS.md does not mention these agents: $missing"; bad=1; }
 
   [ "$bad" = "0" ] && ok "guidance file in sync"
   return 0
 }
 
 # hooks/suggest-skills.sh hand-lists the skills it suggests, exactly like
-# global/CLAUDE.md does — so it has the same staleness bug. A skill it never names
+# global/AGENTS.md does — so it has the same staleness bug. A skill it never names
 # is one the hook will never surface, which is the whole reason the hook exists.
 check_hook_sync() {
   local hook="$REPO_DIR/hooks/suggest-skills.sh" listed actual missing stale bad=0
@@ -558,7 +558,7 @@ check_stale_agents() {
   listed="$(awk -F'|' 'NF>3 {print $4}' "$GLOBAL_MD_SRC" | grep -o '`[a-z0-9-]*`' | tr -d '`' | sort -u || true)"
   for a in $listed; do
     [ -f "$AGENTS_SRC/$a.md" ] || {
-      finding check_stale_agents doc-sync "global/CLAUDE.md cites agent '$a' — no agents/$a.md"
+      finding check_stale_agents doc-sync "global/AGENTS.md cites agent '$a' — no agents/$a.md"
       bad=1
     }
   done
@@ -567,6 +567,23 @@ check_stale_agents() {
 }
 
 # Both CLAUDE.md files state the counts in prose. Prose drifts silently.
+# Codex TRUNCATES AGENTS.md past 32 KiB, and truncation is silent — the guidance
+# simply stops applying part-way through, with nothing to notice. The file is well
+# under today, so this is a tripwire for the edit that pushes it over rather than a
+# current problem.
+check_guidance_size() {
+  local bytes limit=32768
+  [ -f "$GLOBAL_MD_SRC" ] || return 0
+  bytes="$(wc -c < "$GLOBAL_MD_SRC" | tr -d ' ')"
+  if [ "$bytes" -gt "$limit" ]; then
+    finding check_guidance_size structural \
+      "global/AGENTS.md is ${bytes} bytes — over Codex's ${limit}-byte limit, so it will be silently truncated there"
+    return 0
+  fi
+  ok "guidance file fits Codex's 32 KiB limit ($((bytes / 1024)) KiB used)"
+  return 0
+}
+
 # The installer's whole premise is that ONE clone feeds every runner via symlinks.
 # That is cheap to assert for real — install into a temp dir and look — and it is
 # the kind of claim that rots silently, so assert it rather than trusting the docs.
@@ -654,6 +671,7 @@ check_conventions_sections
 check_guidance_sync
 check_hook_sync
 check_stale_agents
+check_guidance_size
 check_installer_runners
 check_counts
 

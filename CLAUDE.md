@@ -27,7 +27,7 @@ CONVENTIONS.md              # review-class shared rules
 CONVENTIONS-authoring.md    # authoring-class shared rules (§A1–A8)
 CONVENTIONS-pm.md           # PM-authoring-class shared rules (§P1–P8); skills in NAV-82..84
 CONVENTIONS-orchestration.md # §U binds EVERY skill; §C cost + §R progress for spawning ones
-global/CLAUDE.md            # advisory guidance → symlinked to ~/.claude/CLAUDE.md
+global/AGENTS.md            # advisory guidance → symlinked per runner (see install.sh)
 install.sh                  # symlink installer (idempotent; safe uninstall; never clobbers)
 check.sh                    # validator — frontmatter, refs, class contracts, cost/progress
 bin/nj-agents-review        # headless /pre-push-review → §5 exit codes (0 PASS/WARN, 1 BLOCK, 2 error)
@@ -227,8 +227,8 @@ construction and the validator tells you what is still missing:
 3. `./install.sh` → reload Claude Code.
 4. **`./check.sh` must be clean.** It globs, so the new file is covered immediately.
 5. Add a `CHANGELOG.md` entry under `[Unreleased]` — a new skill is user-facing.
-   Use `/changelog`; see the standing rule in `global/CLAUDE.md`.
-6. Update `README.md`, `docs.html`, and the right table in **`global/CLAUDE.md`** —
+   Use `/changelog`; see the standing rule in `global/AGENTS.md`.
+6. Update `README.md`, `docs.html`, and the right table in **`global/AGENTS.md`** —
    that file is hand-maintained and is what makes the skill discoverable in *other*
    repos. `check.sh` flags it if you forget.
 

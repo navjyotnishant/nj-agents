@@ -23,7 +23,7 @@
 | `check_cost_control` | A spawning skill that declares no cost shape | referential |
 | `check_progress_reporting` | A spawning skill that never announces what it dispatched | referential |
 | `check_conventions_sections` | A citation like `§A9` pointing at a heading that does not exist | referential |
-| `check_guidance_sync` | A skill missing from `global/CLAUDE.md`, or listed after deletion | doc-sync |
+| `check_guidance_sync` | A skill missing from `global/AGENTS.md`, or listed after deletion | doc-sync |
 | `check_hook_sync` | A skill the suggestion hook never suggests | doc-sync |
 | `check_stale_agents` | An agent named in the docs but deleted from the repo | doc-sync |
 | `check_counts` | Prose counts drifting from reality | doc-sync |

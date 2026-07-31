@@ -12,6 +12,19 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- The global guidance file is now **`global/AGENTS.md`** — one canonical copy that
+  every runner reads. `install.sh` symlinks it to `~/.claude/CLAUDE.md`,
+  `~/.codex/AGENTS.md`, or `~/.gemini/GEMINI.md` depending on `--runner`, so all
+  three resolve to the same bytes and there is no per-runner variant to keep in
+  sync. `AGENTS.md` is the name the ecosystem is converging on.
+  `check.sh` gained a size assertion: Codex silently truncates `AGENTS.md` past
+  32 KiB, and truncation gives no signal — the guidance just stops applying
+  part-way through. The file is 16 KiB today, so this is a tripwire for the edit
+  that would push it over.
+
+  **Upgrading:** the rename orphans an existing `~/.claude/CLAUDE.md` symlink,
+  which will point at a path that no longer exists. Re-run `./install.sh` to
+  repair it.
 - `./install.sh --runner claude|codex|cursor|gemini|agents` installs into that
   agent's own config directory, with the global guidance file linked under the
   name it reads (`CLAUDE.md` / `AGENTS.md` / `GEMINI.md`). `claude` remains the

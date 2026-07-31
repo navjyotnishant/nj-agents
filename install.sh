@@ -9,7 +9,7 @@
 #   ./install.sh --project DIR   # install into DIR/<runner-dir>/ (per-project)
 #   ./install.sh --uninstall     # remove symlinks this installer created (global)
 #   ./install.sh --project DIR --uninstall
-#   ./install.sh --check-only    # only check global/CLAUDE.md is in sync; install nothing
+#   ./install.sh --check-only    # only check global/AGENTS.md is in sync; install nothing
 #   ./install.sh --with-hooks    # ALSO register the skill-suggestion hook in settings.json
 #   ./install.sh --git-hooks     # install this repo's own .git/hooks (per-clone, not committed)
 #
@@ -94,7 +94,7 @@ fi
 
 SKILLS_SRC="$REPO_DIR/skills"
 AGENTS_SRC="$REPO_DIR/agents"
-GLOBAL_MD_SRC="$REPO_DIR/global/CLAUDE.md"
+GLOBAL_MD_SRC="$REPO_DIR/global/AGENTS.md"
 HOOKS_SRC="$REPO_DIR/hooks"
 SKILLS_DST="$TARGET_ROOT/skills"
 AGENTS_DST="$TARGET_ROOT/agents"

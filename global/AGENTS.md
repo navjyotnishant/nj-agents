@@ -1,9 +1,11 @@
 # Global guidance — nj-agents SDLC toolkit
 
 <!--
-  Source of truth: <nj-agents repo>/global/CLAUDE.md
-  Installed to ~/.claude/CLAUDE.md as a SYMLINK by nj-agents/install.sh.
-  Edit it in the repo, not here. Repo: github.com/navjyotnishant/nj-agents
+  Source of truth: <nj-agents repo>/global/AGENTS.md
+  Installed as a SYMLINK by nj-agents/install.sh, under whichever filename the
+  runner reads — ~/.claude/CLAUDE.md, ~/.codex/AGENTS.md, ~/.gemini/GEMINI.md.
+  All of them point back HERE, so there is one copy and nothing to keep in sync.
+  Edit it in the repo, not through a link. Repo: github.com/navjyotnishant/nj-agents
 -->
 
 A personal toolkit of Claude Code **skills and agents** covering the software
