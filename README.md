@@ -24,7 +24,7 @@ How the suite fits together, and the key workflows — see
 from JSON models by the suite's own `/arch-diagram`, passed through the `diagram-qa`
 visual-QA gate).
 
-![Suite architecture](docs/architecture/suite-overview-icons.svg)
+![Suite architecture](docs/architecture/suite-overview.svg)
 
 ## Review suite (review class)
 
