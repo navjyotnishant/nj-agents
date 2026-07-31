@@ -1,6 +1,7 @@
 ---
 name: tests-build-runner
 description: "Use this agent to auto-detect and run a repo's own test/lint/build commands over the current changes and triage any failures. It discovers the right commands for whatever stack the repo uses (Node, Python, Go, Rust, JVM, Make/just, or commands documented in CLAUDE.md/AGENTS.md), runs them, and reports pass/fail — it never installs tooling and never modifies code. Works in any repo.\n\n<example>\nContext: The user wants tests and lint run as a gate before pushing.\nuser: \"run the tests and lint before I push\"\n<commentary>\n/review-tests-build (or the pre-push-review umbrella) spawns this agent to detect and run the project's commands and gate on the result.\n</commentary>\nassistant: \"Launching tests-build-runner to detect and run this repo's test/lint/build commands.\"\n</example>"
+tools: Read, Grep, Glob, Bash
 color: green
 author: navjyotnishant
 ---

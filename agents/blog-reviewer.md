@@ -1,6 +1,7 @@
 ---
 name: blog-reviewer
 description: "Use this agent to critique a fact-checked technical blog draft for structure, clarity, technical depth, narrative flow, and audience fit — returning actionable editorial notes (not a rewrite). Works in any repo/topic.\n\n<example>\nContext: The draft has passed fact-checking and needs an editorial critique before final editing.\nuser: \"review this blog draft\"\n<commentary>\nThe tech-blog skill spawns this agent after the fact-checker; its notes feed the editor.\n</commentary>\nassistant: \"Launching blog-reviewer for a structure and clarity critique.\"\n</example>"
+tools: Read, Grep, Glob
 color: yellow
 author: navjyotnishant
 ---

@@ -12,6 +12,14 @@ does as of this version, rather than how it was built.
 
 ### Changed
 
+- All 25 agents now declare an explicit `tools:` allowlist. Claude Code and Cursor
+  treat a missing key as inherit-all, but **Gemini CLI treats it as _no_ tools** —
+  the agent loads and then cannot act — so an explicit list is the only spelling
+  that means the same thing on every runner. The lists are derived per agent from
+  what its body actually does: 22 of the 25 need only read tools, because they
+  return content for the skill to write rather than writing anything themselves.
+  `check.sh` now requires the key and fails an agent whose body claims read-only
+  while its `tools:` declares a write tool.
 - Review-skill banners now say "this session" rather than "this Claude session".
   **The privacy guarantee is unchanged** — the diff still goes only to the running
   session and its subagents, no external API is called, and nothing leaves the

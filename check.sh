@@ -169,7 +169,12 @@ check_agent_frontmatter() {
     # No `model:` — an agent inherits the session's model, so an Opus session gets
     # Opus subagents. Pinning one in the file silently overrides the user's choice.
     # If an agent ever needs a specific tier, it states why in its own body.
-    for key in name description color; do
+    #
+    # `tools:` IS required, and the reason is portability rather than taste. Claude
+    # Code and Cursor read a missing key as inherit-all, but Gemini CLI reads it as
+    # *no tools* — the agent loads and then cannot do anything. An explicit list is
+    # the only spelling that means the same thing on every runner.
+    for key in name description tools color; do
       grep -q "^$key:" "$f" || {
         finding check_agent_frontmatter structural "agents/$name.md: frontmatter missing '$key:'"
         bad=1
@@ -180,6 +185,23 @@ check_agent_frontmatter() {
       finding check_agent_frontmatter structural "agents/$name.md: name: is '$val', must match the filename"
       bad=1
     }
+
+    # An agent whose own body says it is read-only must not hand itself a write
+    # tool. The prose and the tool list are two statements of the same contract,
+    # and a silent disagreement between them is exactly how an advise-only
+    # reviewer starts editing the repo it was asked to review.
+    val="$(grep -m1 '^tools:' "$f" | sed 's/^tools: *//' || true)"
+    if printf '%s' "$val" | grep -qE '\b(Write|Edit|NotebookEdit)\b'; then
+      # Anchor on the agent's own safety posture, not any mention of the words.
+      # "only safe, read-only/demo commands" describes what an agent may RUN and
+      # says nothing about whether it writes — matching it flagged an agent whose
+      # whole job is producing an image file.
+      if body "$f" | grep -qiE '^(Read-only\b|Do not write files|Never write files)'; then
+        finding check_agent_frontmatter contract \
+          "agents/$name.md: declares a write tool but its body says it is read-only"
+        bad=1
+      fi
+    fi
   done
   [ "$bad" = "0" ] && ok "agent frontmatter ok ($(ls "$AGENTS_SRC"/*.md | wc -l | tr -d ' ') agents)"
   return 0

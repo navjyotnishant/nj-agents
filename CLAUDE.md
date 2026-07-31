@@ -44,10 +44,19 @@ docs/architecture/          # generated diagrams + their JSON source models
   repo* for accumulated debt and returns candidates — there is no sensible BLOCK for
   "you have 12 unused exports". `check.sh` holds only gates to the verdict tokens.
 - **Agent frontmatter:** `name`, `description` (may embed `<example>`/`<commentary>`),
-  `color`, `author`; optional `memory: project`. Omitting `tools:` inherits all tools,
-  and **omitting `model:` inherits the session's model** — so an Opus session gets Opus
-  subagents. Do not pin a model unless there is a specific, stated reason: a hardcoded
-  tier silently overrides the user's own choice.
+  `tools`, `color`, `author`; optional `memory: project`. **Omitting `model:` inherits
+  the session's model** — so an Opus session gets Opus subagents. Do not pin a model
+  unless there is a specific, stated reason: a hardcoded tier silently overrides the
+  user's own choice.
+  **`tools:` is required, for portability rather than taste.** Claude Code and Cursor
+  read a missing key as inherit-all, but **Gemini CLI reads it as _no_ tools** — the
+  agent loads and then cannot act. An explicit allowlist is the only spelling that
+  means the same thing on every runner. Most agents need only `Read, Grep, Glob`
+  (+ `Bash` if they run commands): **22 of 25 return content for the *skill* to
+  write**, and their bodies say so. Only an agent that genuinely produces a file
+  itself gets `Write` — today that is `screenshot-capturer` and `screenshot-redactor`.
+  `check.sh` fails an agent whose body claims read-only while its `tools:` declares
+  a write tool.
 - **kebab-case** names throughout. This layout matches the official Anthropic plugin
   convention (skill = dir + SKILL.md, agent = flat .md, `scripts/`/`references/` subdirs).
 

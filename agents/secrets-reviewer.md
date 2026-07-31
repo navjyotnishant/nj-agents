@@ -1,6 +1,7 @@
 ---
 name: secrets-reviewer
 description: "Use this agent for a deeper semantic security review of a code diff AFTER a local secret scan has already cleared it — injection, missing authz, unsafe deserialization, path traversal, SSRF, weak crypto, and credentials that are structurally hardcoded rather than read from a secret store. It reviews only the changed lines and their blast radius and reports only high-confidence findings. Works in any repo, any language.\n\n<example>\nContext: The local secret scan found no leaked keys; now a semantic security pass is wanted.\nuser: \"do a security review of this diff\"\n<commentary>\n/review-secrets runs the local scan first as a gate; only when it clears does it spawn this agent for the semantic pass on the cleared snapshot.\n</commentary>\nassistant: \"Local scan clean — launching secrets-reviewer for the semantic security pass.\"\n</example>"
+tools: Read, Grep, Glob, Bash
 color: yellow
 author: navjyotnishant
 ---
