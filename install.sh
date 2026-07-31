@@ -30,9 +30,11 @@
 # agents/*.md (scripts/gen-codex-agents.sh). Generated files are build artifacts:
 # rewritten on every install, never committed, and they say so in their header.
 #
-# Cursor guidance is the remaining gap — it needs .mdc with real frontmatter
-# rather than plain markdown (NAV-152), so --runner cursor installs skills only
-# and says so when it runs.
+# Cursor guidance is generated too, for the same reason: it reads .mdc with real
+# frontmatter, not plain markdown. Its rule is a POINTER at global/AGENTS.md
+# rather than a copy — Cursor's own create-rule skill says rules should stay
+# under 50 lines, and an always-on 240-line rule would cost context on every
+# request (scripts/gen-cursor-rule.sh).
 #
 # Idempotent: re-running relinks. It only ever touches symlinks that point back
 # into THIS repo — it never deletes a real file or a link owned by something else.
@@ -119,7 +121,7 @@ remove_if_ours() {
 
 # Tallies, so the summary can say what actually happened rather than scrolling 49
 # near-identical "linked ..." lines past the one line that mattered.
-N_NEW=0; N_SAME=0; N_REPAIRED=0; N_BLOCKED=0; N_GENERATED=0
+N_NEW=0; N_SAME=0; N_REPAIRED=0; N_BLOCKED=0; N_GENERATED=0; N_RULE=0
 BLOCKED_LIST=""
 
 link_one() {
@@ -215,6 +217,10 @@ if [ "$UNINSTALL" = "1" ]; then
   done
   for f in "$HOOKS_SRC"/*.sh; do [ -f "$f" ] && remove_if_ours "$HOOKS_DST/$(basename "$f")"; done
   [ -n "$GLOBAL_MD_DST" ] && remove_if_ours "$GLOBAL_MD_DST"
+  # Generated, not linked — remove_if_ours would skip it. Only ours carries the
+  # generator's own marker line.
+  r="$TARGET_ROOT/rules/nj-agents.mdc"
+  [ -f "$r" ] && grep -q "gen-cursor-rule.sh" "$r" && { rm "$r"; echo "  removed $r"; }
   echo "Done."
   exit 0
 fi
@@ -255,8 +261,16 @@ fi
 # hand-written file (link_one guards that).
 if [ -n "$GLOBAL_MD_DST" ]; then
   link_one "$GLOBAL_MD_SRC" "$GLOBAL_MD_DST"
-else
-  echo "  - guidance skipped: Cursor needs .mdc with frontmatter, not plain markdown (NAV-152)"
+elif [ "$RUNNER" = "cursor" ]; then
+  # Cursor wants .mdc with real frontmatter, and its own create-rule skill says
+  # rules should stay "under 50 lines" — so this is a generated pointer at the
+  # 240-line guidance, not a copy of it.
+  if n_rule="$("$REPO_DIR/scripts/gen-cursor-rule.sh" "$TARGET_ROOT/rules")"; then
+    N_RULE="$n_rule"
+  else
+    echo "  ! Cursor rule generation failed — the skills install, but Cursor" >&2
+    echo "    will not know to prefer them" >&2
+  fi
 fi
 
 # Hooks: shipped here so they survive a reinstall, but only WIRED on request —
@@ -301,6 +315,9 @@ echo "  linked        $N_NEW new, $N_SAME already current$([ "$N_REPAIRED" -gt 0
   echo "  generated     $N_GENERATED agent .toml files (Codex reads TOML, not markdown) —
                 build artifacts, rewritten every install; do not edit them"
 [ -n "$GLOBAL_MD_DST" ] && echo "  guidance      ${GLOBAL_MD_DST#$HOME/} -> ${GLOBAL_MD_SRC#$REPO_DIR/}"
+[ "$N_RULE" -gt 0 ] && \
+  echo "  guidance      rules/nj-agents.mdc ($N_RULE lines, generated) — a pointer at
+                global/AGENTS.md, since Cursor rules should stay under 50 lines"
 
 if [ "$N_BLOCKED" -gt 0 ]; then
   echo ""

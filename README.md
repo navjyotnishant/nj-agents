@@ -264,7 +264,7 @@ skill once and every runner sees it. There is nothing to sync.
 |---|---|---|---|---|
 | **24 skills** | yes | yes | yes | yes |
 | **25 agents** | yes | yes (generated) | not yet | yes |
-| **Guidance file** | `CLAUDE.md` | `AGENTS.md` | not yet | `GEMINI.md` |
+| **Guidance file** | `CLAUDE.md` | `AGENTS.md` | `.mdc` (generated) | `GEMINI.md` |
 
 Codex reads agents as **TOML**, not markdown with YAML frontmatter — a different
 *format*, not a different path, so they cannot be symlinked. `--runner codex`
@@ -272,8 +272,12 @@ Codex reads agents as **TOML**, not markdown with YAML frontmatter — a differe
 Codex's own `migrate-to-codex` converter. Generated files are build artifacts:
 rewritten on every install, never committed, and they say so in their header.
 
-Cursor guidance is the remaining gap (`.mdc` needs real frontmatter), so
-`--runner cursor` installs skills only and says so when it runs.
+Cursor reads guidance as `.mdc` with real frontmatter, so that is generated too —
+but as a **pointer**, not a copy. Cursor's own `create-rule` skill says rules
+should stay "under 50 lines"; an always-on 240-line rule would cost context on
+every request. The generated rule names the classes and the guarantees, and
+points at `global/AGENTS.md` for the rest. `check.sh` fails it if it outgrows
+the budget.
 
 **What is actually verified**, as distinct from inferred:
 

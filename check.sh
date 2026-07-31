@@ -703,6 +703,40 @@ PY
   return 0
 }
 
+# Cursor's own create-rule skill says rules should stay "under 50 lines" and be
+# "concise and to the point". Our rule is generated, so it can quietly grow past
+# that as skills are added — an always-on rule costs context on every request.
+check_cursor_rule() {
+  local tmp lines
+  [ -x "$REPO_DIR/scripts/gen-cursor-rule.sh" ] || return 0
+  tmp="$(mktemp -d)" || return 0
+  # shellcheck disable=SC2064
+  trap "rm -rf '$tmp'" RETURN
+
+  if ! "$REPO_DIR/scripts/gen-cursor-rule.sh" "$tmp" >/dev/null 2>&1; then
+    finding check_cursor_rule structural \
+      "scripts/gen-cursor-rule.sh failed — Cursor would not know the toolkit exists"
+    return 0
+  fi
+  [ -f "$tmp/nj-agents.mdc" ] || {
+    finding check_cursor_rule structural "gen-cursor-rule.sh wrote no nj-agents.mdc"
+    return 0
+  }
+  # Frontmatter must be real, or Cursor treats it as a plain file.
+  head -1 "$tmp/nj-agents.mdc" | grep -q '^---$' || {
+    finding check_cursor_rule structural "the generated Cursor rule has no YAML frontmatter"
+    return 0
+  }
+  lines="$(wc -l < "$tmp/nj-agents.mdc" | tr -d ' ')"
+  if [ "$lines" -gt 50 ]; then
+    finding check_cursor_rule structural \
+      "the generated Cursor rule is $lines lines — over Cursor's own 50-line guidance for an always-on rule. Make it point at more and state less."
+    return 0
+  fi
+  ok "Cursor rule generates and fits its 50-line budget ($lines lines)"
+  return 0
+}
+
 check_guidance_size() {
   local bytes limit=32768
   [ -f "$GLOBAL_MD_SRC" ] || return 0
@@ -805,6 +839,7 @@ check_guidance_sync
 check_hook_sync
 check_stale_agents
 check_codex_agent_generation
+check_cursor_rule
 check_guidance_size
 check_diagram_counts
 check_installer_runners

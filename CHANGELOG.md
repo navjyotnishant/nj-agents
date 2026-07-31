@@ -36,6 +36,17 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- **Cursor knows the toolkit exists.** Cursor reads guidance as `.mdc` in
+  `.cursor/rules/` with real YAML frontmatter, so `global/AGENTS.md` cannot be
+  symlinked there the way `CLAUDE.md` and `GEMINI.md` can. `./install.sh --runner
+  cursor` generates the rule instead — deliberately a **pointer, not a copy**.
+  Cursor's own `create-rule` skill says rules should stay "under 50 lines" and be
+  "concise and to the point"; converting 240 lines of standing rules into an
+  always-on rule would cost context on every request. The generated rule names the
+  five classes, lists their skills, states the guarantees every skill makes, and
+  points at `global/AGENTS.md` for the rest — 33 lines. `check.sh` fails it if it
+  outgrows the budget, and the skill lists are read from the file tree so they
+  cannot drift.
 - **Codex gets the agents too.** Codex reads agents as TOML rather than markdown
   with YAML frontmatter — a different *format*, not a different path, so the 25
   `agents/*.md` cannot be symlinked there the way skills can. `./install.sh
