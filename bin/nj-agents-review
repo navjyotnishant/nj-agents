@@ -18,6 +18,23 @@
 # has no idea what PASS/WARN/BLOCK means, so without this wrapper the exit-code
 # contract in CONVENTIONS.md §5 is documented but unimplemented — a hook wired to
 # `claude -p` directly would let a BLOCK through silently.
+#
+# Runner: `claude -p` by default. Override with NJ_AGENT_CMD to drive a different
+# agent CLI, since the verdict→exit-code mapping is the value here and it is not
+# Claude-specific:
+#
+#   NJ_AGENT_CMD="codex exec"   nj-agents-review
+#   NJ_AGENT_CMD="gemini -p"    nj-agents-review
+#
+# The word-split is deliberate — the value is a command plus its flags, not a path.
+# When NJ_AGENT_CMD is set, Claude-only flags (--output-format json,
+# --max-budget-usd, --model) are dropped: another CLI would reject them. The
+# verdict is then read from raw text rather than JSON, which the parser below
+# already handles as its no-jq/no-python fallback.
+#
+# NOT YET VERIFIED against a non-Claude runner (NAV-157) — Codex is over its usage
+# limit and Gemini's free tier refuses its CLI client. The plumbing is here; the
+# proof is not. Treat a non-default NJ_AGENT_CMD as untested.
 
 set -euo pipefail
 
@@ -35,8 +52,15 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-command -v claude >/dev/null 2>&1 || {
-  echo "nj-agents-review: the 'claude' CLI is not on PATH — cannot run the review." >&2
+# Word-split on purpose: NJ_AGENT_CMD is "codex exec", not a bare binary.
+AGENT_CMD="${NJ_AGENT_CMD:-claude -p}"
+# shellcheck disable=SC2206
+AGENT=( $AGENT_CMD )
+AGENT_BIN="${AGENT[0]}"
+
+command -v "$AGENT_BIN" >/dev/null 2>&1 || {
+  echo "nj-agents-review: '$AGENT_BIN' is not on PATH — cannot run the review." >&2
+  [ -n "${NJ_AGENT_CMD:-}" ] && echo "  (from NJ_AGENT_CMD=\"$NJ_AGENT_CMD\")" >&2
   exit 2
 }
 git rev-parse --git-dir >/dev/null 2>&1 || {
@@ -44,18 +68,26 @@ git rev-parse --git-dir >/dev/null 2>&1 || {
   exit 2
 }
 
-set -- -p "/pre-push-review" --output-format json --max-budget-usd "$BUDGET"
-[ -n "$MODEL" ] && set -- "$@" --model "$MODEL"
+# --output-format/--max-budget-usd/--model are Claude Code flags; another CLI
+# would reject them outright. Send them only on the default runner, and let the
+# verdict parser fall back to reading raw text everywhere else.
+if [ -n "${NJ_AGENT_CMD:-}" ]; then
+  set -- "/pre-push-review"
+  [ -n "$MODEL" ] && echo "nj-agents-review: --model ignored — NJ_AGENT_CMD is set, so pass the model in it." >&2
+else
+  set -- "/pre-push-review" --output-format json --max-budget-usd "$BUDGET"
+  [ -n "$MODEL" ] && set -- "$@" --model "$MODEL"
+fi
 
 if [ "$DRY_RUN" = "1" ]; then
-  echo "NJ_AGENTS_CI=1 claude $*"
+  echo "NJ_AGENTS_CI=1 $AGENT_CMD $*"
   exit 0
 fi
 
 # NJ_AGENTS_CI=1 puts the skill in non-interactive mode: it never prompts, and
 # resolves ambiguity to the safe outcome (CONVENTIONS.md §5).
-OUT="$(NJ_AGENTS_CI=1 claude "$@" 2>&1)" || {
-  echo "nj-agents-review: the claude CLI failed to run." >&2
+OUT="$(NJ_AGENTS_CI=1 "${AGENT[@]}" "$@" 2>&1)" || {
+  echo "nj-agents-review: '$AGENT_BIN' failed to run." >&2
   printf '%s\n' "$OUT" >&2
   exit 2
 }
@@ -63,7 +95,14 @@ OUT="$(NJ_AGENTS_CI=1 claude "$@" 2>&1)" || {
 # jq if it's here, python3 if it isn't — detect, never require (§A5). Both extract
 # the same two fields; if neither is available we fall back to reading the raw text,
 # which is lossy but still finds an unambiguous verdict.
-if command -v jq >/dev/null 2>&1; then
+#
+# A custom NJ_AGENT_CMD gets no --output-format json, so its output is prose, not
+# JSON. Skip straight to the text path rather than running a JSON parse that would
+# return empty and turn a real verdict into a spurious exit 2.
+if [ -n "${NJ_AGENT_CMD:-}" ]; then
+  IS_ERR=""
+  RESULT="$OUT"
+elif command -v jq >/dev/null 2>&1; then
   IS_ERR="$(printf '%s' "$OUT" | jq -r '.is_error // empty' 2>/dev/null || true)"
   RESULT="$(printf '%s' "$OUT" | jq -r '.result // empty' 2>/dev/null || true)"
 elif command -v python3 >/dev/null 2>&1; then

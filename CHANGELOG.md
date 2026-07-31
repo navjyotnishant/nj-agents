@@ -36,6 +36,26 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- **`bin/nj-agents-review` drives any agent CLI** via `NJ_AGENT_CMD`
+  (`NJ_AGENT_CMD="codex exec" nj-agents-review`). The verdict→exit-code mapping —
+  0 PASS/WARN, 1 BLOCK, 2 harness error — is the value the wrapper adds, and it is
+  not Claude-specific: `claude -p` exits 0 whether the review passed or blocked, and
+  so does every other agent CLI. With a custom runner the Claude-only flags
+  (`--output-format json`, `--max-budget-usd`, `--model`) are dropped, since another
+  CLI would reject them, and the verdict is read from prose instead. `check.sh`
+  asserts all four exit codes against stub CLIs.
+  **Not yet verified against a real non-Claude runner** — Codex is over its usage
+  limit and Gemini's free tier refuses its CLI client. The plumbing is there; the
+  proof is not.
+- **`tests/run.sh` no longer defaults to `haiku`.** With `NJ_TEST_MODEL` unset it
+  uses the runner's own default. The old default meant every behavioural fixture was
+  verified on a model nobody actually runs the skills with — and a smaller model
+  follows a skill more literally, so a fixture could pass there and fail in use.
+  Setting `NJ_TEST_MODEL=haiku` for a cheap pass still works, now as a deliberate
+  choice rather than a silent one.
+  This generator stays Claude-Code-only by construction (it needs
+  `--output-format json`, `--permission-mode`, `--max-budget-usd`), and now says so
+  and exits rather than half-working if `NJ_AGENT_CMD` is set.
 - **Cursor knows the toolkit exists.** Cursor reads guidance as `.mdc` in
   `.cursor/rules/` with real YAML frontmatter, so `global/AGENTS.md` cannot be
   symlinked there the way `CLAUDE.md` and `GEMINI.md` can. `./install.sh --runner

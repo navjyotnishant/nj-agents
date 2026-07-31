@@ -243,13 +243,28 @@ skill headlessly and maps the verdict onto the §5 exit codes — 0 PASS/WARN, 1
 would let a BLOCK through. Put `bin/` on PATH, or call it by full path. The hook
 degrades to a no-op if it's absent, so it never blocks blindly.)
 
-**Option B — project `.claude/settings.json` `PreToolUse` hook** matching
-`Bash(git push*)` — gates pushes made *through Claude*. Best for solo-Claude
-workflows.
+**Option A is the portable one.** It is a plain git hook running a plain script, so
+it gates a push however that push happens — from a terminal, an IDE, or another
+agent. The wrapper drives `claude -p` by default and honours `NJ_AGENT_CMD` for a
+different CLI:
 
-Recommend A for team-wide gating, B for solo-Claude. Present the snippet; write it
-only on the user's go-ahead. Offer to add `.nj-agents-reports/` to `.gitignore` if
-the report dir lives under the repo.
+```bash
+NJ_AGENT_CMD="codex exec" nj-agents-review
+```
+
+(That override is **not yet verified against a non-Claude runner** — the plumbing
+exists, the proof does not. Say so rather than implying it is tested.)
+
+**Option B — project `.claude/settings.json` `PreToolUse` hook** matching
+`Bash(git push*)`. **Claude Code only**: `settings.json` and `PreToolUse` are its
+own mechanism, with no equivalent in Codex, Cursor or Gemini. It also gates only
+pushes made *through Claude* — a push typed into a terminal bypasses it entirely.
+
+Recommend A in almost every case: it is portable, and it catches every push rather
+than the subset that goes through one tool. B is worth it only for a solo
+Claude-Code workflow where the convenience of an in-session gate outweighs both.
+Present the snippet; write it only on the user's go-ahead. Offer to add
+`.nj-agents-reports/` to `.gitignore` if the report dir lives under the repo.
 
 ## Step 7 — Clean up
 

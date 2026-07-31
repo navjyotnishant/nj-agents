@@ -706,6 +706,37 @@ PY
 # Cursor's own create-rule skill says rules should stay "under 50 lines" and be
 # "concise and to the point". Our rule is generated, so it can quietly grow past
 # that as skills are added — an always-on rule costs context on every request.
+# The wrapper exists to turn a verdict into an exit code, because `claude -p`
+# exits 0 whether the review passed or blocked. That mapping is the whole product
+# and it is runner-neutral, so assert it against stub CLIs rather than trusting it
+# — an absent verdict must read as error (2), never as pass.
+check_review_exit_codes() {
+  local tmp bad=0 v want got
+  [ -x "$REPO_DIR/bin/nj-agents-review" ] || return 0
+  tmp="$(mktemp -d)" || return 0
+  # shellcheck disable=SC2064
+  trap "rm -rf '$tmp'" RETURN
+
+  for v in "BLOCK:1" "PASS:0" "WARN:0" "NOVERDICT:2"; do
+    want="${v##*:}"; v="${v%%:*}"
+    if [ "$v" = "NOVERDICT" ]; then
+      printf '#!/bin/sh\necho "the review did not reach a verdict"\n' > "$tmp/stub"
+    else
+      printf '#!/bin/sh\necho "Overall: %s"\n' "$v" > "$tmp/stub"
+    fi
+    chmod +x "$tmp/stub"
+    got=0
+    NJ_AGENT_CMD="$tmp/stub" "$REPO_DIR/bin/nj-agents-review" >/dev/null 2>&1 || got=$?
+    [ "$got" = "$want" ] || {
+      finding check_review_exit_codes structural \
+        "bin/nj-agents-review: a '$v' verdict exited $got, expected $want (CONVENTIONS.md §5)"
+      bad=1
+    }
+  done
+  [ "$bad" = "0" ] && ok "review verdict maps to the right exit code on any runner"
+  return 0
+}
+
 check_cursor_rule() {
   local tmp lines
   [ -x "$REPO_DIR/scripts/gen-cursor-rule.sh" ] || return 0
@@ -839,6 +870,7 @@ check_guidance_sync
 check_hook_sync
 check_stale_agents
 check_codex_agent_generation
+check_review_exit_codes
 check_cursor_rule
 check_guidance_size
 check_diagram_counts
