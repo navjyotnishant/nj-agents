@@ -110,6 +110,16 @@ docs/architecture/          # generated diagrams + their JSON source models
   Motivated by the global "track work in a PM tool" rule.
 - **Social class** — produces paste-ready copy; never writes to the repo, never auto-posts.
   Skill: `/social-post`.
+- **Testing class** — *writes test source into the repo **and executes it** against a
+  running app.* The only class that does either, which is why it is its own class
+  rather than a squeeze into authoring: `/review-tests-build` runs commands but writes
+  nothing, `/test-gap-finder` explicitly never writes tests. Shared rules:
+  `CONVENTIONS-testing.md` (T1–T12). Three of those are enforced by `check.sh`:
+  **T1** writes only inside detected test directories, never app source · **T2** never
+  weakens or deletes an assertion, and no sleeps/retries/skips to force green ·
+  **T3** requires an explicit non-prod base URL, else BLOCK. A read-only testing
+  skill opts out of T1 by stating it is read-only, never by omission.
+  Skills land under NAV-161.
 
 > The one rule both code-facing classes share: **the human decides what gets committed.**
 > (The user may explicitly say "commit and push" — then it's fine.)

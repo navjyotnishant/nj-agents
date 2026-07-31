@@ -9,7 +9,7 @@
 #   ./check.sh --strict          # same, but exit 1 if anything was found (CI)
 #   ./check.sh --json            # machine-readable findings on stdout
 #
-#   ./check.sh --new-skill NAME --class review|authoring|workflow|pm|social
+#   ./check.sh --new-skill NAME --class review|authoring|workflow|pm|social|testing
 #   ./check.sh --new-agent NAME
 #                                # scaffold from templates/, then validate it
 #
@@ -57,8 +57,8 @@ scaffold() {
   esac
   if [ "$kind" = "skill" ]; then
     case "$class" in
-      review|authoring|workflow|pm|social) ;;
-      *) echo "  ! --class must be one of: review authoring workflow pm social" >&2; exit 2 ;;
+      review|authoring|workflow|pm|social|testing) ;;
+      *) echo "  ! --class must be one of: review authoring workflow pm social testing" >&2; exit 2 ;;
     esac
     tmpl="$REPO_DIR/templates/SKILL.md"; dst="$SKILLS_SRC/$name/SKILL.md"
   else
@@ -154,7 +154,7 @@ check_skill_frontmatter() {
     esac
     val="$(grep -m1 '^class:' "${d%/}/SKILL.md" | sed 's/^class: *//' || true)"
     case "$val" in
-      review|authoring|workflow|pm|social|"") ;;
+      review|authoring|workflow|pm|social|testing|"") ;;
       *) finding check_skill_frontmatter structural "skills/$name: unknown class '$val'"; bad=1 ;;
     esac
   done
@@ -490,6 +490,39 @@ check_class_contract() {
             "skills/$name (pm) has no paste-ready-markdown fallback (§P3/§P6)"
           bad=1
         } ;;
+      testing)
+        # This class writes source AND executes it against a running app — the only
+        # class that does either. T1/T2/T3 are what keep that safe, so they are
+        # asserted rather than left to prose (which is how `social` ended up with no
+        # enforced contract at all).
+        #
+        # A read-only testing skill (/test-plan, /test-report) has nothing to fence,
+        # so it opts out by SAYING it is read-only — never by omission, or the
+        # exemption becomes the default.
+        if ! has "$f" 'read-only\|writes nothing\|never writes' i; then
+          has "$f" 'test director\|only .*test dir\|§T1\|T1 ' i || {
+            finding check_class_contract referential \
+              "skills/$name (testing) never states the T1 source fence — writes only inside detected test directories, never app source"
+            bad=1
+          }
+        fi
+        # T2 binds anything that edits an existing spec. "Green by deletion" is the
+        # failure mode, and it is invisible in a passing suite.
+        if has "$f" 'repair\|fix the test\|edit.*spec' i; then
+          has "$f" 'weaken\|delete an assertion\|§T2\|T2 ' i || {
+            finding check_class_contract referential \
+              "skills/$name (testing) edits specs but never states T2 — may not weaken or delete an assertion, add a sleep, raise retries, or add a skip"
+            bad=1
+          }
+        fi
+        # T3 is the one clause whose blast radius is outside the repo.
+        if has "$f" 'base url\|run the suite\|execute' i; then
+          has "$f" 'non-prod\|§T3\|T3 ' i || {
+            finding check_class_contract referential \
+              "skills/$name (testing) runs against an app but never states the T3 non-prod gate"
+            bad=1
+          }
+        fi ;;
       workflow)
         # A workflow skill must never push or tag — that half is absolute. Running
         # `git commit` is allowed, but ONLY behind an explicit per-item approval:
