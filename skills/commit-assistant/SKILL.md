@@ -1,6 +1,6 @@
 ---
 name: commit-assistant
-description: Use this skill when the user asks to "write a commit message", "help me commit this", "draft a conventional commit for these changes", or wants a clean commit message for the current diff. Reads the working-tree changes, groups them into logically distinct commits when they're unrelated, and drafts a Conventional Commits message for each — then prints the exact `git add` + `git commit` block for the user to run. It NEVER runs git itself: the human decides what gets committed. Works in any git repo; nothing here is project-specific.
+description: "Use this skill when the user asks to \"write a commit message\", \"help me commit this\", \"draft a conventional commit for these changes\", or wants a clean commit message for the current diff. Reads the working-tree changes, groups them into logically distinct commits when they're unrelated, and drafts a Conventional Commits message for each — then prints the exact `git add` + `git commit` block for the user to run. It NEVER runs git itself: the human decides what gets committed. Works in any git repo; nothing here is project-specific."
 version: 0.1.0
 class: workflow
 author: navjyotnishant

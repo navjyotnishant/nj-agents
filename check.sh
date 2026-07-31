@@ -162,6 +162,45 @@ check_skill_frontmatter() {
   return 0
 }
 
+# Frontmatter must be VALID YAML, not merely parseable by a lenient reader. An
+# unquoted scalar containing ": " is a mapping-value error: YAML reads it as a
+# nested key. Claude Code and Gemini shrug and load the skill anyway; Codex refuses
+# it outright —
+#   ERROR failed to load skill .../commit-assistant/SKILL.md: invalid YAML:
+#   mapping values are not allowed in this context
+# — which is how "It NEVER runs git itself: the human decides" silently made two
+# skills invisible on one runner. Quote the value and it is fine everywhere.
+check_frontmatter_yaml() {
+  local f name key val bad=0
+  for f in "$SKILLS_SRC"/*/SKILL.md "$AGENTS_SRC"/*.md; do
+    [ -f "$f" ] || continue
+    case "$f" in
+      "$SKILLS_SRC"/*) name="skills/$(basename "$(dirname "$f")")" ;;
+      *)               name="agents/$(basename "$f")" ;;
+    esac
+    # Frontmatter only: everything between the first two --- lines.
+    while IFS= read -r line; do
+      case "$line" in
+        [a-z_]*": "*) ;;
+        *) continue ;;
+      esac
+      key="${line%%: *}"
+      val="${line#*: }"
+      case "$val" in
+        '"'*|"'"*) continue ;;   # quoted — a colon inside is safe
+      esac
+      case "$val" in
+        *": "*)
+          finding check_frontmatter_yaml structural \
+            "$name: '$key:' is an unquoted value containing ': ' — invalid YAML, and Codex refuses to load it. Wrap the value in double quotes."
+          bad=1 ;;
+      esac
+    done < <(awk '/^---$/{n++; next} n==1' "$f")
+  done
+  [ "$bad" = "0" ] && ok "frontmatter is valid YAML on every runner"
+  return 0
+}
+
 check_agent_frontmatter() {
   local f name key val bad=0
   for f in "$AGENTS_SRC"/*.md; do
@@ -682,6 +721,7 @@ check_counts() {
 
 [ "$JSON" = "1" ] || echo "Checking nj-agents ..."
 
+check_frontmatter_yaml
 check_skill_frontmatter
 check_agent_frontmatter
 check_authorship

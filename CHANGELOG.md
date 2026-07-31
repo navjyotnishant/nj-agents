@@ -10,6 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Initial public release of the toolkit. Everything below describes what nj-agents
 does as of this version, rather than how it was built.
 
+### Fixed
+
+- **`/commit-assistant` and `/pre-push-review` would not load on Codex CLI.** Their
+  `description:` frontmatter was an unquoted YAML scalar containing `": "`, which
+  YAML reads as a nested mapping — so the frontmatter was invalid, and Codex
+  refused both skills outright (`invalid YAML: mapping values are not allowed in
+  this context`). Claude Code and Gemini parse them anyway, which is why it went
+  unnoticed: a lenient reader hid a genuine defect. Both values are now quoted.
+  `check.sh` fails any unquoted frontmatter value containing `": "`, so a strict
+  runner can no longer be the only thing that notices.
+
 ### Changed
 
 - **Architecture diagrams no longer carry file-tree counts.** "23 skills",
