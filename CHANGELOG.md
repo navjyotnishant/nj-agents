@@ -41,7 +41,7 @@ does as of this version, rather than how it was built.
   the repo and then executes it against a running application**, and no existing
   class does either. `/review-tests-build` runs commands but writes nothing;
   `/test-gap-finder` reads coverage and never writes a test.
-  Twelve clauses, mostly prohibitions, because a suite that can edit and run itself
+  Fourteen clauses, mostly prohibitions, because a suite that can edit and run itself
   has two failure modes nobody notices for months: it goes green by weakening its
   own assertions (**T2**), and it publishes a credential it captured from a real
   session (**T4**). T1 (source fence), T2, and T3 (non-prod URL gate) are **enforced
