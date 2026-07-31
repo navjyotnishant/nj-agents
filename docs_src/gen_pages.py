@@ -506,15 +506,25 @@ write("index.md", [
     "",
     f"![How skills and agents relate](assets/{OVERVIEW_DIAGRAM})",
     "",
-    "## Every page here is generated",
+    "## Always current, by construction",
     "",
-    "Nothing in this site is hand-written or committed. Each page is built from "
-    "`skills/*/SKILL.md` and `agents/*.md` at build time, and the skill↔agent wiring "
-    "is derived from the source rather than maintained by hand — so a page cannot "
-    "drift from the thing it documents, and a reference to something that does not "
-    "exist fails the build.",
+    "Every skill and agent here is **written and maintained by hand** — the procedures, "
+    "the safety rails, the conventions each one follows. This site is the *presentation* "
+    "of those files, rebuilt from them on every commit.",
     "",
-    "See [the harness](harness/overview.md) for what else is enforced.",
+    "That distinction is what makes it trustworthy:",
+    "",
+    "- **A page cannot disagree with the thing it documents.** It is rendered from "
+    "`skills/*/SKILL.md` and `agents/*.md` at build time, so a change to a skill is a "
+    "change to its page.",
+    "- **The wiring is derived, not retyped.** Which agents a skill spawns — and which "
+    "skills spawn a given agent — is recovered from the definitions themselves.",
+    "- **A broken reference fails the build.** A skill pointing at an agent that does "
+    "not exist stops the site from publishing rather than shipping a dead link.",
+    "",
+    "Built with the help of Claude, and verified the same way everything else here is: "
+    "a validator that runs on every push, and a behavioural suite that asserts what "
+    "these skills must never do.",
 ])
 
 with mkdocs_gen_files.open("SUMMARY.md", "w") as f:
