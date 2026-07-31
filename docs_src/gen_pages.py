@@ -443,7 +443,7 @@ for name in sorted(agents):
         "",
         "| | |",
         "|---|---|",
-        f"| Model | `{m.get('model', '—')}` |",
+        f"| Model | {'`' + m['model'] + '`' if m.get('model') else "inherits the session's"} |",
         f"| Author | {m.get('author', '—')} |",
         f"| Source | [`agents/{name}.md`]({REPO_URL}/agents/{name}.md) |",
         "",

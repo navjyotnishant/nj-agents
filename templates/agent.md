@@ -1,7 +1,6 @@
 ---
 name: AGENT_NAME
 description: "Use this agent to <what it does, in one sentence — the trigger>. It <how it works: what it reads, what it returns, what it refuses to do>. Works in any repo.\n\n<example>\nContext: <the situation where a skill would spawn this>.\nuser: \"<what the user said>\"\n<commentary>\n<which skill spawns this agent, at which step, and what happens with its output>\n</commentary>\nassistant: \"<the one line announcing the spawn>\"\n</example>"
-model: sonnet
 color: blue
 author: AUTHOR_NAME
 ---
@@ -14,7 +13,10 @@ author: AUTHOR_NAME
   description  ONE double-quoted string with literal \n escapes, embedding an
                <example> block — this is what makes the agent discoverable
   color        green | red | teal | orange | magenta | yellow | blue | cyan
-  model        currently sonnet across the toolkit; see NAV-146 (model-agnostic)
+
+  NO model: key. Omitting it makes the agent inherit the session's model, so an
+  Opus session gets Opus subagents. Pinning one here would silently override the
+  user's choice. Add it back only for a specific, stated reason.
 
   An agent is spawned BY a skill. Before writing one, be sure the work genuinely
   needs a separate context — if the skill can do it inline, do not add an agent.

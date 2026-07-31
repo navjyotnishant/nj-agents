@@ -44,7 +44,10 @@ docs/architecture/          # generated diagrams + their JSON source models
   repo* for accumulated debt and returns candidates — there is no sensible BLOCK for
   "you have 12 unused exports". `check.sh` holds only gates to the verdict tokens.
 - **Agent frontmatter:** `name`, `description` (may embed `<example>`/`<commentary>`),
-  `model`, `color`, `author`; optional `memory: project`. Omitting `tools:` inherits all tools.
+  `color`, `author`; optional `memory: project`. Omitting `tools:` inherits all tools,
+  and **omitting `model:` inherits the session's model** — so an Opus session gets Opus
+  subagents. Do not pin a model unless there is a specific, stated reason: a hardcoded
+  tier silently overrides the user's own choice.
 - **kebab-case** names throughout. This layout matches the official Anthropic plugin
   convention (skill = dir + SKILL.md, agent = flat .md, `scripts/`/`references/` subdirs).
 

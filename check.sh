@@ -166,7 +166,10 @@ check_agent_frontmatter() {
   local f name key val bad=0
   for f in "$AGENTS_SRC"/*.md; do
     name="$(basename "$f" .md)"
-    for key in name description model color; do
+    # No `model:` — an agent inherits the session's model, so an Opus session gets
+    # Opus subagents. Pinning one in the file silently overrides the user's choice.
+    # If an agent ever needs a specific tier, it states why in its own body.
+    for key in name description color; do
       grep -q "^$key:" "$f" || {
         finding check_agent_frontmatter structural "agents/$name.md: frontmatter missing '$key:'"
         bad=1

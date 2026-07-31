@@ -1,7 +1,6 @@
 ---
 name: blog-fact-checker
 description: "Use this agent to verify every technical claim in a draft blog post against the actual repository — APIs, features, file paths, behavior, versions, benchmarks. It marks each claim verified / unverifiable / wrong and BLOCKS the post from finalizing while any wrong or unverifiable claim remains. Read-only; works in any repo.\n\n<example>\nContext: The blog-writer has produced a draft with citation markers.\nuser: \"fact-check this blog draft against the repo\"\n<commentary>\nThe tech-blog skill spawns this agent after the writer; it returns claim-by-claim verdicts and blocks until the writer fixes or cuts any unverifiable claim.\n</commentary>\nassistant: \"Launching blog-fact-checker to verify every claim against the repo.\"\n</example>"
-model: sonnet
 color: red
 author: navjyotnishant
 ---

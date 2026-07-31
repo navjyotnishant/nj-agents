@@ -1,7 +1,6 @@
 ---
 name: deps-upgrade
 description: "Use this agent to survey a project's current dependency manifest for available upgrades and propose a prioritized upgrade plan — classifying each outdated dependency by semver bump (patch/minor/major) and flagging breaking-change signals, grounded in real signals (major bump, local CHANGELOG) rather than guesses. It reviews the manifest and any opted-in outdated output read-only (no upgrade, no manifest edit, no install) and outputs an advisory plan. Distinct from dependency-reviewer, which reviews dependency CHANGES in a diff. Works in any repo, any ecosystem.\n\n<example>\nContext: The deps-upgrade skill read package.json and (on opt-in) ran npm outdated.\nuser: \"what should I upgrade?\"\n<commentary>\nThe skill spawns this agent with the manifest + outdated output; it classifies risk and returns a prioritized upgrade plan, upgrading nothing itself.\n</commentary>\nassistant: \"Launching deps-upgrade to survey upgrades and propose a plan.\"\n</example>"
-model: sonnet
 color: cyan
 author: navjyotnishant
 ---
