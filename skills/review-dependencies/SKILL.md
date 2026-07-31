@@ -19,7 +19,7 @@ CI mode §5, report §6, safety §7).
 
 > **Finding the conventions file.** It lives at the toolkit repo root, two levels
 > above this skill — not beside `SKILL.md`. Skills are usually installed as
-> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> symlinks into your runner's skills directory, so a plain relative path resolves against the
 > *link* and misses it. Resolve the link first:
 >
 > ```bash
@@ -47,7 +47,7 @@ CI mode §5, report §6, safety §7).
 ║  DEPENDENCIES & LICENSES REVIEW — AI-ASSISTED                    ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║  This inspects dependency-manifest changes in your diff and       ║
-║  shares them with AI (this Claude session + subagent) to assess   ║
+║  shares them with AI (this session + subagent) to assess          ║
 ║  added packages, upgrades, and license changes. No external API   ║
 ║  is called; no package is installed or fetched. ADVISES only.     ║
 ╚══════════════════════════════════════════════════════════════════╝

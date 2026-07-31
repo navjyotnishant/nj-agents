@@ -26,7 +26,7 @@ handling §3, CI mode §5, report §6, safety §7).
 
 > **Finding the conventions file.** It lives at the toolkit repo root, two levels
 > above this skill — not beside `SKILL.md`. Skills are usually installed as
-> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> symlinks into your runner's skills directory, so a plain relative path resolves against the
 > *link* and misses it. Resolve the link first:
 >
 > ```bash
@@ -69,9 +69,8 @@ Detected at runtime, never installed by this skill (`§A5`).
 ║  detected, this STOPS and shares nothing until you remove it.      ║
 ║                                                                   ║
 ║  Only after the scan clears is the diff shared with AI (this      ║
-║  Claude session + subagent) for a deeper security pass. No        ║
-║  external API is called. Nothing leaves this machine. ADVISES     ║
-║  only.                                                            ║
+║  session + subagent) for a deeper security pass. No external      ║
+║  API is called. Nothing leaves this machine. ADVISES only.        ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
@@ -79,7 +78,7 @@ Detected at runtime, never installed by this skill (`§A5`).
 
 - **A git repository** (`git rev-parse --git-dir`); else stop and say so.
 - **A diff to review** (staged + unstaged + unpushed); if empty, report and stop.
-- **No external API key** — uses the current Claude session.
+- **No external API key** — uses the current AI session.
 - **REQUIRED:** a dedicated secret scanner on PATH — `gitleaks`, `trufflehog`, or
   `detect-secrets` (any one). If none is installed, this dimension BLOCKs with
   install instructions (Step 3); there is no heuristic-only fallback gate.

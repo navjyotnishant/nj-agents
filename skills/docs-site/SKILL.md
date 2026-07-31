@@ -21,7 +21,7 @@ grounding/safety §A6, non-clobber §A7).
 
 > **Finding the conventions file.** It lives at the toolkit repo root, two levels
 > above this skill — not beside `SKILL.md`. Skills are usually installed as
-> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> symlinks into your runner's skills directory, so a plain relative path resolves against the
 > *link* and misses it. Resolve the link first:
 >
 > ```bash
@@ -72,7 +72,7 @@ Detected at runtime, never installed by this skill (`§A5`).
 - **A git repository** (`git rev-parse --git-dir`); else stop and say so.
 - **Something to document** — existing docs, source code, a user-provided outline, or
   definition files. If there's nothing to read and no outline, ask what to document.
-- **No external API / no network.** All analysis is the current Claude session.
+- **No external API / no network.** All analysis is the current AI session.
 - **Optional:** `pandoc` (if on PATH) for an extra Markdown export; the Figma/other
   MCPs are never required (§A5).
 

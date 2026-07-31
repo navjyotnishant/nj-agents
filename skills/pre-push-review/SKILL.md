@@ -27,7 +27,7 @@ is defined once in **`CONVENTIONS.md`** — read it; the steps below reference i
 
 > **Finding `CONVENTIONS.md`.** It lives at the toolkit repo root, two levels
 > above this skill — not beside `SKILL.md`. Skills are usually installed as
-> symlinks into `~/.claude/skills/`, so a plain relative path resolves against
+> symlinks into your runner's skills directory, so a plain relative path resolves against
 > the *link* and misses it. Resolve the link first:
 >
 > ```bash
@@ -70,7 +70,7 @@ Before running any git command or reading any diff, print this banner verbatim:
 ╠══════════════════════════════════════════════════════════════════╣
 ║  This generates a SNAPSHOT of your changes (git diff of staged,   ║
 ║  unstaged, and committed-but-unpushed work) and shares it with    ║
-║  AI (this Claude session + its subagents) for review. No external ║
+║  AI (this session + its subagents) for review. No external        ║
 ║  API is called and nothing leaves this machine — the current      ║
 ║  session does the analysis.                                       ║
 ║                                                                   ║
@@ -90,7 +90,7 @@ Before running any git command or reading any diff, print this banner verbatim:
 - **A git repository.** If `git rev-parse --git-dir` fails, stop and say so.
 - **A diff to review.** If staged + unstaged + unpushed is all empty, report
   "nothing to review" and stop.
-- **No external API key / no network.** Uses the current Claude session; never asks
+- **No external API key / no network.** Uses the current AI session; never asks
   for or requires any credential.
 - **REQUIRED:** a dedicated secret scanner on PATH (`gitleaks` / `trufflehog` /
   `detect-secrets` — any one). If none is installed, the review BLOCKs with install
