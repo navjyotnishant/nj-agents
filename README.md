@@ -70,6 +70,7 @@ invented — and prints a banner before it starts.
 | `/arch-diagram` | Reads your README/docs/ADRs, then **authors a presentation-quality SVG** — infographic by default, `--sketch` for a hand-drawn finish. Renders it and **looks at it** against a 15-second readability test before shipping. Places it in `docs/architecture/` and proposes the commit. | `diagram-architect` |
 | `/docs-site` | **Multi-agent** universal documentation generator. Builds a self-contained, theme-aware `docs.html` from existing docs, the codebase, an outline, or structured definition files (SKILL.md/OpenAPI/JSON-Schema). Auto-derives the menu from the content, grounds everything in the source (flags gaps rather than inventing), and embeds **auto-redacted** screenshots via `/capture-screenshots`. Proposes the commit. | `docs-architect`, `docs-designer` |
 | `/capture-screenshots` | **Multi-agent** capture + **redaction** pipeline. Captures from a running web app (Playwright), terminal/CLI output, a static HTML/component, or existing images; then detects PII/secrets (emails, tokens, keys, phone, cards, names), blurs/masks them (full for high-risk, partial for illustrative), and **verifies coverage before writing** (blocks if unsure). Only the redacted image is committed — the raw stays gitignored. | `screenshot-capturer`, `sensitive-data-reviewer`, `screenshot-redactor` |
+| `/screenshot-docs-sync` | Keeps documentation **and its embedded screenshots** current as the UI drifts. Diffs since the last doc update, works out which doc sections went stale, re-captures only the affected screens with a headless browser, and edits the docs in place. Where `/capture-screenshots` is the one-shot capture, this is the maintenance loop you re-run after every UI change. Same redaction discipline; proposes the commit. | (no dedicated agent) |
 | `/tech-blog` | **Multi-agent** pipeline (writer → fact-checker → reviewer → editor → final-polish → platform-lint → optional poster) that writes an expert technical post about the project. The **fact-checker BLOCKS** on any claim it can't verify against the repo. **Generates** the visual assets it needs (arch diagrams via `/arch-diagram`, redacted screenshots via `/capture-screenshots`) alongside the writer, then embeds them; applies an emphasis/terminology/style pass, runs a pre-publish checklist (single-H1, ending, dupes) and a platform lint (Dev.to tags/SVG→PNG/cover), writes to `docs/blog/` + publish-ready MD/HTML, posts via a connected MCP you opt into — or, for Dev.to with no MCP, a direct-REST fallback (`DEVTO_API_KEY`, draft-first). | `blog-writer`, `blog-fact-checker`, `blog-reviewer`, `blog-editor`, `blog-final-polish`, `blog-platform-lint`, `blog-poster` |
 | `/scaffold-project` | Lays out a **new** repository to a recognized baseline — the **OpenSSF OSPS Baseline** (Level 1 by default; Level 2 for published/multi-maintainer projects). Grounds the security/governance layer in the baseline (each file cited by control ID, e.g. `OSPS-LE-03.01` → LICENSE) and delegates the stack layout to the ecosystem's own generator (`cargo new`, `uv init`, `npm create`) rather than inventing one. Reads a supplied project doc first. Verifies the result (OpenSSF Scorecard when present, else by-hand control check) before reporting done, then proposes the commit. | (no dedicated agent) |
 | `/social-post` | Drafts promo copy (LinkedIn / X) for a **published** post/repo/demo, grounded in the actual content. Short / medium / builder-story variants, hook-first, correct link-preview + first-comment strategy, clean hashtags. Honors style prefs (e.g. no em-dashes). Drafts only — never auto-posts. | `social-post` |
@@ -209,9 +210,35 @@ Per-project (into `DIR/.claude/`):
 ./install.sh --project /path/to/your/repo
 ```
 
-> **Upgrading from before `global/AGENTS.md`?** The guidance file was renamed from
-> `global/CLAUDE.md`, which orphans an existing `~/.claude/CLAUDE.md` symlink — it
-> will point at a path that no longer exists. Re-run `./install.sh` to repair it.
+### Re-run `./install.sh` after every pull
+
+Not optional. The installer is what reconciles your config directory with the
+repo, and several things only get fixed by running it:
+
+- **A renamed source orphans its symlink.** `global/CLAUDE.md` became
+  `global/AGENTS.md`, so an older `~/.claude/CLAUDE.md` now points at a path that
+  does not exist. Nothing errors — the guidance simply stops applying. Re-running
+  repairs it and **says so** (`1 repaired (were dangling)`).
+- **New skills and agents are not picked up** until they are linked.
+- **It reports what it will not touch.** A real file where a symlink belongs
+  means your copy stopped tracking the repo; a skill in the config directory that
+  is not in the repo is not version-controlled and not installed for any other
+  runner. Both are listed, neither is changed for you.
+
+The output is a summary rather than a wall of link lines:
+
+```
+Summary
+  runner        claude  (/Users/you/.claude)
+  linked        2 new, 49 already current, 1 repaired (were dangling)
+  guidance      .claude/CLAUDE.md -> global/AGENTS.md
+
+  Present here but NOT in this repo — not version-controlled, and not
+  installed for any other runner. Move them into the repo to keep them:
+  skill  .claude/skills/my-local-skill
+```
+
+It is idempotent and never clobbers a real file, so re-running it is always safe.
 
 ### Other agents
 
@@ -230,7 +257,7 @@ skill once and every runner sees it. There is nothing to sync.
 
 | | Claude Code | Codex | Cursor | Gemini |
 |---|---|---|---|---|
-| **23 skills** | yes | yes | yes | yes |
+| **24 skills** | yes | yes | yes | yes |
 | **25 agents** | yes | not yet | not yet | yes |
 | **Guidance file** | `CLAUDE.md` | `AGENTS.md` | not yet | `GEMINI.md` |
 

@@ -114,14 +114,37 @@ remove_if_ours() {
   fi
 }
 
+# Tallies, so the summary can say what actually happened rather than scrolling 49
+# near-identical "linked ..." lines past the one line that mattered.
+N_NEW=0; N_SAME=0; N_REPAIRED=0; N_BLOCKED=0
+BLOCKED_LIST=""
+
 link_one() {
-  local src="$1" dst="$2"
+  local src="$1" dst="$2" cur
   if [ -e "$dst" ] && [ ! -L "$dst" ]; then
-    echo "  ! $dst exists and is NOT a symlink — leaving it alone" >&2
+    # A real file the user wrote. Never clobber it — but do not let it pass in
+    # silence either: it means their copy has stopped tracking the repo.
+    N_BLOCKED=$((N_BLOCKED + 1))
+    BLOCKED_LIST="$BLOCKED_LIST  $dst
+"
     return
   fi
+  if [ -L "$dst" ]; then
+    cur="$(readlink "$dst")"
+    if [ "$cur" = "$src" ]; then
+      N_SAME=$((N_SAME + 1))
+    elif [ -e "$dst" ]; then
+      N_NEW=$((N_NEW + 1))          # repointed at a different live target
+    else
+      # Dangling — e.g. the source was renamed since the last install. This is
+      # exactly the case a silent re-link would hide, and a broken guidance link
+      # gives no error at run time, so it is worth calling out.
+      N_REPAIRED=$((N_REPAIRED + 1))
+    fi
+  else
+    N_NEW=$((N_NEW + 1))
+  fi
   ln -sfn "$src" "$dst"
-  echo "  linked $dst -> $src"
 }
 
 # Wiring the suggestion hook means editing settings.json — the user's file, not
@@ -227,9 +250,53 @@ if [ -d "$HOOKS_SRC" ]; then
 fi
 [ "$WITH_HOOKS" = "1" ] && register_hook
 
+# Anything in the target that is NOT a link back here is invisible to this repo:
+# not version-controlled, not installed for other runners, not covered by
+# check.sh. Usually it is a skill written directly into the config dir and then
+# forgotten. Report it — the install is the only moment anyone looks here.
+ORPHANS=""
+scan_orphans() {
+  local dir="$1" kind="$2" f
+  [ -d "$dir" ] || return 0
+  for f in "$dir"/*; do
+    [ -e "$f" ] || continue
+    [ -L "$f" ] && continue
+    # Already reported above as "not replaced" — it shadows a repo file, which is
+    # a different problem from being an orphan, and saying both invites confusion.
+    case "$BLOCKED_LIST" in *"  $f"$'\n'*) continue ;; esac
+    ORPHANS="$ORPHANS  $kind  ${f#$HOME/}
+"
+  done
+}
+scan_orphans "$SKILLS_DST" "skill"
+[ "$INSTALL_AGENTS" = "1" ] && scan_orphans "$AGENTS_DST" "agent"
+scan_orphans "$HOOKS_DST" "hook "
+
+echo ""
+echo "Summary"
+echo "  runner        $RUNNER  ($TARGET_ROOT)"
+echo "  linked        $N_NEW new, $N_SAME already current$([ "$N_REPAIRED" -gt 0 ] && echo ", $N_REPAIRED repaired (were dangling)")"
+[ -n "$GLOBAL_MD_DST" ] && echo "  guidance      ${GLOBAL_MD_DST#$HOME/} -> ${GLOBAL_MD_SRC#$REPO_DIR/}"
+
+if [ "$N_BLOCKED" -gt 0 ]; then
+  echo ""
+  echo "  Not replaced — these are real files, not links, so your copy no longer"
+  echo "  tracks this repo. Delete one and re-run to adopt the repo's version:"
+  printf '%s' "$BLOCKED_LIST"
+fi
+
+if [ -n "$ORPHANS" ]; then
+  echo ""
+  echo "  Present here but NOT in this repo — not version-controlled, and not"
+  echo "  installed for any other runner. Move them into the repo to keep them:"
+  printf '%s' "$ORPHANS"
+fi
+
 # check.sh itself installs into a temp dir to verify the runner layout, so it sets
 # NJ_AGENTS_NO_CHECK to stop us calling it straight back and recursing forever.
+echo ""
 [ -n "${NJ_AGENTS_NO_CHECK:-}" ] || "$REPO_DIR/check.sh" || true
 
+echo ""
 echo "Done. Restart $RUNNER (or reload) to pick up the new skills/agents."
 echo "Try:  /pre-push-review   (or /review-secrets, /review-correctness, ...)"

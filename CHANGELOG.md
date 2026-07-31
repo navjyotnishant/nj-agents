@@ -12,6 +12,19 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- **`/screenshot-docs-sync`** — keeps documentation and its embedded screenshots
+  current as the UI drifts. Diffs since the last doc update, works out which doc
+  sections went stale, re-captures only the affected screens, and edits in place.
+  Where `/capture-screenshots` is the one-shot capture, this is the maintenance
+  loop. Same redaction discipline; proposes the commit. (24 skills now.)
+- `./install.sh` reports what it did instead of scrolling 50 near-identical link
+  lines past the one that mattered: how many links were new, already current, or
+  **repaired because they were dangling** — plus two things it deliberately does
+  not change. A real file where a symlink belongs means your copy has stopped
+  tracking the repo. A skill or hook sitting in the config directory that is not
+  in the repo is not version-controlled and not installed for any other runner.
+  Both are now listed rather than silently skipped.
+
 - The global guidance file is now **`global/AGENTS.md`** — one canonical copy that
   every runner reads. `install.sh` symlinks it to `~/.claude/CLAUDE.md`,
   `~/.codex/AGENTS.md`, or `~/.gemini/GEMINI.md` depending on `--runner`, so all
