@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Initial public release of the toolkit. Everything below describes what nj-agents
 does as of this version, rather than how it was built.
 
+### Changed
+
+- Review-skill banners now say "this session" rather than "this Claude session".
+  **The privacy guarantee is unchanged** — the diff still goes only to the running
+  session and its subagents, no external API is called, and nothing leaves the
+  machine. Only the vendor name was removed, so the banner stays true whichever
+  agent runs the skill.
+- The note explaining where each skill finds `CONVENTIONS*.md` no longer claims
+  skills live in `~/.claude/skills/`. The `readlink -f` resolution it describes
+  already works from any install location — it follows the symlink back into the
+  clone — so only the path claim was wrong.
+- `/tech-blog`'s Dev.to publisher reads its API key and state from
+  `~/.config/nj-agents/` in preference to `~/.claude/`. An existing install is
+  unaffected: a file already present in the legacy location is still used, and
+  `$DEVTO_API_KEY` in the environment continues to take priority over both.
+
 ### Added
 
 **Review suite — advise only, never writes, never commits**
