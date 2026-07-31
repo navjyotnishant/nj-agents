@@ -576,6 +576,13 @@ write("index.md", [
     "",
     f"![How skills and agents relate](assets/{OVERVIEW_DIAGRAM})",
     "",
+    # Counts belong in the caption, not the artwork. Drawn into an SVG they go
+    # stale silently and need the diagram redrawn to fix; here they are read from
+    # the file tree on every build, so they cannot disagree with it.
+    f"*{len(skills)} skills · {len(agents)} agents · {len(CLASSES)} classes · "
+    f"{len(writers)} agents that can write files. Counted from the source on every "
+    "build — the diagram deliberately carries no tallies.*",
+    "",
     "## What an agent is allowed to do",
     "",
     f"A skill orchestrates; an agent does one job and hands the result back. "

@@ -10,6 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Initial public release of the toolkit. Everything below describes what nj-agents
 does as of this version, rather than how it was built.
 
+### Changed
+
+- **Architecture diagrams no longer carry file-tree counts.** "23 skills",
+  "25 agents", "6 gates" and the like were drawn into the SVGs, which meant every
+  one went stale the moment a skill was added — silently, and correctable only by
+  redrawing the diagram. They now live in the caption underneath, where the README
+  needs a one-line edit and the docs site generates them from the source on every
+  build. The artwork keeps what it can state truthfully forever: the *shapes* (15
+  hexagons say "fifteen" without asserting it) and genuine structural facts like
+  "1 level deep, always" and "0 commits made for you".
+  `check.sh` enforces this going forward, and `/arch-diagram` documents the test:
+  if adding a file would falsify it, it is a tally and belongs in the caption.
+
 ### Added
 
 - **`/screenshot-docs-sync`** — keeps documentation and its embedded screenshots

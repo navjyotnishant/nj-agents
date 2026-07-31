@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" width="1200" height="560" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-serif" role="img" aria-label="nj-agents: 23 skills in five classes. Review advises and never writes; authoring writes one artifact and proposes the commit; workflow drafts a PR or commit; PM writes a tracker item; social produces copy. 25 agents do the work.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" width="1200" height="560" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-serif" role="img" aria-label="nj-agents: skills in five classes. Review advises and never writes; authoring writes one artifact and proposes the commit; workflow drafts a PR or commit; PM writes a tracker item; social produces copy. Specialist agents do the work.">
   <defs>
     <linearGradient id="rv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eff6ff"/><stop offset="1" stop-color="#dbeafe"/></linearGradient>
     <linearGradient id="au" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff7ed"/><stop offset="1" stop-color="#ffedd5"/></linearGradient>
@@ -47,41 +47,36 @@
 
   <g filter="url(#sh)"><rect x="250" y="118" width="440" height="92" rx="13" fill="url(#rv)" stroke="#93c5fd"/></g>
   <text class="cls" x="272" y="146" fill="#1e40af">Review</text>
-  <text class="n" x="352" y="146" fill="#1e40af">9</text>
-  <text class="cap" x="380" y="146" fill="#1e40af">advises only — writes nothing, commits nothing</text>
-  <text class="sk" x="272" y="170">6 gates review a diff and return PASS · WARN · BLOCK</text>
-  <text class="sk" x="272" y="190">3 scans sweep the repo for accumulated debt</text>
+  <text class="cap" x="352" y="146" fill="#1e40af">advises only — writes nothing, commits nothing</text>
+  <text class="sk" x="272" y="170">gates review a diff and return PASS · WARN · BLOCK</text>
+  <text class="sk" x="272" y="190">scans sweep the repo for accumulated debt</text>
 
   <g filter="url(#sh)"><rect x="250" y="226" width="440" height="92" rx="13" fill="url(#au)" stroke="#fdba74"/></g>
   <text class="cls" x="272" y="254" fill="#9a3412">Authoring</text>
-  <text class="n" x="368" y="254" fill="#9a3412">6</text>
   <text class="cap" x="396" y="254" fill="#9a3412">writes ONE artifact, then proposes the commit</text>
-  <text class="sk" x="272" y="278">changelog · arch-diagram · capture-screenshots</text>
-  <text class="sk" x="272" y="298">docs-site · tech-blog · scaffold-project</text>
+  <text class="sk" x="272" y="278">changelog · arch-diagram · capture-screenshots · docs-site</text>
+  <text class="sk" x="272" y="298">screenshot-docs-sync · tech-blog · scaffold-project</text>
 
   <g filter="url(#sh)"><rect x="250" y="334" width="212" height="84" rx="13" fill="url(#wf)" stroke="#d8b4fe"/></g>
   <text class="cls" x="272" y="362" fill="#6b21a8">Workflow</text>
-  <text class="n" x="366" y="362" fill="#6b21a8">3</text>
   <text class="cap" x="272" y="384" fill="#6b21a8">drafts a PR or commit —</text>
   <text class="cap" x="272" y="401" fill="#6b21a8">never runs git</text>
 
   <g filter="url(#sh)"><rect x="478" y="334" width="212" height="84" rx="13" fill="url(#pm)" stroke="#5eead4"/></g>
   <text class="cls" x="500" y="362" fill="#115e59">PM</text>
-  <text class="n" x="546" y="362" fill="#115e59">4</text>
   <text class="cap" x="500" y="384" fill="#115e59">writes a tracker item,</text>
   <text class="cap" x="500" y="401" fill="#115e59">proposes the create</text>
 
   <text class="band" x="750" y="104" fill="#334155">WHAT ANY OF THEM CAN CALL</text>
   <g filter="url(#sh)"><rect x="750" y="118" width="410" height="140" rx="14" fill="#fffbf5" stroke="#fed7aa"/></g>
-  <text class="cls" x="772" y="150">25 specialist agents</text>
+  <text class="cls" x="772" y="150">Specialist agents</text>
   <text class="cap" x="772" y="176">A skill orchestrates; an agent does one job. Agents</text>
   <text class="cap" x="772" y="193">never call each other, so the hierarchy is one level</text>
   <text class="cap" x="772" y="210">deep — every fan-out you see belongs to a skill.</text>
-  <text class="cap" x="772" y="236" font-weight="700" fill="#9a3412">6 skills run a real pipeline. The largest runs 9.</text>
+  <text class="cap" x="772" y="236" font-weight="700" fill="#9a3412">Several skills run a real pipeline of them.</text>
 
   <g filter="url(#sh)"><rect x="750" y="274" width="410" height="144" rx="14" fill="url(#so)" stroke="#f9a8d4"/></g>
   <text class="cls" x="772" y="306" fill="#9d174d">Social</text>
-  <text class="n" x="838" y="306" fill="#9d174d">1</text>
   <text class="cap" x="866" y="306" fill="#9d174d">copy you paste — never posts</text>
   <text class="cap" x="772" y="336">Every class, whatever it produces, shares the same</text>
   <text class="cap" x="772" y="353">floor: grounded in your repo, no invented facts, no</text>
@@ -90,15 +85,11 @@
 
   <path d="M190 268 H242" fill="none" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#a)"/>
 
+  <!-- Counts that track the file tree (skills, agents, checks) deliberately do NOT
+       live here. Baked into an SVG they go stale silently and need a redraw to fix;
+       rendered under the image they are generated from the files on every build.
+       "0 commits" stays because it is a design promise, not a tally. -->
   <line x1="40" y1="452" x2="1160" y2="452" stroke="#e2e8f0"/>
-  <text class="big" x="40" y="494" fill="#0f172a">23</text>
-  <text class="lg" x="72" y="492">skills</text>
-  <text class="big" x="128" y="494" fill="#ea580c">25</text>
-  <text class="lg" x="160" y="492">agents</text>
-  <text class="big" x="226" y="494" fill="#0f172a">5</text>
-  <text class="lg" x="244" y="492">classes</text>
-  <text class="big" x="316" y="494" fill="#15803d">0</text>
-  <text class="lg" x="334" y="492">commits made for you — every one is proposed, and yours to run</text>
-  <text class="big" x="860" y="494" fill="#0f172a">16</text>
-  <text class="lg" x="892" y="492">checks enforce all of this on every push</text>
+  <text class="big" x="40" y="494" fill="#15803d">0</text>
+  <text class="lg" x="62" y="492">commits made for you — every one is proposed, and yours to run</text>
 </svg>

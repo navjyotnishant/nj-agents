@@ -571,6 +571,32 @@ check_stale_agents() {
 # simply stops applying part-way through, with nothing to notice. The file is well
 # under today, so this is a tripwire for the edit that pushes it over rather than a
 # current problem.
+# A count drawn into an SVG goes stale the moment a skill is added, gives no
+# signal that it has, and needs the diagram redrawn to correct. The same number in
+# a caption is one edit — and on the docs site it is generated from the file tree.
+# So: tallies live under the image, never inside it. This catches the next diagram
+# that tries, by looking for the current skill/agent counts as rendered text.
+check_diagram_counts() {
+  local f bad=0 n_skills n_agents n_gates n_scans
+  n_skills="$(ls -d "$SKILLS_SRC"/*/ 2>/dev/null | wc -l | tr -d ' ')"
+  n_agents="$(ls "$AGENTS_SRC"/*.md 2>/dev/null | wc -l | tr -d ' ')"
+  n_gates="$(grep -l '^subclass: gate' "$SKILLS_SRC"/*/SKILL.md 2>/dev/null | wc -l | tr -d ' ')"
+  n_scans="$(grep -l '^subclass: scan' "$SKILLS_SRC"/*/SKILL.md 2>/dev/null | wc -l | tr -d ' ')"
+  for f in "$REPO_DIR"/docs/architecture/*.svg; do
+    [ -f "$f" ] || continue
+    # Only flag the two totals that track the file tree. Structural numbers a
+    # diagram legitimately states ("1 level deep", "0 commits", "caps at 2") are
+    # design facts, not tallies, and must not trip this.
+    if grep -qE ">($n_skills|$n_agents)<|\b$n_skills skills\b|\b$n_agents agents\b|\b$n_gates gates\b|\b$n_scans scans\b" "$f"; then
+      finding check_diagram_counts doc-sync \
+        "${f#$REPO_DIR/} has a skill/agent count drawn into it — put tallies in the caption, where they are generated and cannot go stale"
+      bad=1
+    fi
+  done
+  [ "$bad" = "0" ] && ok "diagrams carry no file-tree counts"
+  return 0
+}
+
 check_guidance_size() {
   local bytes limit=32768
   [ -f "$GLOBAL_MD_SRC" ] || return 0
@@ -672,6 +698,7 @@ check_guidance_sync
 check_hook_sync
 check_stale_agents
 check_guidance_size
+check_diagram_counts
 check_installer_runners
 check_counts
 

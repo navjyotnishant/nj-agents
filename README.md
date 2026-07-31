@@ -26,6 +26,11 @@ visual-QA gate).
 
 ![Suite architecture](docs/architecture/suite-overview.svg)
 
+**24 skills · 25 agents · 5 classes · 16 checks.** Counts live here rather than in
+the image: a number drawn into an SVG goes stale silently and needs the diagram
+redrawn to correct, while a number in the text is one edit — and on the docs site,
+generated from the file tree on every build.
+
 ## Review suite (review class)
 
 A thorough, AI-assisted review of your *current commit or uncommitted changes* before
