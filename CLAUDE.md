@@ -55,9 +55,12 @@ docs/architecture/          # generated diagrams + their JSON source models
   read a missing key as inherit-all, but **Gemini CLI reads it as _no_ tools** — the
   agent loads and then cannot act. An explicit allowlist is the only spelling that
   means the same thing on every runner. Most agents need only `Read, Grep, Glob`
-  (+ `Bash` if they run commands): **22 of 25 return content for the *skill* to
+  (+ `Bash` if they run commands): **23 of the 25 return content for the *skill* to
   write**, and their bodies say so. Only an agent that genuinely produces a file
-  itself gets `Write` — today that is `screenshot-capturer` and `screenshot-redactor`.
+  itself gets `Write` — today exactly two do, `screenshot-capturer` and
+  `screenshot-redactor`. `diagram-architect` looks like a third and is not: it
+  emits SVG *content* and the skill writes the file, which its body states
+  outright ("Do not write files").
   `check.sh` fails an agent whose body claims read-only while its `tools:` declares
   a write tool.
 - **kebab-case** names throughout. This layout matches the official Anthropic plugin

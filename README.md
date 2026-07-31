@@ -173,6 +173,28 @@ aggregate verdict — to `${NJ_AGENTS_REPORT_DIR:-<repo>/.nj-agents-reports}/` (
 temp dir). It is **never committed**; the umbrella offers to add
 `.nj-agents-reports/` to your `.gitignore`.
 
+## What an agent is allowed to do
+
+A skill orchestrates; an agent does one job and hands the result back.
+**23 of the 25 agents cannot write files at all** — they return their output and
+the *skill* writes it. Each agent's body says so, and its declared `tools:` match.
+
+Exactly two hold a write tool, because each genuinely produces a file itself:
+`screenshot-capturer` and `screenshot-redactor`.
+
+`diagram-architect` looks like a third and is not — it emits SVG *content* and the
+skill writes the file, which its body states outright.
+
+Every agent declares an explicit `tools:` allowlist. That is **required, for
+portability rather than taste**: Claude Code and Cursor read a missing key as
+*inherit every tool*, but Gemini CLI reads it as *no tools*, so the agent loads
+unable to act. An explicit list is the only spelling that means the same thing on
+every runner.
+
+`check.sh` enforces both halves — the key must be present, and an agent whose body
+claims to be read-only may not declare a write tool, so the prose and the tool list
+cannot drift apart.
+
 ## Install
 
 Global (all projects):

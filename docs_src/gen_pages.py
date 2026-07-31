@@ -6,7 +6,7 @@ and none can drift from the thing it documents. Delete a skill and its page is g
 on the next build; add one and it appears with no registration step.
 
 The skill<->agent wiring is DERIVED, never hand-maintained. No agent declares a
-`skills:` frontmatter key -- all 26 carry exactly name/description/model/color/author
+`skills:` frontmatter key -- all 25 carry exactly name/description/tools/color/author
 -- so the wiring is recovered from the backticked references inside each SKILL.md,
 filtered by set membership against agents/*.md. A reference to a skill or agent that
 does not exist raises and FAILS THE BUILD.
@@ -261,6 +261,44 @@ STAGES = {
 }
 
 
+WRITE_TOOLS = {"Write", "Edit", "NotebookEdit"}
+
+
+def agent_tools(m):
+    """The declared allowlist, as a list. Required on every agent."""
+    return [t.strip() for t in m.get("tools", "").split(",") if t.strip()]
+
+
+def tools_cell(m):
+    tools = agent_tools(m)
+    if not tools:
+        return "—"
+    return " ".join(f"`{t}`" for t in tools)
+
+
+def writes_note(m):
+    """Say plainly whether this agent can touch the filesystem.
+
+    Most cannot, and that is the interesting fact: 22 of 25 agents return their
+    output for the SKILL to write. Someone reading an agent page should not have
+    to infer that from a tool list.
+    """
+    if WRITE_TOOLS & set(agent_tools(m)):
+        return [
+            '!!! warning "Writes files"',
+            "    This agent produces a file itself, rather than returning content for "
+            "the skill to write — one of only two that do.",
+            "",
+        ]
+    return [
+        '!!! note "Returns content — does not write files"',
+        "    Like all but two of the agents, this one returns its output to the skill "
+        "that spawned it, and the **skill** writes the file. It holds no write tools, "
+        "so it cannot modify the repo even if asked to.",
+        "",
+    ]
+
+
 def card(name, s, cls, spawns_list, agents):
     """One skill as a card: icon + title, the stage-chip row, WHAT IT DOES /
     USES sections, and a footer naming the source. Mirrors the reference layout."""
@@ -444,9 +482,11 @@ for name in sorted(agents):
         "| | |",
         "|---|---|",
         f"| Model | {'`' + m['model'] + '`' if m.get('model') else "inherits the session's"} |",
+        f"| Tools | {tools_cell(m)} |",
         f"| Author | {m.get('author', '—')} |",
         f"| Source | [`agents/{name}.md`]({REPO_URL}/agents/{name}.md) |",
         "",
+        *writes_note(m),
         *example_block(m),
         *returns_block(a["body"]),
         "",
@@ -507,6 +547,12 @@ for slug, title in [("overview", "Overview"), ("checks", "What is checked"),
 
 # ---- index
 counts = {c: len(by_class.get(c, [])) for c in CLASSES}
+
+# Derived, not hardcoded: an agent gaining or losing a write tool changes this
+# page on the next build rather than leaving a stale number behind.
+writers = sorted(
+    n for n, a in agents.items() if WRITE_TOOLS & set(agent_tools(a["meta"]))
+)
 write("index.md", [
     "# nj-agents",
     "",
@@ -529,6 +575,30 @@ write("index.md", [
     "## How it fits together",
     "",
     f"![How skills and agents relate](assets/{OVERVIEW_DIAGRAM})",
+    "",
+    "## What an agent is allowed to do",
+    "",
+    f"A skill orchestrates; an agent does one job and hands the result back. "
+    f"**{len(agents) - len(writers)} of the {len(agents)} agents cannot write files at all** — they return "
+    "their output and the *skill* writes it. That is not an accident of "
+    "configuration: each agent's body says so, and its declared tools match.",
+    "",
+    f"Only **{len(writers)}** hold a write tool, because each genuinely produces a file "
+    "itself:",
+    "",
+] + [
+    f"- [`{w}`](agents/{w}.md)" for w in sorted(writers)
+] + [
+    "",
+    "Every agent declares an explicit `tools:` allowlist. That is required rather "
+    "than optional, and for portability rather than taste: Claude Code and Cursor "
+    "read a missing key as *inherit every tool*, but Gemini CLI reads it as *no "
+    "tools*, so the agent loads unable to act. An explicit list is the only "
+    "spelling that means the same thing on every runner.",
+    "",
+    "`check.sh` enforces both halves — the key must be present, and an agent whose "
+    "body claims to be read-only may not declare a write tool. The two statements "
+    "of the same contract cannot drift apart.",
     "",
     "## Always current, by construction",
     "",
