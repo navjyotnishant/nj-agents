@@ -1,6 +1,6 @@
 ---
 name: commit-assistant
-description: "Use this skill when the user asks to \"write a commit message\", \"help me commit this\", \"draft a conventional commit for these changes\", or wants a clean commit message for the current diff. Reads the working-tree changes, groups them into logically distinct commits when they're unrelated, and drafts a Conventional Commits message for each — then prints the exact `git add` + `git commit` block for the user to run. It NEVER runs git itself: the human decides what gets committed. Works in any git repo; nothing here is project-specific."
+description: "Use this skill when the user asks to \"write a commit message\", \"help me commit this\", \"draft a conventional commit for these changes\", or wants a clean commit message for the current diff. Reads the working-tree changes, groups them into logically distinct commits when they're unrelated, and drafts a Conventional Commits message for each — then prints the exact `git add` + `git commit` block and OFFERS to run each one, asking per commit and showing exactly what it would stage. Never pushes, never tags, never bypasses a hook — and in CI it prints only. The human decides what gets committed. Works in any git repo; nothing here is project-specific."
 version: 0.1.0
 class: workflow
 author: navjyotnishant
@@ -15,7 +15,8 @@ each — rather than one grab-bag commit.
 
 This is a **workflow-class** skill (see `/pr-describe`). It reads a diff like the
 review class but invents nothing (`CONVENTIONS.md §1` scope, `CONVENTIONS-authoring.md
-§A6` grounding), and it **proposes, never acts** (§A3).
+§A6` grounding), and it **proposes before it acts** (§A3): the block is printed first,
+every time, and a commit runs only on an explicit per-commit yes.
 
 > **Finding the conventions file.** It lives at the toolkit repo root, two levels
 > above this skill — not beside `SKILL.md`. Skills are usually installed as
@@ -35,9 +36,15 @@ review class but invents nothing (`CONVENTIONS.md §1` scope, `CONVENTIONS-autho
 > fail, and say what you did not do.
 
 > **The one hard rule this skill lives on top of:** *the human decides what gets
-> committed.* This skill's entire output is the `git commit` block from §A3 — with a
-> good message instead of a placeholder. **It never runs `git add`, `git commit`,
-> `git push`, or `git tag`**, in interactive or CI mode. No exceptions, no `--no-verify`.
+> committed.* Its core output is the `git commit` block from §A3 — with a good message
+> instead of a placeholder — and that block always stands on its own.
+>
+> It may then **offer** to run each commit, asking **once per commit** and showing the
+> exact paths it would stage (Step 6). §U forbids running git on the skill's *own
+> initiative* and explicitly allows an explicit go-ahead; a per-commit yes is that
+> go-ahead. What never happens: committing something the user has not seen, one
+> approval covering several commits, **any `git push` or `git tag`**, `--no-verify`,
+> or committing at all in CI mode.
 
 ## Step 0 — Print the banner FIRST
 
@@ -48,7 +55,8 @@ review class but invents nothing (`CONVENTIONS.md §1` scope, `CONVENTIONS-autho
 ║  Drafts Conventional Commits message(s) from your changes and     ║
 ║  prints the git add + commit block. Splits unrelated changes into ║
 ║  separate commits. Grounded in the real diff — nothing invented.  ║
-║  It NEVER runs git — you review and run the commands yourself.    ║
+║  Then OFFERS to run each one, asking per commit and showing what  ║
+║  it would stage. Never pushes, never tags, never --no-verify.     ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
@@ -125,7 +133,7 @@ performance," "clean up," or "fix bug" unless a concrete change backs it. Don't 
 motivation the changes don't show — if the *why* isn't derivable, keep the body factual
 or omit it.
 
-## Step 5 — Print the commit block(s), never run them (§A3)
+## Step 5 — Print the commit block(s) (§A3)
 
 For each group, print a copy-paste block, `git push` deliberately **omitted** (this
 skill stops at the commit; pushing is a separate conscious act):
@@ -146,8 +154,58 @@ git commit -m "docs: fix broken install link in README"
 ```
 ````
 
-Then stop. **Never execute any of these.** If a pre-push/pre-commit gate exists, note
-it but never bypass it (`--no-verify` is forbidden).
+If a pre-commit/pre-push gate exists, note it — but never bypass it (`--no-verify`
+is forbidden, whoever runs the command).
+
+## Step 6 — Offer to run each commit, one at a time
+
+The block above is the deliverable and always stands on its own: copy it, ignore the
+rest of this step, and nothing is lost. But re-typing a command you have just read
+and approved is friction, not safety — so offer to run it.
+
+**Ask per commit, never once for the batch.** Splitting unrelated changes is this
+skill's whole point; a single yes covering three commits throws that away and
+approves messages the user has not seen land yet.
+
+For each group in order, show **exactly what would be staged** — the human is
+approving a set of paths, not a sentence — then ask:
+
+```
+Commit 1 of 2 — feat(list): paginate results with a cursor API
+  will stage:  src/list.js  src/api.js  src/list.test.js
+
+  [y] run it   [n] skip this one   [e] edit the message   [a] stop here
+```
+
+Then:
+
+- **y** — run `git add` for exactly those paths, then `git commit`. Print the real
+  `git` output (the `[main a1b2c3d]` line), not a paraphrase. Move to the next.
+- **n** — skip it, leave those paths unstaged, continue. A skipped commit does not
+  block the ones after it; they were grouped as independent.
+- **e** — take the revised message and re-show the prompt. Never commit a message
+  the user is still editing.
+- **a** — stop entirely. Report what was committed and what was not.
+
+**Re-read the tree between commits.** Committing changes what is staged and what
+`git status` reports, so a plan computed once can be stale by commit 3 — a file may
+have already gone in, or been touched. If the staged set no longer matches the plan,
+say so and re-confirm rather than staging something the user did not approve.
+
+**If any `git` command fails** — a pre-commit hook rejects it, a path has vanished —
+stop immediately. Do not continue to the next commit, do not retry, and never reach
+for `--no-verify`. Report which commits landed and which did not, so the user resumes
+from a known state.
+
+**Non-interactive/CI mode** (`NJ_AGENTS_CI=1`, `CONVENTIONS.md §5`): print the blocks
+and stop. There is nobody to ask, and an unattended commit is exactly the thing the
+"human decides" rule exists to prevent.
+
+This does not weaken `§U`'s **the human decides what gets committed**. That rule
+forbids running git *on the skill's own initiative*; it explicitly allows an explicit
+go-ahead from the user. Asking and being told yes is that go-ahead — collected in the
+session instead of in a shell. What stays forbidden: committing anything the user has
+not seen, batching the approval, pushing (never offered), and `--no-verify`.
 
 ## Report format
 
@@ -160,14 +218,23 @@ Style:          Conventional Commits (repo convention) | <repo's own style>
 1. <type(scope): subject>  → <paths>
 2. <type(scope): subject>  → <paths>
 
-Blocks printed above for you to run. Nothing was committed or pushed.
+Committed:      <keys/SHAs of the ones you said yes to, or "none — blocks printed only">
+Not committed:  <skipped, aborted, or left for you to run by hand>
+Pushed:         nothing — this skill never pushes
 Skipped/uncertain: <e.g. untracked file left out, ambiguous grouping>
 ```
 
 ## Safety rails
 
-- **Never run `git add` / `commit` / `push` / `tag`** — print blocks only (§A3).
-  Holds in CI/non-interactive mode too. No `--no-verify`, never bypass a gate.
+- **Never commit anything the user has not seen and approved.** The block is printed
+  first, always; `git add`/`commit` run only on an explicit per-commit yes (Step 6).
+  One approval never covers more than one commit.
+- **Never `git push` or `git tag`.** Not offered, not on request — this skill stops at
+  the commit. Pushing is a separate conscious act.
+- **Never `--no-verify`, never bypass a hook.** If a gate rejects a commit, stop and
+  report; do not retry around it.
+- **Print blocks only in CI/non-interactive mode** (`NJ_AGENTS_CI=1`) — there is
+  nobody to ask, so there is no approval to act on.
 - **Respect existing staging** as the user's stated intent.
 - **Ground every message in the diff** (§A6) — no invented rationale, no `fix bug`.
 - **Match the repo's commit style**, including a `no Co-Authored-By`-type rule.

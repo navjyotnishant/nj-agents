@@ -78,7 +78,7 @@ can't verify against the repo, and `/arch-diagram` runs a mandatory
 | Skill | What it does | Agent |
 |---|---|---|
 | `/pr-describe` | Drafts a PR **title + body** from the branch's delta vs its base (the PR view). Fills the repo's own PR template when present; grounds every line in a real commit/hunk. Opens a **draft** PR only if you opt in and `gh` is present; else hands you the text. **Never pushes, never opens a non-draft PR, never merges.** | `pr-describer` |
-| `/commit-assistant` | Drafts Conventional Commits message(s) from the working-tree changes and prints the `git add` + `git commit` block. Splits unrelated changes into separate commits; respects existing staging. **Never runs git** — the human decides what gets committed. | (no dedicated agent) |
+| `/commit-assistant` | Drafts Conventional Commits message(s) from the working-tree changes and prints the `git add` + `git commit` block. Splits unrelated changes into separate commits; respects existing staging. Then **offers to run each one**, asking per commit and showing exactly what it would stage. **Never pushes or tags**; CI mode prints only. | (no dedicated agent) |
 | `/release-notes` | Turns a version's changes into a **draft GitHub Release** — reuses the `CHANGELOG.md` section as the body (composes with `/changelog`), else summarizes the commit delta. Drafts `gh release create --draft`; **never publishes, never pushes a tag.** | (no dedicated agent) |
 
 Reads a diff like the review class but invents nothing; proposes like the authoring

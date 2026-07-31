@@ -491,11 +491,23 @@ check_class_contract() {
           bad=1
         } ;;
       workflow)
-        has "$f" 'never .*git\|never push\|never runs git' i || {
+        # A workflow skill must never push or tag — that half is absolute. Running
+        # `git commit` is allowed, but ONLY behind an explicit per-item approval:
+        # §U forbids acting on the skill's own initiative, not acting on a yes.
+        # So require both halves, or a skill could satisfy this by saying "never
+        # pushes" while committing silently.
+        has "$f" 'never push\|never .*push\|does not push\|stops at the commit' i || {
           finding check_class_contract referential \
-            "skills/$name (workflow) never states that it does not run git"
+            "skills/$name (workflow) never states that it does not push"
           bad=1
-        } ;;
+        }
+        if has "$f" 'git commit' i && ! has "$f" 'never runs? git\|print blocks only\|never execute' i; then
+          has "$f" 'ask.*per commit\|per commit\|explicit.*yes\|go-ahead\|opt-in\|only on.*approval' i || {
+            finding check_class_contract referential \
+              "skills/$name (workflow) may run git commit but names no approval gate — §U allows it only on an explicit go-ahead"
+            bad=1
+          }
+        fi ;;
     esac
   done
   [ "$bad" = "0" ] && ok "class contracts honoured"

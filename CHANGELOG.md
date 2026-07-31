@@ -124,6 +124,22 @@ does as of this version, rather than how it was built.
 
 ### Changed
 
+- **`/commit-assistant` now offers to run the commits it drafts.** It still prints
+  the `git add` + `git commit` block first, every time — that block stands on its
+  own and copying it works exactly as before. But re-typing a command you have just
+  read and approved is friction, not safety, so it then asks.
+  **Once per commit, never once for the batch**: splitting unrelated changes is the
+  skill's whole point, and a single yes covering three commits approves messages you
+  have not seen land. Each prompt shows the exact paths it would stage, because the
+  thing being approved is a set of files, not a sentence. `[y]` run · `[n]` skip ·
+  `[e]` edit the message · `[a]` stop.
+  It re-reads the tree between commits (committing changes what is staged), halts on
+  the first failure rather than retrying, and **never pushes, never tags, never
+  `--no-verify`**. In CI it prints and stops — there is nobody to ask.
+  This does not weaken §U's *the human decides what gets committed*: that rule
+  forbids running git on the skill's **own initiative** and explicitly allows an
+  explicit go-ahead. `check.sh` now enforces the distinction — a workflow skill that
+  runs `git commit` must name an approval gate, or it fails.
 - All 25 agents now declare an explicit `tools:` allowlist. Claude Code and Cursor
   treat a missing key as inherit-all, but **Gemini CLI treats it as _no_ tools** —
   the agent loads and then cannot act — so an explicit list is the only spelling
