@@ -54,6 +54,10 @@ case "$prompt" in
   *upgrade*|*outdated*|*dependenc*) add "/deps-upgrade or /review-dependencies" ;;
 esac
 case "$prompt" in
+  *"e2e"*|*"end-to-end"*|*"browser test"*|*"playwright"*|*"cypress"*)
+    add "/e2e-run (detects your runner; BLOCKs on a prod URL)" ;;
+esac
+case "$prompt" in
   # Order matters: "refresh the screenshots in the docs" is the sync case, not a
   # one-shot capture, and the first match is the one that reads as the answer.
   *"docs"*screenshot*|*screenshot*"docs"*|*"refresh the docs"*|*"sync the docs"*)

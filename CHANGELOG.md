@@ -55,7 +55,11 @@ does as of this version, rather than how it was built.
   testable. **T14** puts the flake ledger at a *committed* `.nj-agents/flake-ledger.json`
   — gitignored it would start empty on every CI runner, which is exactly where
   intermittent failures accumulate and where the history is worth most.
-  No skills in this class yet — the contract lands first so they inherit it.
+  First skill in the class: **`/e2e-run`** (25 skills now). Detects the repo's own
+  E2E runner — Playwright, Cypress, WebdriverIO, or whatever its config points at —
+  BLOCKs unless the base URL is explicitly non-prod, runs the suite, and captures
+  trace/HAR/video/console into a gitignored temp dir. It runs tests; it never writes
+  or edits them, so there is no path on which it makes a suite green.
 - **`bin/nj-agents-review` drives any agent CLI** via `NJ_AGENT_CMD`
   (`NJ_AGENT_CMD="codex exec" nj-agents-review`). The verdict→exit-code mapping —
   0 PASS/WARN, 1 BLOCK, 2 harness error — is the value the wrapper adds, and it is
