@@ -25,6 +25,11 @@ idempotence, §P6 MCP-detect-never-require, §P7 safety, §P8 report-the-tree).
 > then read `$ROOT/CONVENTIONS-pm.md`. If a file is genuinely absent, say so and continue
 > with the procedure below rather than stopping.
 
+> **Every skill follows `CONVENTIONS-orchestration.md` §U** — ground everything in
+> the actual repo, never run git on your own initiative, no secrets in output,
+> keep `CHANGELOG.md` current when the change is user-facing, degrade rather than
+> fail, and say what you did not do.
+
 A Task is the **unit of work** — smaller and more concrete than a Story. Where a Story
 says *what a user gets*, a Task says *what someone does*. Use `/pm-story` if the thing
 is really a user-facing capability with acceptance criteria.

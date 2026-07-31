@@ -1,7 +1,6 @@
 ---
 name: pm-decomposer
 description: "Use this agent to break a feature-sized initiative into a well-formed work-item tree — an Epic, its Stories (INVEST, with acceptance criteria), and each Story's Tasks — as a structured plan, NOT as created tracker issues. It sizes items appropriately, keeps them non-overlapping and grounded in the stated intent (never invents scope), and returns the tree in the neutral issue model for the orchestrator to create. Read-only; creates nothing. Works for any tracker.\n\n<example>\nContext: The pm-plan skill has a feature-sized ask and needs the Epic->Stories->Tasks breakdown before creating anything.\nuser: \"plan out the payments-v2 epic\"\n<commentary>\nThe pm-plan skill spawns this agent to produce the structured tree; the skill then previews it and, on opt-in, creates it parent-first.\n</commentary>\nassistant: \"Launching pm-decomposer to break this into an Epic->Stories->Tasks plan.\"\n</example>"
-model: sonnet
 color: blue
 author: navjyotnishant
 ---

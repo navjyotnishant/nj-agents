@@ -1,0 +1,8 @@
+# Documentation site. Pinned per the build spec.
+# Install:  python3 -m venv .venv-docs && ./.venv-docs/bin/pip install -r requirements-docs.txt
+# Build:    ./.venv-docs/bin/mkdocs build
+mkdocs==1.6.1
+mkdocs-material
+mkdocs-gen-files
+mkdocs-literate-nav
+mkdocs-glightbox

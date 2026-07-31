@@ -38,11 +38,26 @@ grounding/safety §A6, non-clobber §A7).
 > then read `$ROOT/CONVENTIONS-authoring.md`. If a file is genuinely absent, say so and continue
 > with the procedure below rather than stopping.
 
+> **Every skill follows `CONVENTIONS-orchestration.md` §U** — ground everything in
+> the actual repo, never run git on your own initiative, no secrets in output,
+> keep `CHANGELOG.md` current when the change is user-facing, degrade rather than
+> fail, and say what you did not do.
+
 > **Spawning subagents — `CONVENTIONS-orchestration.md`.** This skill spawns agents,
 > so `§C` (cost) and `§R` (progress reporting) apply. **Cost shape:** a 6-agent pipeline (writer → fact-checker → reviewer → editor → final-polish → platform-lint).
 > State it and get a yes before the first dispatch; cap fix rounds at 2; halt on any
 > signal to stop. Announce the **pipeline** up front and each stage as it starts, so a stall is
 > attributable to a named stage (`§R`).
+
+
+## Dependencies
+
+Detected at runtime, never installed by this skill (`§A5`).
+
+| Tool | Used for | Without it |
+|---|---|---|
+| `rsvg-convert` | rasterising generated diagrams | embeds the SVG directly |
+| `DEVTO_API_KEY` or a publishing MCP | posting a draft, on opt-in | hands you the publish-ready files |
 
 ## Step 0 — Print the banner FIRST
 

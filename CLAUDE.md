@@ -9,7 +9,7 @@ agents** for software-development workflows. Install it once (symlinks into `~/.
 and invoke the skills with `/name` in **any** git repo — nothing here is specific to one
 project, stack, or language.
 
-- **23 skills · 26 agents**, in four classes + a diagram-generation subsystem.
+- **23 skills · 25 agents**, in four classes + a diagram-generation subsystem.
 - Install: `./install.sh` (global) or `./install.sh --project DIR`. The installer **globs**
   `skills/*/` and `agents/*.md`, so new files are picked up automatically. Reload Claude
   Code after installing (skills/agents load at session start).
@@ -23,7 +23,7 @@ agents/<name>.md            # an agent is a FLAT .md file
 CONVENTIONS.md              # review-class shared rules
 CONVENTIONS-authoring.md    # authoring-class shared rules (§A1–A8)
 CONVENTIONS-pm.md           # PM-authoring-class shared rules (§P1–P8); skills in NAV-82..84
-CONVENTIONS-orchestration.md # ANY spawning skill: §C cost, §R progress reporting
+CONVENTIONS-orchestration.md # §U binds EVERY skill; §C cost + §R progress for spawning ones
 global/CLAUDE.md            # advisory guidance → symlinked to ~/.claude/CLAUDE.md
 install.sh                  # symlink installer (idempotent; safe uninstall; never clobbers)
 check.sh                    # validator — frontmatter, refs, class contracts, cost/progress
@@ -44,7 +44,10 @@ docs/architecture/          # generated diagrams + their JSON source models
   repo* for accumulated debt and returns candidates — there is no sensible BLOCK for
   "you have 12 unused exports". `check.sh` holds only gates to the verdict tokens.
 - **Agent frontmatter:** `name`, `description` (may embed `<example>`/`<commentary>`),
-  `model`, `color`, `author`; optional `memory: project`. Omitting `tools:` inherits all tools.
+  `color`, `author`; optional `memory: project`. Omitting `tools:` inherits all tools,
+  and **omitting `model:` inherits the session's model** — so an Opus session gets Opus
+  subagents. Do not pin a model unless there is a specific, stated reason: a hardcoded
+  tier silently overrides the user's own choice.
 - **kebab-case** names throughout. This layout matches the official Anthropic plugin
   convention (skill = dir + SKILL.md, agent = flat .md, `scripts/`/`references/` subdirs).
 
@@ -117,22 +120,30 @@ own text, so a new skill is bound the moment it says "spawn".
 
 ## Diagram subsystem (`/arch-diagram`) — read before touching diagrams
 
-The house style is **icon tiles** (crisp line icon + label + class-color stripe) with a
-subtle Excalidraw sketch texture (rough.js) and a hand-drawn black frame. It is
-generated from a small JSON model, not hand-placed.
+Diagrams are **authored directly as SVG**, not emitted from a renderer. That is what
+allows gradients, hexagons, legends and a takeaway row, and what lets a layout be
+*rearranged* when it reads badly rather than being stuck with a grid's output.
 
-- Renderers + QA in `skills/arch-diagram/scripts/`: `icon_diagram.js` (lane/tile),
-  `flow_diagram.js` (process flows), `qa_diagram.js` (deterministic checker),
-  `diagram_common.js` (shared palette + icon set + **semantic-color contract**).
-  Run `npm install` in that dir once (rough.js; `node_modules` gitignored).
-- **Enforced visual-QA loop (do not skip):** after every render, spawn the **`diagram-qa`**
-  agent → it runs `qa_diagram.js` + a visual PNG pass → returns a **BLOCKING** verdict.
-  Loop render → QA → fix until PASS. Mechanical issues (overflow/clip/missing-icon) the
-  renderer auto-fixes; layout/color issues go back to `diagram-architect`.
-- **Semantic color is enforced:** red = failure/block/stop, green = success/pass/output,
-  class color = ordinary steps, grey = neutral inputs. Never green a failure or red a
-  success (`diagram_common.js` documents it; `qa_diagram.js` flags violations).
-- SVG→PNG for the visual pass: `rsvg-convert` (ships with graphviz/cairo).
+- **Two styles, same layout.** `infographic` is the **default** — clean gradients,
+  system font, crisp connectors. `--sketch` swaps in flat paper fills, a handwriting
+  font and a subtle wobble on card borders. Only the finish differs, so switching
+  never invalidates a layout that already passed review.
+- **Enforced visual gate (do not skip):** render the SVG to PNG (`rsvg-convert`),
+  **look at it**, and critique it against the 15-second test — does the headline state
+  the outcome, do any arrows cross, is any text clipped, is every number right? Fix
+  and repeat, capped at 2 rounds. Source review cannot catch a label hidden behind a
+  frame stroke or an arrowhead eaten by a filter; only rendering it can.
+- **Semantic colour is absolute:** red = failure/block/stop, green = success/pass,
+  orange = AI agents, grey = neutral input. Never green a failure or red a success.
+  Hexagons are agents; rounded rectangles are stages. Only use a shape that has
+  something to represent on that diagram.
+- **Sketch gotcha:** a displacement filter on a `<path>` suppresses its arrowheads —
+  SVG markers are not rendered through a filter. Wobble the cards, never the
+  connectors.
+
+The previous rough.js renderer (`icon_diagram.js` / `flow_diagram.js` /
+`qa_diagram.js`) and the `diagram-qa` agent were removed in v0.4.0. The four diagrams
+it produced remain as committed SVGs and are now edited by hand.
 
 ## Editing gotchas
 
@@ -149,21 +160,24 @@ generated from a small JSON model, not hand-placed.
 
 - **`main`** — the integration branch. Feature work merges here; CI runs on every
   push and PR.
-- **`prod`** — what gets released and installed from. Fast-forwarded from `main`
+- **`PRD`** — what gets released and installed from. Fast-forwarded from `main`
   once CI is green and the change has been used for real.
 
 ```bash
-git checkout prod && git merge --ff-only main && git push origin prod
+git checkout PRD && git merge --ff-only main && git push origin PRD
 ```
 
-Fast-forward only, deliberately: `prod` should never contain a commit that was not
+Fast-forward only, deliberately: `PRD` should never contain a commit that was not
 first on `main` and green.
 
-**Enforcement is local, not server-side.** GitHub branch protection needs Pro on a
-private repo, so nothing on the remote rejects a bad push. `./install.sh --git-hooks`
-installs a `pre-push` hook running the same checks as CI — per-clone, and bypassable
-with `--no-verify`. Real protection becomes available if the repo goes public or the
-plan changes.
+**`PRD` is protected server-side.** A PR is required, the `check` status check must
+pass, and force-push and deletion are blocked. `enforce_admins=false` and
+`required_approving_review_count=0` keep self-merge possible for a solo maintainer —
+which also means the owner can override the gate, so it is a guard rail rather than a
+wall. `main` is deliberately unprotected: it is where work integrates.
+
+`./install.sh --git-hooks` additionally installs a local `pre-push` hook running the
+same checks, so problems surface before a push rather than after.
 
 ## Commit style
 
@@ -189,7 +203,9 @@ construction and the validator tells you what is still missing:
    `check.sh` reports the gap rather than passing on placeholder text.
 3. `./install.sh` → reload Claude Code.
 4. **`./check.sh` must be clean.** It globs, so the new file is covered immediately.
-5. Update `README.md`, `docs.html`, and the right table in **`global/CLAUDE.md`** —
+5. Add a `CHANGELOG.md` entry under `[Unreleased]` — a new skill is user-facing.
+   Use `/changelog`; see the standing rule in `global/CLAUDE.md`.
+6. Update `README.md`, `docs.html`, and the right table in **`global/CLAUDE.md`** —
    that file is hand-maintained and is what makes the skill discoverable in *other*
    repos. `check.sh` flags it if you forget.
 

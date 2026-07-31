@@ -55,7 +55,7 @@ whole manifest by definition.
 | Skill | What it does | Agents |
 |---|---|---|
 | `/changelog` | `CHANGELOG.md` in Keep a Changelog + SemVer from commit history. Merges into `[Unreleased]` without clobbering; suggests the bump. (For the GitHub **Release** object, see `/release-notes`.) | `changelog-writer` |
-| `/arch-diagram` | System/solution/sequence/data-flow/deployment/ER diagrams into `docs/architecture/`. | `diagram-architect`, `diagram-qa` |
+| `/arch-diagram` | Authors a presentation-quality SVG into `docs/architecture/` — infographic by default, `--sketch` on request. Renders and reviews it before shipping. | `diagram-architect` |
 | `/capture-screenshots` | Capture → detect PII/secrets → blur/mask → **verify coverage before writing**. | `screenshot-capturer`, `sensitive-data-reviewer`, `screenshot-redactor` |
 | `/docs-site` | Self-contained theme-aware `docs.html` from docs, code, an outline, or SKILL.md/OpenAPI/JSON-Schema. Auto-derives the menu; flags gaps rather than inventing. | `docs-architect`, `docs-designer` |
 | `/tech-blog` | writer → fact-checker → reviewer → editor → final-polish → platform-lint → optional poster. Generates its own diagrams/screenshots, then embeds them. | `blog-writer`, `blog-fact-checker`, `blog-reviewer`, `blog-editor`, `blog-final-polish`, `blog-platform-lint`, `blog-poster` |
@@ -68,7 +68,7 @@ Shared behavior lives in the repo's `CONVENTIONS-authoring.md` (§A1 repo-ingest
 
 Two gates worth knowing: `/tech-blog`'s **fact-checker BLOCKS** on any claim it
 can't verify against the repo, and `/arch-diagram` runs a mandatory
-**render → QA → fix loop** through `diagram-qa` until the diagram PASSES.
+**render → look → critique** loop until the diagram reads in 15 seconds.
 
 ## Workflow suite — reads the diff, drafts a change artifact, proposes (never auto-acts)
 
@@ -166,6 +166,21 @@ Apply these to related work even when no skill is invoked:
   happened but not where the user now is, so they have to go look it up. Pair the tree
   with the commit SHA and one line on anything surprising, and put the tree last.
   Full rule and example: `CONVENTIONS-pm.md §P8`.
+- **Keep `CHANGELOG.md` current — don't reconstruct it later.** A repo with user-facing
+  changes should have one, in Keep a Changelog format with an `[Unreleased]` section.
+  Update it **when the work lands**, not at release time: a changelog written months
+  later from `git log` is a commit list with better formatting, because the reasons
+  are gone. Use `/changelog` rather than hand-writing entries — it merges into
+  `[Unreleased]` without clobbering and drops `wip`/`fixup`/merge noise.
+  **When to update it:** a feature, a fix, a breaking change, a deprecation, or
+  anything a user of this repo would want to know. **When not to:** refactors, test
+  changes, docs-only edits, internal tooling — those are in the git history and don't
+  belong in a user-facing record.
+  If a repo has no `CHANGELOG.md` and is accumulating real changes, **offer to start
+  one** rather than silently letting the gap grow. A throwaway repo, or one with no
+  users and no releases, doesn't need one — say so and move on rather than
+  hard-blocking. A project whose own `CLAUDE.md` sets a different policy overrides
+  this.
 - **Author header on new scripts and standalone modules.** For a new script, migration,
   or major standalone module, add a comment header at the top:
 

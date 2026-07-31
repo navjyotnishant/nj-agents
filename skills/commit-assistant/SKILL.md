@@ -29,6 +29,11 @@ review class but invents nothing (`CONVENTIONS.md §1` scope, `CONVENTIONS-autho
 > then read `$ROOT/CONVENTIONS-authoring.md` and `$ROOT/CONVENTIONS.md`. If a file is genuinely absent, say so and continue
 > with the procedure below rather than stopping.
 
+> **Every skill follows `CONVENTIONS-orchestration.md` §U** — ground everything in
+> the actual repo, never run git on your own initiative, no secrets in output,
+> keep `CHANGELOG.md` current when the change is user-facing, degrade rather than
+> fail, and say what you did not do.
+
 > **The one hard rule this skill lives on top of:** *the human decides what gets
 > committed.* This skill's entire output is the `git commit` block from §A3 — with a
 > good message instead of a placeholder. **It never runs `git add`, `git commit`,

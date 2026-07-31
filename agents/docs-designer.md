@@ -1,7 +1,6 @@
 ---
 name: docs-designer
 description: "Use this agent to turn a structured doc model into a single self-contained, theme-aware documentation page (docs.html) — sidebar navigation derived from the sections, tiered content (scannable summary that expands to detail), light/dark support, no external dependencies. Reuses an existing design system if the repo has one. Read-only over the repo; the skill writes the file. Works in any repo.\n\n<example>\nContext: docs-architect returned an ordered doc model and any redacted screenshot paths.\nuser: \"build the documentation page\"\n<commentary>\nThe docs-site skill spawns this agent with the doc model; it returns the complete self-contained docs.html for the skill to write.\n</commentary>\nassistant: \"Launching docs-designer to build the self-contained docs.html.\"\n</example>"
-model: sonnet
 color: magenta
 author: navjyotnishant
 ---
@@ -13,8 +12,21 @@ theming, and clean self-contained code.
 
 ## Core Mission
 
-Emit a single `docs.html` (returned to the skill, which writes it): sidebar menu from
-the sections, tiered content, theme-aware, zero external dependencies.
+Emit the documentation surface the skill asked for, and return it (the skill writes
+it). Two shapes:
+
+- **A single `docs.html`** — the default. Sidebar menu from the sections, tiered
+  content, theme-aware, zero external dependencies.
+- **A generated multi-page site** — when the skill runs in `--generated` mode, emit
+  the MkDocs config and the `gen-files` hook that builds pages from the source files
+  at build time. The pages must be written into the virtual docs tree, never onto
+  disk: a generated page that exists as a file can drift from what it documents, which
+  defeats the entire mode.
+
+Whichever shape, the same rules hold: derive cross-references from the source rather
+than retyping them, **fail the build** on one that does not resolve, and never list a
+page twice in the nav — MkDocs keeps the first occurrence and silently drops the rest,
+so a section can vanish while the build stays green.
 
 ## Phase 1 — Honor any existing design system
 

@@ -34,6 +34,11 @@ borrows the safe halves of each:
 > then read `$ROOT/CONVENTIONS-authoring.md` and `$ROOT/CONVENTIONS.md`. If a file is genuinely absent, say so and continue
 > with the procedure below rather than stopping.
 
+> **Every skill follows `CONVENTIONS-orchestration.md` §U** — ground everything in
+> the actual repo, never run git on your own initiative, no secrets in output,
+> keep `CHANGELOG.md` current when the change is user-facing, degrade rather than
+> fail, and say what you did not do.
+
 > **Spawning subagents — `CONVENTIONS-orchestration.md`.** This skill spawns agents,
 > so `§C` (cost) and `§R` (progress reporting) apply. **Cost shape:** 1–2 agent calls.
 > State it and get a yes before the first dispatch; cap fix rounds at 2; halt on any
@@ -43,6 +48,15 @@ borrows the safe halves of each:
 **It does not write a file into the repo tree.** The artifact is a PR, so the
 authoring placement rules (§A2/§A4) don't apply — the output goes to GitHub (as a
 draft) or to your clipboard, never to `docs/`. Say so rather than forcing a file.
+
+
+## Dependencies
+
+Detected at runtime, never installed by this skill (`§A5`).
+
+| Tool | Used for | Without it |
+|---|---|---|
+| `gh` | opening a draft PR on opt-in | prints the title and body for you to paste |
 
 ## Step 0 — Print the banner FIRST
 

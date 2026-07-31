@@ -1,6 +1,7 @@
-# nj-agents — shared orchestration conventions
+# nj-agents — shared cross-class conventions
 
-Rules for **any skill that spawns subagents**, in any class. Where the per-class
+Rules that hold across every class. **§U** binds *every* skill in the toolkit; **§C**
+and **§R** bind any skill that spawns subagents. Where the per-class
 conventions docs (`CONVENTIONS.md`, `CONVENTIONS-authoring.md`, `CONVENTIONS-pm.md`)
 say *what* a class produces, this one says how a skill behaves while producing it:
 what it costs (`§C`) and what the developer sees while it runs (`§R`).
@@ -13,6 +14,65 @@ skill spawning six agents costs the same whatever class it belongs to.
 **Who this binds:** every skill whose procedure spawns an agent. `check.sh` detects
 that from the skill's own text rather than a list of names, so a skill added
 tomorrow is covered the moment it says "spawn".
+
+---
+
+## §U — Universal (every skill, every class)
+
+These hold regardless of what a skill produces. They were previously restated in each
+class doc, which meant they drifted — "no secrets" appeared in two, "ground
+everything" in one, so a PM skill was never formally bound by the grounding rule at
+all despite it obviously applying.
+
+**Ground everything in the actual repo.** Read the README, the docs, the code. Never
+invent an API, a file path, a version, a benchmark, or a component. A claim you cannot
+verify gets cut or explicitly marked — never smoothed over. This is `§A6` for
+authoring, `§P1` for PM, and it applies to the rest too.
+
+**The human decides what gets committed.** No skill runs `git add`, `commit`, `push`,
+or `tag` on its own initiative — it writes the artifact and prints the exact commands.
+An explicit "commit and push" from the user overrides this, nothing else does. Never
+`--no-verify`.
+
+**No secrets in output.** Never put a credential, token, internal hostname, or private
+URL into a file, a tracker item, a commit message, or a report. On a suspected secret,
+stop and say so rather than including it redacted-but-present.
+
+**Keep `CHANGELOG.md` current when the change is user-facing.** A feature, a fix, a
+breaking change or a deprecation goes under `[Unreleased]` **as it lands** — not
+reconstructed at release time, when the reasons are gone. Use `/changelog`. Refactors,
+tests, docs-only edits and internal tooling do **not** belong there: a changelog that
+records everything records nothing. If the repo has no `CHANGELOG.md`, offer to start
+one rather than letting the gap grow — but never hard-block a throwaway repo over it.
+
+**Document every external dependency, with its fallback.** A skill that shells out to
+anything not in a POSIX base install states it in a `## Dependencies` table: the tool,
+what it is used for, and what happens without it. A reader must be able to see what a
+skill needs *before* running it, not discover it from an error. Buried in prose does
+not count — it has to be scannable.
+
+| Tool | Used for | Without it |
+|---|---|---|
+| `example` | what it does here | the documented fallback, or BLOCK if genuinely required |
+
+**Degrade, don't fail.** External tools and MCP connectors are detected at runtime,
+never required; every path has a zero-dependency fallback. The one exception is secret
+scanning, which genuinely blocks without a scanner.
+
+**Verify a visual artifact by looking at it.** For anything rendered — a diagram, a
+page, a screenshot — reading the source is not verification. A label hidden behind a
+frame stroke, an arrowhead removed by a filter, a nav that a JS-loaded theme breaks:
+all invisible in the source and obvious the moment it is rendered and viewed. Grepping
+the built output is not looking at it.
+
+**A number in an artifact is a claim.** Count it from the source before writing it
+down. A diagram saying "7 agents" beside nine shapes, or a page claiming 12 skills
+when there are 23, discredits everything around it — and the reader has no way to
+know which other facts to distrust.
+
+**Say what you did not do.** A skipped step, a partial scope, an unavailable tool —
+state it plainly. An artifact that implies more coverage than it has is worse than one
+that admits the gap.
 
 ---
 
@@ -59,9 +119,11 @@ Add --all to re-review everything.
 ```
 
 **Hard stops.**
-- **Cap fix rounds at 2.** After two failed QA/verify cycles on the same artifact,
-  stop and report: what's fixed, what still fails, the options. Do not start a third
-  round without being asked.
+- **Cap fix rounds at 2, then ASK.** After two cycles on the same artifact, stop and
+  report what's fixed and what still fails — then offer the choice explicitly:
+  *"Ship as-is, or run 2 more rounds?"* Never start a third round unprompted, and
+  never quietly abandon the work either. The cap makes spend a decision rather than a
+  side-effect; the question is what keeps it from becoming a dead end.
 - **A blocking verdict is a checkpoint, not a to-do.** When a QA/review agent returns
   BLOCK, surface it — do not silently fix and re-run. Say what it found and what
   fixing it would cost.

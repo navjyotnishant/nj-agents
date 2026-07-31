@@ -1,0 +1,96 @@
+site_name: nj-agents
+site_description: A project-agnostic toolkit of Claude Code skills and agents for the software development lifecycle.
+site_url: https://navjyotnishant.github.io/nj-agents/
+repo_url: https://github.com/navjyotnishant/nj-agents
+repo_name: navjyotnishant/nj-agents
+edit_uri: blob/main/
+
+# docs_src/, NOT docs/ — the latter already exists and holds tracked diagram
+# artifacts (SVG/PNG + their JSON source models). Pointing mkdocs at it would sweep
+# those into the nav. Almost everything under docs_src/ is written at build time by
+# gen_pages.py; only the harness pages are authored.
+docs_dir: docs_src
+
+theme:
+  name: material
+  icon:
+    logo: material/robot-outline
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle: { icon: material/brightness-auto, name: Follow system }
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle: { icon: material/brightness-7, name: Dark mode }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle: { icon: material/brightness-4, name: Light mode }
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.top
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+    - toc.follow
+
+# gen_pages.py lives inside docs_dir so the gen-files plugin can find it, which
+# also means mkdocs treats it as a static file and publishes it. It is the build
+# script, not documentation — exclude it.
+exclude_docs: |
+  gen_pages.py
+
+plugins:
+  - search
+  # Writes pages into the VIRTUAL docs tree at build time. Nothing lands on disk, so
+  # no generated page can drift from the source it documents.
+  - gen-files:
+      scripts:
+        - docs_src/gen_pages.py
+  # Nav comes from the SUMMARY.md that the same pass emits, so it cannot go stale
+  # when a skill is added or removed.
+  - literate-nav:
+      nav_file: SUMMARY.md
+  # Diagrams are wider than the ~976px content column, so they render shrunk and
+  # unreadable. Click to open full-size with zoom and pan.
+  - glightbox:
+      touchNavigation: true
+      zoomable: true
+      draggable: true
+      auto_caption: true
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+extra_css:
+  - stylesheets/cards.css
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/navjyotnishant/nj-agents
+
+# A dangling reference already fails the build in gen_pages.py; this makes a broken
+# internal link fail too, rather than shipping a dead page.
+strict: true

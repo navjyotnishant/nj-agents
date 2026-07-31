@@ -27,6 +27,11 @@ report §6, safety §7).
 > then read `$ROOT/CONVENTIONS.md`. If a file is genuinely absent, say so and continue
 > with the procedure below rather than stopping.
 
+> **Every skill follows `CONVENTIONS-orchestration.md` §U** — ground everything in
+> the actual repo, never run git on your own initiative, no secrets in output,
+> keep `CHANGELOG.md` current when the change is user-facing, degrade rather than
+> fail, and say what you did not do.
+
 > **Spawning subagents — `CONVENTIONS-orchestration.md`.** This skill spawns agents,
 > so `§C` (cost) and `§R` (progress reporting) apply. **Cost shape:** 1–2 agent calls.
 > State it and get a yes before the first dispatch; cap fix rounds at 2; halt on any
@@ -38,6 +43,15 @@ most expensive scan in this toolkit and most runs are asking about work in progr
 So it **defaults to the changed set** (`CONVENTIONS.md §1`) and takes `--full` for the
 whole tree. Say which scope ran, and — when it was the changed set — say plainly that
 dead code elsewhere was not looked at.
+
+
+## Dependencies
+
+Detected at runtime, never installed by this skill (`§A5`).
+
+| Tool | Used for | Without it |
+|---|---|---|
+| `knip` / `ts-prune` / `vulture` / `deadcode` / `cargo-udeps` | the repo's own dead-code analysis, if already installed | a grep-based export-vs-import cross-reference, marked lower-confidence |
 
 ## Step 0 — Print the warning banner FIRST
 

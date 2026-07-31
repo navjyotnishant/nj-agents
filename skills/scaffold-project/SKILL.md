@@ -29,7 +29,21 @@ propose-commit, §A4 placement, §A5 MCP-detect-never-require, §A6 grounding,
 > then read `$ROOT/CONVENTIONS-authoring.md`. If a file is genuinely absent, say so and continue
 > with the procedure below rather than stopping.
 
+> **Every skill follows `CONVENTIONS-orchestration.md` §U** — ground everything in
+> the actual repo, never run git on your own initiative, no secrets in output,
+> keep `CHANGELOG.md` current when the change is user-facing, degrade rather than
+> fail, and say what you did not do.
+
 ---
+
+## Dependencies
+
+Detected at runtime, never installed by this skill (`§A5`).
+
+| Tool | Used for | Without it |
+|---|---|---|
+| the ecosystem's own generator (`cargo new`, `uv init`, `npm create`) | laying out the stack-specific structure | a minimal hand-written layout — say which parts the generator would normally have provided |
+| `gitleaks` | wiring the secret-scanning pre-commit hook (`OSPS-BR-07.01`) | the hook is scaffolded but noted as inactive until a scanner is installed |
 
 ## Grounding — where the standard comes from (READ FIRST)
 

@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" width="1200" height="480" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-serif" role="img" aria-label="/tech-blog pipeline: your repo feeds a draft stage, then a blocking fact-check gate, then a refine stage, producing a publish-ready post. Unverifiable claims return to the writer and never ship.">
+  <defs>
+    <linearGradient id="agent" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff7ed"/><stop offset="1" stop-color="#ffedd5"/></linearGradient>
+    <linearGradient id="gate"  x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fef2f2"/><stop offset="1" stop-color="#fee2e2"/></linearGradient>
+    <linearGradient id="out"   x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0fdf4"/><stop offset="1" stop-color="#dcfce7"/></linearGradient>
+    <linearGradient id="inp"   x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f8fafc"/><stop offset="1" stop-color="#f1f5f9"/></linearGradient>
+    <filter id="sh" x="-40%" y="-40%" width="180%" height="200%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3.5" flood-color="#0f172a" flood-opacity="0.10"/>
+    </filter>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#94a3b8"/></marker>
+    <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#22c55e"/></marker>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#dc2626"/></marker>
+  </defs>
+
+  <style>
+    .t{fill:#0f172a}
+    .h1{font-size:22px;font-weight:700}
+    .lede{font-size:13.5px;fill:#475569}
+    .phase{font-size:17px;font-weight:670}
+    .cap{font-size:11px;fill:#64748b}
+    .kick{font-size:9px;font-weight:700;letter-spacing:.11em}
+    .hexlabel{font-size:10px;font-weight:600;fill:#9a3412}
+    .band{font-size:9.5px;font-weight:700;letter-spacing:.10em;fill:#94a3b8}
+    .big{font-size:24px;font-weight:700}
+    .legend{font-size:10.5px;fill:#64748b}
+    @media (prefers-color-scheme: dark){
+      .t{fill:#e2e8f0}.lede{fill:#cbd5e1}.cap{fill:#94a3b8}.legend{fill:#94a3b8}.hexlabel{fill:#fdba74}
+    }
+  </style>
+
+  <!-- house-style frame: a hand-drawn border, drawn first so nothing overlaps it -->
+  <path d="M14 13 Q600 9 1186 14 Q1190 245 1186 466 Q600 471 14 466 Q10 245 14 13 Z"
+        fill="none" stroke="#0f172a" stroke-width="1.6" stroke-linejoin="round" opacity="0.85"/>
+  <path d="M17 17 Q600 13 1183 18" fill="none" stroke="#0f172a" stroke-width="0.7" opacity="0.35"/>
+
+  <text class="t h1" x="40" y="42">A repo in. A publish-ready post out.</text>
+  <text class="lede" x="40" y="68">Nothing ships that the code doesn't back up. Claims that can't be verified go back to the writer — they never reach the page.</text>
+
+  <!-- ── band labels: the logical grouping, left to right ── -->
+  <text class="band" x="40"  y="106">INPUT</text>
+  <text class="band" x="264" y="106" fill="#ea580c">① DRAFT</text>
+  <text class="band" x="516" y="106" fill="#dc2626">② VERIFY — BLOCKING</text>
+  <text class="band" x="784" y="106" fill="#ea580c">③ REFINE</text>
+  <text class="band" x="1048" y="106" fill="#16a34a">OUTPUT</text>
+
+  <!-- INPUT (rounded rect · grey neutral) -->
+  <g filter="url(#sh)"><rect x="40" y="120" width="176" height="96" rx="14" fill="url(#inp)" stroke="#cbd5e1"/></g>
+  <text class="t phase" x="62" y="156">Code &amp; docs</text>
+  <text class="cap" x="62" y="180">README · source · ADRs</text>
+  <text class="cap" x="62" y="197">read, never guessed at</text>
+
+  <!-- ① DRAFT — hexagon agents -->
+  <g filter="url(#sh)"><rect x="264" y="120" width="196" height="96" rx="14" fill="url(#agent)" stroke="#fdba74"/></g>
+  <text class="t phase" x="286" y="156">Write it</text>
+  <text class="cap" x="286" y="180">an expert draft, every</text>
+  <text class="cap" x="286" y="197">claim carrying a citation</text>
+  <g filter="url(#sh)">
+    <path d="M290 246 l13-8 13 8 v16 l-13 8 -13-8 z" fill="url(#agent)" stroke="#fb923c"/>
+    <path d="M356 246 l13-8 13 8 v16 l-13 8 -13-8 z" fill="url(#agent)" stroke="#fb923c"/>
+  </g>
+  <text class="hexlabel" x="286" y="284">blog-writer</text>
+  <text class="hexlabel" x="352" y="284">diagram-architect</text>
+
+  <!-- ② THE GATE -->
+  <g filter="url(#sh)"><rect x="516" y="112" width="208" height="112" rx="14" fill="url(#gate)" stroke="#ef4444" stroke-width="2.5"/></g>
+  <text class="phase" x="538" y="150" fill="#b91c1c">Prove it</text>
+  <text class="cap" x="538" y="174" fill="#b91c1c">every claim checked against</text>
+  <text class="cap" x="538" y="191" fill="#b91c1c">the code itself</text>
+  <text class="cap" x="538" y="211" fill="#b91c1c" font-weight="700">Can't verify it? It does not ship.</text>
+  <g filter="url(#sh)"><path d="M542 246 l13-8 13 8 v16 l-13 8 -13-8 z" fill="url(#gate)" stroke="#ef4444"/></g>
+  <text class="hexlabel" x="538" y="284" fill="#b91c1c">blog-fact-checker</text>
+
+  <!-- ③ REFINE -->
+  <g filter="url(#sh)"><rect x="784" y="120" width="196" height="96" rx="14" fill="url(#agent)" stroke="#fdba74"/></g>
+  <text class="t phase" x="806" y="156">Polish it</text>
+  <text class="cap" x="806" y="180">structure, clarity, and the</text>
+  <text class="cap" x="806" y="197">target platform's own rules</text>
+  <g filter="url(#sh)">
+    <path d="M810 246 l13-8 13 8 v16 l-13 8 -13-8 z" fill="url(#agent)" stroke="#fb923c"/>
+    <path d="M856 246 l13-8 13 8 v16 l-13 8 -13-8 z" fill="url(#agent)" stroke="#fb923c"/>
+    <path d="M902 246 l13-8 13 8 v16 l-13 8 -13-8 z" fill="url(#agent)" stroke="#fb923c"/>
+    <path d="M948 246 l13-8 13 8 v16 l-13 8 -13-8 z" fill="url(#agent)" stroke="#fb923c"/>
+  </g>
+  <text class="hexlabel" x="806" y="284">reviewer · editor · polish · lint</text>
+
+  <!-- OUTPUT -->
+  <g filter="url(#sh)"><rect x="1048" y="120" width="112" height="96" rx="14" fill="url(#out)" stroke="#22c55e" stroke-width="2.5"/></g>
+  <text class="phase" x="1070" y="158" fill="#15803d">✓ Post</text>
+  <text class="cap" x="1070" y="182" fill="#15803d">docs/blog/</text>
+  <text class="cap" x="1070" y="199" fill="#15803d">posting: opt-in</text>
+
+  <!-- ── FLOW: strictly left → right, no crossings ── -->
+  <path d="M216 168 H256" fill="none" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#a)"/>
+  <path d="M460 168 H508" fill="none" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#a)"/>
+  <path d="M724 168 H776" fill="none" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#a)"/>
+  <text class="kick" x="732" y="160" fill="#16a34a">VERIFIED</text>
+  <path d="M980 168 H1040" fill="none" stroke="#22c55e" stroke-width="2.5" marker-end="url(#ag)"/>
+
+  <!-- the reject loop: below everything, so it crosses nothing -->
+  <path d="M556 300 V332 H303 V300" fill="none" stroke="#dc2626" stroke-width="2.5" marker-end="url(#ar)"/>
+  <text class="kick" x="366" y="350" fill="#dc2626">UNVERIFIABLE → REWRITTEN, NEVER PUBLISHED</text>
+
+  <!-- ── legend + numbers ── -->
+  <line x1="40" y1="384" x2="1160" y2="384" stroke="#e2e8f0"/>
+  <path d="M44 408 l9-5.5 9 5.5 v11 l-9 5.5 -9-5.5 z" fill="url(#agent)" stroke="#fb923c"/>
+  <text class="legend" x="70" y="418">AI agent</text>
+  <rect x="140" y="404" width="18" height="16" rx="4" fill="url(#inp)" stroke="#cbd5e1"/>
+  <text class="legend" x="166" y="418">stage</text>
+  <line x1="228" y1="412" x2="258" y2="412" stroke="#94a3b8" stroke-width="2.5"/>
+  <text class="legend" x="266" y="418">sync</text>
+  <line x1="312" y1="412" x2="342" y2="412" stroke="#dc2626" stroke-width="2.5"/>
+  <text class="legend" x="350" y="418">rejected — back to the writer</text>
+
+  <text class="big" x="560" y="420" fill="#0f172a">9</text>
+  <text class="legend" x="580" y="418">specialist agents</text>
+  <text class="big" x="712" y="420" fill="#b91c1c">1</text>
+  <text class="legend" x="726" y="418">hard gate</text>
+  <text class="big" x="812" y="420" fill="#15803d">0</text>
+  <text class="legend" x="830" y="418">commits made for you — the post is written, the commit is proposed</text>
+</svg>

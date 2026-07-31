@@ -189,3 +189,13 @@ applies: **§C** (state the cost shape before spawning, cap fix rounds at 2, hal
 any signal to stop) and **§R** (announce the agent roster before dispatch, mark each
 one as it lands). Those rules are class-agnostic — a six-agent pipeline costs the
 same whatever it produces.
+
+---
+
+## Also applies
+
+`CONVENTIONS-orchestration.md` **§U** binds every skill regardless of class —
+ground everything in the repo, never run git on your own initiative, no secrets in
+output, keep `CHANGELOG.md` current when the change is user-facing, degrade rather
+than fail, and say what you did not do. The rules below are what this class adds
+on top.
