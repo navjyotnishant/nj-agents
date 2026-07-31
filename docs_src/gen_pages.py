@@ -131,6 +131,21 @@ def derive_wiring(skills: dict, agents: dict):
     return spawns, spawned_by
 
 
+def dependencies(body: str) -> list[tuple[str, str]]:
+    """(tool, what happens without it) from the skill's own ## Dependencies table.
+    Parsed rather than retyped, so the page cannot disagree with the skill."""
+    m = re.search(r"^## Dependencies\b.*?\n(.*?)(?=\n## |\Z)", strip_comments(body), re.S | re.M)
+    if not m:
+        return []
+    out = []
+    for row in re.findall(r"^\|(.+?)\|(.+?)\|(.+?)\|\s*$", m.group(1), re.M):
+        tool, _use, without = (c.strip() for c in row)
+        if tool.lower() in ("tool", "") or set(tool) <= set("-: "):
+            continue
+        out.append((tool, without))
+    return out
+
+
 def cost_shape(body: str) -> str | None:
     m = re.search(r"\*\*Cost shape:\*\*\s*(.+?)\.\s", strip_comments(body), re.DOTALL)
     return re.sub(r"\s*\n>\s*", " ", m.group(1)).strip() if m else None
@@ -331,6 +346,7 @@ for cls, (title, blurb) in CLASSES.items():
             "",
             "| | |",
             "|---|---|",
+            f"| Run it | `/{name}` |",
             f"| Class | `{cls}`{' · `' + sub + '`' if sub else ''} |",
             f"| Version | `{m.get('version', '—')}` |",
             f"| Author | {m.get('author', '—')} |",
@@ -338,9 +354,17 @@ for cls, (title, blurb) in CLASSES.items():
         cost = cost_shape(s["body"])
         if cost:
             out.append(f"| Cost | {cost} |")
+        deps = dependencies(s["body"])
+        if deps:
+            out.append("| Needs | " + " · ".join(f"{t}" for t, _ in deps) + " |")
         out.append(
             f"| Source | [`skills/{name}/SKILL.md`]({REPO_URL}/skills/{name}/SKILL.md) |"
         )
+        if deps:
+            out += ["", "### What it needs, and what happens without it", "",
+                    "Every tool is detected at runtime — none is installed for you.", "",
+                    "| Tool | Without it |", "|---|---|"]
+            out += [f"| {t} | {w} |" for t, w in deps]
         if name in PIPELINE_DIAGRAMS:
             out += ["", "## The pipeline", "",
                     f"![/{name} pipeline](../assets/{PIPELINE_DIAGRAMS[name]})"]
