@@ -363,6 +363,49 @@ for cls, (title, blurb) in CLASSES.items():
         write(page, out, s["path"])
         nav_skills.append(f"        * [/{name}]({page})")
 
+pipelines = sorted(
+    ((n, spawns[n]) for n in skills if len(spawns[n]) > 1),
+    key=lambda kv: (-len(kv[1]), kv[0]),
+)
+grouped = {a for _, members in pipelines for a in members}
+
+for skill_name, members in pipelines:
+    ordered = pipeline_order(skill_name, members, skills)
+    sk = skills[skill_name]
+
+    # The orchestrator gets its OWN page. Without one the group header was a dead
+    # text label — /docs-site had pages for docs-architect and docs-designer but
+    # nothing for the thing that runs them. This page is the orchestrator's view, so
+    # the pipeline diagram lives HERE and on no sub-agent page.
+    #
+    # It is a distinct page from skills/<name>.md, not a second listing of it —
+    # listing the same file twice is what made mkdocs silently drop it from Skills.
+    orch = f"orchestrators/{skill_name}.md"
+    out = [
+        f"# `/{skill_name}` — orchestrator",
+        "",
+        f"Runs **{len(ordered)} agents**. " + summary(sk["meta"]),
+        "",
+    ]
+    if skill_name in PIPELINE_DIAGRAMS:
+        out += ["## The pipeline", "",
+                f"![/{skill_name} pipeline](../assets/{PIPELINE_DIAGRAMS[skill_name]})", ""]
+    out += ["## What it runs, in order", "", "| # | Agent | What it does |", "|---|---|---|"]
+    for i, a in enumerate(ordered, 1):
+        out.append(f"| {i} | [`{a}`](../agents/{a}.md) | {clip(summary(agents[a]['meta']), 90)} |")
+    cost = cost_shape(sk["body"])
+    out += ["", "## At a glance", "", "| | |", "|---|---|",
+            f"| Class | `{sk['meta'].get('class','—')}` |",
+            f"| Cost | {cost or '—'} |",
+            f"| Skill page | [`/{skill_name}`](../skills/{skill_name}.md) |",
+            f"| Source | [`skills/{skill_name}/SKILL.md`]({REPO_URL}/skills/{skill_name}/SKILL.md) |"]
+    write(orch, out, sk["path"])
+
+    nav_agents.append(f"    * [/{skill_name}]({orch})")
+    for name in ordered:
+        nav_agents.append(f"        * [{name}](agents/{name}.md)")
+
+
 for name in sorted(agents):
     a = agents[name]
     m = a["meta"]
@@ -391,10 +434,12 @@ for name in sorted(agents):
         "",
     ]
     out += [f"- [`/{s}`](../skills/{s}.md)" for s in sorted(spawned_by[name])]
+    # No pipeline diagram here — it is the orchestrator's view, not this agent's, and
+    # repeating it on 21 sub-agent pages was duplication. Link to it instead.
     for sk in sorted(spawned_by[name]):
         if sk in PIPELINE_DIAGRAMS:
-            out += ["", f"### Where it sits in `/{sk}`", "",
-                    f"![/{sk} pipeline](../assets/{PIPELINE_DIAGRAMS[sk]})"]
+            out += ["", f"See the [`/{sk}` pipeline](../orchestrators/{sk}.md) for where "
+                    "this fits in the whole run."]
     out += ["", f"[Read `agents/{name}.md` →]({REPO_URL}/agents/{name}.md)"]
     write(page, out, a["path"])
 
@@ -422,22 +467,6 @@ for svg in sorted((ROOT / "docs" / "architecture").glob("*.svg")):
 # No "Workflow" child link either: that page already lives under Skills, and listing
 # it twice under two labels is what made the nav feel like it jumped around. The
 # agent's own page links back to its spawner.
-pipelines = sorted(
-    ((n, spawns[n]) for n in skills if len(spawns[n]) > 1),
-    key=lambda kv: (-len(kv[1]), kv[0]),
-)
-grouped = {a for _, members in pipelines for a in members}
-
-for skill_name, members in pipelines:
-    ordered = pipeline_order(skill_name, members, skills)
-    # A plain LABEL, not a link. Listing skills/<name>.md here as well as under
-    # Skills made mkdocs keep only the first occurrence and silently drop the page
-    # from Skills — which is what left "Authoring" showing bare "Workflow" entries
-    # with three of its six skills missing. The agent pages link back to the skill.
-    nav_agents.append(f"    * {skill_name}")
-    for name in ordered:
-        nav_agents.append(f"        * [{name}](agents/{name}.md)")
-
 solo = sorted(a for a in agents if a not in grouped)
 if solo:
     nav_agents.append("    * Single-agent skills")
