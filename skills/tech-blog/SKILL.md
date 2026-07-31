@@ -28,7 +28,7 @@ grounding/safety §A6, non-clobber §A7).
 
 > **Finding the conventions file.** It lives at the toolkit repo root, two levels
 > above this skill — not beside `SKILL.md`. Skills are usually installed as
-> symlinks into `~/.claude/skills/`, so a plain relative path resolves against the
+> symlinks into your runner's skills directory, so a plain relative path resolves against the
 > *link* and misses it. Resolve the link first:
 >
 > ```bash
@@ -250,7 +250,8 @@ on that platform (never auto-publish without explicit confirmation).
 If no MCP is connected but the target is **Dev.to** and the user opts in, `blog-poster`
 has a direct-REST fallback: `scripts/publish-devto.py <post.md>` creates a draft via
 the Dev.to API (uploads local images to Dev.to's CDN, forces `published: false`,
-idempotent re-runs). It needs a `DEVTO_API_KEY` — exported or in `~/.claude/.env`
+idempotent re-runs). It needs a `DEVTO_API_KEY` — exported, or in `~/.config/nj-agents/.env`
+(the legacy `~/.claude/.env` is still read for existing installs)
 (Dev.to → Settings → Extensions → "DEV Community API Keys"). If neither path applies,
 stop here and hand the user the publish-ready MD/HTML files with manual posting
 instructions.

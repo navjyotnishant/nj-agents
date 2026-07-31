@@ -27,10 +27,11 @@ the platform's fields correctly.
 ## Direct REST fallback (Dev.to, no MCP)
 
 When **no publishing MCP is present**, the target is **Dev.to**, and `DEVTO_API_KEY`
-is available (exported, or in `~/.claude/.env`), publish via the bundled script
+is available (exported, or in `~/.config/nj-agents/.env`, falling back to the legacy
+`~/.claude/.env`), publish via the bundled script
 instead of doing nothing. The script ships next to the `tech-blog` skill at
 `skills/tech-blog/scripts/publish-devto.py` — resolve it via the skill's install path
-(under `~/.claude/skills/tech-blog/` when installed globally). Run:
+(under the tech-blog skill directory wherever it is installed). Run:
 
 ```
 python3 <resolved>/skills/tech-blog/scripts/publish-devto.py <path-to-final-post.md>
@@ -43,12 +44,13 @@ It sends the whole Markdown file (Dev.to parses the YAML front matter natively),
 uploads any local `./images/*.png` to Dev.to's media CDN and rewrites their
 references, and **forces a draft** (`published: false`) — the same draft-first
 posture as the MCP path. It is idempotent: re-running updates the same draft (state
-in `~/.claude/devto-state.json`), never a duplicate. The script prints the draft
+in `~/.config/nj-agents/devto-state.json`, or the legacy `~/.claude/` path if that is
+where it already lives), never a duplicate. The script prints the draft
 URL. Then follow Phase 3/4 below exactly — report the URL, never auto-publish, and
 confirm before going live (the operator can re-run with `--publish` only on explicit
 confirmation). If `DEVTO_API_KEY` is missing, do nothing and tell the user where to
 set it (Dev.to → Settings → Extensions → "DEV Community API Keys", then
-`~/.claude/.env`).
+`~/.config/nj-agents/.env`, with `~/.claude/.env` still honoured for existing installs).
 
 ## Phase 2 — Map and create a draft
 
@@ -75,7 +77,7 @@ mapped, say so plainly.
 Post only via a path the user has set up — the detected MCP connector, or the Dev.to
 REST fallback when the user has provided `DEVTO_API_KEY`. Never post anywhere the user
 didn't connect or configure, never auto-publish. The API key is read from the
-environment / `~/.claude/.env` by the script — never echo it, log it, or write it into
+environment / `~/.config/nj-agents/.env` by the script — never echo it, log it, or write it into
 a post or report. Don't include secrets or internal hostnames. Sending content to an
 external platform is outward-facing and hard to undo — draft-first, confirm before
 live.
