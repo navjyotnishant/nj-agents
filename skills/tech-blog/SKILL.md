@@ -194,9 +194,9 @@ depends on another's output:
   accessibility** (a body `# ` duplicates the front-matter title's H1), **ending is a
   takeaway + CTA** (not a bare link list), **no duplicated/leftover artifacts** (doubled
   CTA lines, stray `[src:]` markers), **emphasis sanity** (neither zero nor over-bolded).
-- `blog-platform-lint` (only if the target is external) — platform mechanics: **>4 tags**
-  (Dev.to hard-caps at 4), **SVG/relative images** that won't render, **missing/stale
-  cover**, the draft→publish flow.
+- Spawn `blog-platform-lint` (only if the target is external) — platform mechanics:
+  **>4 tags** (Dev.to hard-caps at 4), **SVG/relative images** that won't render,
+  **missing/stale cover**, the draft→publish flow.
 - **Cover generation** (only if `cover_image` is empty) — `scripts/make-cover.py` (a
   script, not an agent) can run concurrently; **view the rendered PNG** to verify.
 

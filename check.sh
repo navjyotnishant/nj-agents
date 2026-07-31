@@ -268,7 +268,7 @@ check_authorship() {
 # happened to be in. An ORPHAN means an agent nothing spawns: dead weight that
 # still ships, and usually the sign a skill quietly stopped delegating.
 check_agent_references() {
-  local f name refs r bad=0
+  local f name refs r s flat bad=0
   for f in "$SKILLS_SRC"/*/SKILL.md; do
     name="$(basename "$(dirname "$f")")"
     # `|| true`: a skill with no backticked tokens is fine, but grep exits 1 on
@@ -286,10 +286,31 @@ check_agent_references() {
       esac
     done
   done
+  # Every SKILL.md with newlines flattened to spaces, so a dispatch that wraps
+  # across a line ("spawn the\n`tests-build-runner` agent") is still one match.
+  # Built once rather than per-agent.
+  flat="$(for s in "$SKILLS_SRC"/*/SKILL.md; do tr '\n' ' ' < "$s"; echo; done)"
+
+  # An orphan is an agent NOTHING SPAWNS — so look for a spawn, not a mention.
+  # A bare `grep -F "\`name\`"` is fooled by the four agents whose name matches a
+  # skill (dead-code-finder, deps-upgrade, test-gap-finder, social-post): the
+  # skill's own prose says `/deps-upgrade` and `deps-upgrade` constantly, so the
+  # agent looks referenced even if its spawn line is deleted. Verified: removing
+  # the only Spawn line from deps-upgrade left check.sh reporting no orphans.
   for f in "$AGENTS_SRC"/*.md; do
     name="$(basename "$f" .md)"
-    grep -rqF "\`$name\`" "$SKILLS_SRC"/ || {
-      finding check_agent_references referential "agents/$name.md is an orphan — no SKILL.md references it"
+    # Dispatch is written several ways across the suite, and some of them wrap
+    # across a line ("spawn the\n`tests-build-runner` agent"), so flatten the
+    # whitespace first and match the phrasings that actually occur:
+    #   Spawn `x` · spawn the `x` agent · run in parallel: `a`, `b` · the `x` agent
+    # A slash-command reference (`/deps-upgrade`) is deliberately NOT a match.
+    # NOT `printf | grep -q`: grep -q exits at the first match and closes the pipe,
+    # printf dies of SIGPIPE, and under `set -euo pipefail` the whole match reads as
+    # a failure — the same trap `has()` documents above. Count instead of -q.
+    [ "$(printf '%s' "$flat" | grep -ciE \
+      "(spawn|launch|dispatch)[a-z]*( +the)? +\`$name\`|\`$name\` +agent|\`$name\`[,)] *(and)? *\`" || true)" != "0" ] || {
+      finding check_agent_references referential \
+        "agents/$name.md is an orphan — no SKILL.md spawns it (a mention is not a spawn)"
       bad=1
     }
   done
