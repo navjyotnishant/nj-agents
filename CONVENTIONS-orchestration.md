@@ -59,6 +59,24 @@ not count — it has to be scannable.
 never required; every path has a zero-dependency fallback. The one exception is secret
 scanning, which genuinely blocks without a scanner.
 
+**Assume nothing about which agent is running you.** One clone installs into Claude
+Code, Codex, Cursor and Gemini, so a skill or agent that names a vendor is wrong on
+three runners out of four — and wrong *silently*, since nothing errors.
+
+- Say **"this session"**, never "this *<vendor>* session". The privacy claim is true
+  either way; the vendor name is the only part that can be false.
+- **Never pin a model.** An agent omits `model:` so it inherits the session's — a
+  pinned tier silently overrides the user's own choice. A skill never recommends one
+  either: "run this on haiku" is a recommendation no other runner can honour.
+- **Name a runner only when the difference is the point.** "Option B is Claude Code
+  only" is correct and useful. "Shares your diff with Claude" is not.
+- `CLAUDE.md` / `AGENTS.md` / `GEMINI.md` are fine to **read as repo input** — they
+  are real files in real repos whatever tool you run.
+
+`check.sh`'s `check_vendor_neutral` enforces the first two, so this is a gate rather
+than an aspiration. It is deliberately narrow: a skill may *discuss* a runner, and
+several must.
+
 **Verify a visual artifact by looking at it.** For anything rendered — a diagram, a
 page, a screenshot — reading the source is not verification. A label hidden behind a
 frame stroke, an arrowhead removed by a filter, a nav that a JS-loaded theme breaks:

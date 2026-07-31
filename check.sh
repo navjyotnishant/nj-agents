@@ -170,6 +170,57 @@ check_skill_frontmatter() {
 #   mapping values are not allowed in this context
 # — which is how "It NEVER runs git itself: the human decides" silently made two
 # skills invisible on one runner. Quote the value and it is fine everywhere.
+# Model- and runner-agnosticism has to be ENFORCED, not just described, or it lasts
+# exactly as long as the next author who has not read the template. Three ways it
+# rots, all silent — nothing errors, the toolkit just quietly stops being portable:
+#
+#   1. `model:` in an agent — pins a tier and overrides the user's own choice. An
+#      Opus session silently gets Sonnet subagents (this was NAV-146).
+#   2. A vendor name in a user-facing banner — the privacy claim stays true, but it
+#      names a product that is not running (NAV-150).
+#   3. A model name in prose — "run this on haiku" is a recommendation that cannot
+#      be honoured off one vendor.
+#
+# The agent case is a hard failure. The prose cases are matched narrowly, since a
+# skill may legitimately *discuss* a runner: `check_frontmatter_yaml`'s comment
+# names Codex, and CLAUDE.md/AGENTS.md are real files skills read as input.
+check_vendor_neutral() {
+  local f name val bad=0 txt
+  for f in "$AGENTS_SRC"/*.md; do
+    [ -f "$f" ] || continue
+    name="$(basename "$f" .md)"
+    if grep -q '^model:' "$f"; then
+      val="$(grep -m1 '^model:' "$f" | sed 's/^model: *//')"
+      finding check_vendor_neutral structural \
+        "agents/$name.md pins 'model: $val' — omit it so the agent inherits the session's model, or an Opus session silently gets $val subagents"
+      bad=1
+    fi
+  done
+
+  # Banners are what the USER reads, so a vendor name there is a false statement
+  # about what is running. Skill bodies only; agent bodies are model-facing.
+  for f in "$SKILLS_SRC"/*/SKILL.md; do
+    [ -f "$f" ] || continue
+    name="$(basename "$(dirname "$f")")"
+    txt="$(body "$f")"
+    if printf '%s' "$txt" | grep -qiE '(this|the current) (claude|codex|cursor|gemini) session'; then
+      finding check_vendor_neutral structural \
+        "skills/$name names a specific vendor in a user-facing claim ('this <vendor> session') — say 'this session', which is true on every runner"
+      bad=1
+    fi
+    # A bare model name recommended for a run. Anchored on the recommendation, not
+    # the word: a skill may name a model when explaining what it does NOT assume.
+    if printf '%s' "$txt" | grep -qiE '(run|use|default)[a-z]* (it |this |them )?(on|with) (haiku|sonnet|opus|gpt-[0-9]|gemini-[0-9])'; then
+      finding check_vendor_neutral structural \
+        "skills/$name recommends a specific model — the session picks the model, not the skill"
+      bad=1
+    fi
+  done
+
+  [ "$bad" = "0" ] && ok "no pinned models, no vendor names in user-facing claims"
+  return 0
+}
+
 check_frontmatter_yaml() {
   local f name key val bad=0
   for f in "$SKILLS_SRC"/*/SKILL.md "$AGENTS_SRC"/*.md; do
@@ -853,6 +904,7 @@ check_counts() {
 
 [ "$JSON" = "1" ] || echo "Checking nj-agents ..."
 
+check_vendor_neutral
 check_frontmatter_yaml
 check_skill_frontmatter
 check_agent_frontmatter

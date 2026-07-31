@@ -1,6 +1,6 @@
 # What is checked
 
-`./check.sh` runs 14 checks. Advisory by default so it can never break an install;
+`./check.sh` runs 24 checks. Advisory by default so it can never break an install;
 `--strict` turns any finding into exit 1, and that is what CI uses.
 
 ```bash
@@ -14,7 +14,15 @@
 | Check | Catches | Kind |
 |---|---|---|
 | `check_skill_frontmatter` | Missing key, `name` ≠ directory, non-semver version, unknown class | structural |
-| `check_agent_frontmatter` | Missing key, `name` ≠ filename | structural |
+| `check_agent_frontmatter` | Missing key (incl. `tools:`), `name` ≠ filename, a read-only agent declaring a write tool | structural |
+| `check_vendor_neutral` | **An agent pinning `model:`, or a skill naming a vendor in a user-facing claim** | structural |
+| `check_frontmatter_yaml` | An unquoted frontmatter value containing `": "` — invalid YAML that Codex refuses to load | structural |
+| `check_codex_agent_generation` | The Codex `.toml` generator failing, or emitting invalid TOML | structural |
+| `check_cursor_rule` | The Cursor `.mdc` rule failing to generate, or outgrowing its 50-line budget | structural |
+| `check_review_exit_codes` | `bin/nj-agents-review` mapping a verdict to the wrong exit code — including silence reading as PASS | structural |
+| `check_installer_runners` | `install.sh` not serving every runner from one clone | structural |
+| `check_guidance_size` | `global/AGENTS.md` over Codex's 32 KiB limit, where it truncates silently | structural |
+| `check_diagram_counts` | A skill/agent tally drawn into a diagram, where it goes stale invisibly | doc-sync |
 | `check_authorship` | A skill or agent with no `author:` | structural |
 | `check_agent_references` | A skill spawning an agent that does not exist; an agent nothing spawns | referential |
 | `check_class_conventions` | A class that cites the wrong conventions file, or none | referential |
