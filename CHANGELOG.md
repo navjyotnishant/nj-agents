@@ -55,7 +55,7 @@ does as of this version, rather than how it was built.
   testable. **T14** puts the flake ledger at a *committed* `.nj-agents/flake-ledger.json`
   — gitignored it would start empty on every CI runner, which is exactly where
   intermittent failures accumulate and where the history is worth most.
-  First skills in the class (26 skills now): **`/e2e-run`** and **`/test-triage`**. Detects the repo's own
+  First skills in the class (33 skills now): **`/e2e-run`** and **`/test-triage`**. Detects the repo's own
   E2E runner — Playwright, Cypress, WebdriverIO, or whatever its config points at —
   BLOCKs unless the base URL is explicitly non-prod, runs the suite, and captures
   trace/HAR/video/console into a gitignored temp dir. It runs tests; it never writes
@@ -68,6 +68,55 @@ does as of this version, rather than how it was built.
   timing-flavoured failure text looks identical to a real race condition in the
   application, and calling that a flake is how a concurrency bug gets ignored for a
   quarter. Advises only; hands defects to `/pm-task` on your say-so.
+  **`/flake-watch`** reads that ledger and reports the accumulated picture: fail rate
+  per spec, what is trending worse, what crosses the quarantine threshold. Three
+  rules keep it honest — it reports **"insufficient history"** rather than a rate
+  from three runs (a percentage will be believed), it treats **trend** as more
+  informative than magnitude (a spec that went 0% → 15% is a regression someone
+  introduced; a steady 4% is a known cost), and it routes a **100%-failing spec to
+  `/test-triage`** rather than quarantining it — that is a defect wearing a flake
+  costume, and hiding it behind flake accounting is the failure the ledger exists to
+  prevent. Quarantine is always a proposal carrying an SLA and a tracking issue.
+  **`/test-plan`** turns a requirement into a structured case matrix — equivalence
+  classes, boundaries, negative paths and authz, not just the happy path, which is
+  the case least likely to break and the one generation defaults to. Emits JSON for
+  `/test-author` rather than prose, and marks inferred cases so a reviewer knows
+  which came from the ticket and which from judgement.
+  **`/test-author`** generates specs in **the repo's own framework**, never one it
+  picks, matching the style of an existing spec. It enforces a `data-testid` locator
+  contract and flags brittle selectors — and where the app has no testids it
+  *proposes* adding them rather than reaching into application source, which T1
+  fences it out of.
+  **`/test-data`** generates fixtures and factories so each spec owns its data:
+  unique per run, created by the spec, cleaned up after. Shared mutable fixtures are
+  the usual cause of a suite that passes alone and fails in parallel — a data problem
+  that gets diagnosed as flake, quarantined, and eventually deleted.
+  Both writing skills propose the commit and never run git (T6), and neither writes
+  a credential to disk (T8).
+  **`/test-repair`** fixes a test only where the *test* is at fault. It fires solely
+  on `/test-triage`'s `test-bug` verdict; every other classification BLOCKs —
+  including `flake`, deliberately, because every available repair for a flake is
+  forbidden (a sleep, a retry, a loosened assertion) and the honest responses are a
+  real fix or quarantine with an SLA. It may fix selectors, waits, setup and
+  teardown; it may **not** weaken or delete an assertion, add a sleep, raise a retry,
+  or add a skip, and anything touching an assertion escalates rather than appearing
+  in the diff. Where the correct fix is in application source it reports that and
+  stops. Evidence outranks the label: if a failure looks like a defect it stops even
+  when triage said test-bug.
+  **`/e2e-suite`** is the umbrella: run, classify, one PASS/WARN/BLOCK, mirroring
+  `/pre-push-review`. Cost scales with *failures* rather than specs, so a green suite
+  is nearly free. It **never repairs anything** — `/test-repair` is deliberately
+  outside the pipeline, because a gate that fixes its own failures is not a gate.
+  A test bug is **WARN, never PASS**: the application is fine but the suite is lying,
+  and a broken test reporting green is how coverage quietly disappears.
+  **`/test-report`** is the traceability matrix — requirement → case → spec → status
+  → defect — and it **leads with what is not covered**. A report that lists passes
+  reads as "we tested this", and a pass rate is not coverage: 98% passing says
+  nothing about the untested 40% of a requirement. It also weights passes by flake
+  history, since a green run resting on three known-flaky specs is a different
+  result. It states the release position and stops; whether that is acceptable needs
+  business context this skill does not have.
+  All nine skills in the class now exist.
 - **`bin/nj-agents-review` drives any agent CLI** via `NJ_AGENT_CMD`
   (`NJ_AGENT_CMD="codex exec" nj-agents-review`). The verdict→exit-code mapping —
   0 PASS/WARN, 1 BLOCK, 2 harness error — is the value the wrapper adds, and it is

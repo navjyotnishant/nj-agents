@@ -508,7 +508,14 @@ check_class_contract() {
         fi
         # T2 binds anything that edits an existing spec. "Green by deletion" is the
         # failure mode, and it is invisible in a passing suite.
-        if has "$f" 'repair\|fix the test\|edit.*spec' i; then
+        #
+        # A skill that DENIES repairing ("never repairs anything") or merely points
+        # at /test-repair is not bound by T2 — it is asserting the opposite. The
+        # umbrella tripped this on its own disclaimer, which would have taught the
+        # next author to satisfy the check by pasting T2 language into a skill that
+        # does not repair. A rule that rewards noise is worse than no rule.
+        if has "$f" 'repair\|fix the test\|edit.*spec' i \
+           && ! has "$f" 'never repairs\|does not repair\|repairs nothing\|no repair path' i; then
           has "$f" 'weaken\|delete an assertion\|§T2\|T2 ' i || {
             finding check_class_contract referential \
               "skills/$name (testing) edits specs but never states T2 — may not weaken or delete an assertion, add a sleep, raise retries, or add a skip"
