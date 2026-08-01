@@ -29,7 +29,10 @@ job.
 
 - The manifest entry for one page: route, mockup path, selector `pairs`,
   `sequences`, `require`, and any `waivers`.
-- A base URL for the running app, and credentials if the page needs a session.
+- A base URL for the running app. If the page needs a session, you are given a
+  reachable URL — a fixture-harness route, or a browser profile that already
+  holds one. You are never given a credential to use, and never asked to find
+  one.
 
 ## What you do
 
@@ -38,9 +41,18 @@ job.
    must run identical code, or a difference in output stops meaning a difference
    in the pages.
 
-2. **Render the live page.** If it needs a login, sign in first. A login wall has
-   none of the expected elements and would report as dozens of spurious
-   structural failures.
+2. **Render the live page** at the URL you were given.
+
+   **If you land on a login wall, STOP and return BLOCK — "could not reach the
+   page".** A login wall has none of the expected elements and would report as
+   dozens of spurious structural failures, so never diff one.
+
+   You must not try to get past it. No guessing or brute-forcing passwords, no
+   reading the users table, no editing the auth database, no minting a session
+   row, no patching out the auth guard. Measuring a stylesheet never justifies
+   touching an authentication system — an earlier run of this agent tried common
+   passwords against a real admin account, which is why this paragraph exists.
+   Report what you need (a fixture-harness route, or a session) and stop.
 
 3. **Diff** with `diffPage()`, aggregate with `verdict()`.
 
