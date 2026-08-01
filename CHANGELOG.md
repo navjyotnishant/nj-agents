@@ -55,7 +55,7 @@ does as of this version, rather than how it was built.
   testable. **T14** puts the flake ledger at a *committed* `.nj-agents/flake-ledger.json`
   — gitignored it would start empty on every CI runner, which is exactly where
   intermittent failures accumulate and where the history is worth most.
-  First skills in the class (26 skills now): **`/e2e-run`** and **`/test-triage`**. Detects the repo's own
+  First skills in the class (27 skills now): **`/e2e-run`** and **`/test-triage`**. Detects the repo's own
   E2E runner — Playwright, Cypress, WebdriverIO, or whatever its config points at —
   BLOCKs unless the base URL is explicitly non-prod, runs the suite, and captures
   trace/HAR/video/console into a gitignored temp dir. It runs tests; it never writes
@@ -68,6 +68,15 @@ does as of this version, rather than how it was built.
   timing-flavoured failure text looks identical to a real race condition in the
   application, and calling that a flake is how a concurrency bug gets ignored for a
   quarter. Advises only; hands defects to `/pm-task` on your say-so.
+  **`/flake-watch`** reads that ledger and reports the accumulated picture: fail rate
+  per spec, what is trending worse, what crosses the quarantine threshold. Three
+  rules keep it honest — it reports **"insufficient history"** rather than a rate
+  from three runs (a percentage will be believed), it treats **trend** as more
+  informative than magnitude (a spec that went 0% → 15% is a regression someone
+  introduced; a steady 4% is a known cost), and it routes a **100%-failing spec to
+  `/test-triage`** rather than quarantining it — that is a defect wearing a flake
+  costume, and hiding it behind flake accounting is the failure the ledger exists to
+  prevent. Quarantine is always a proposal carrying an SLA and a tracking issue.
 - **`bin/nj-agents-review` drives any agent CLI** via `NJ_AGENT_CMD`
   (`NJ_AGENT_CMD="codex exec" nj-agents-review`). The verdict→exit-code mapping —
   0 PASS/WARN, 1 BLOCK, 2 harness error — is the value the wrapper adds, and it is
