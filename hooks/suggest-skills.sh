@@ -55,6 +55,10 @@ case "$prompt" in
 esac
 case "$prompt" in
   # Triage first: "why did the e2e tests fail" is a triage question, not a run one.
+  *"full e2e"*|*"e2e gate"*|*"run and triage"*|*"release ready"*|*"ready to release"*)
+    add "/e2e-suite (umbrella: run + triage + one verdict)" ;;
+  *"test report"*|*traceability*|*"coverage against"*)
+    add "/test-report (requirement → case → spec → defect)" ;;
   *"fix the test"*|*"repair the test"*|*"selector changed"*|*"broken spec"*)
     add "/test-repair (test-bug only; never weakens an assertion)" ;;
   *"test plan"*|*"what should we test"*|*"test cases for"*)

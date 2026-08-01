@@ -9,7 +9,7 @@
 -->
 
 A personal toolkit of Claude Code **skills and agents** covering the software
-development lifecycle is installed globally on this machine — **31 skills, 25
+development lifecycle is installed globally on this machine — **33 skills, 25
 agents**. It is **project-agnostic**: every skill works in any git repo, any stack,
 any language, and discovers per-repo details at runtime rather than assuming a
 stack, path, port, or tool.
@@ -109,11 +109,13 @@ requires an explicit non-prod base URL or it BLOCKs.
 
 | Skill | What it does | Agent |
 |---|---|---|
+| `/e2e-suite` | **Umbrella.** Runs the suite, classifies every failure, returns one PASS/WARN/BLOCK. Cost scales with *failures*, not specs — a green suite is nearly free. **Never repairs anything**: a gate that fixes its own failures is not a gate. A test bug is WARN, never PASS (the app is fine, the suite is lying), and ambiguity never resolves toward PASS. | orchestrates the below |
 | `/e2e-run` | Detects the repo's **own** E2E runner (Playwright/Cypress/WDIO/…), BLOCKs unless the base URL is explicitly non-prod, runs the suite, and captures trace/HAR/video/console into a **gitignored temp dir**. Raw artifacts never leave it; published text is secret-scrubbed. Runs tests, never writes them. | (none yet) |
 | `/test-plan` | Turns a requirement (from a connected tracker, or pasted) into a **structured case matrix** — equivalence classes, boundaries, negative paths, authz, not just the happy path. Consumes `/test-gap-finder`'s coverage rather than recomputing it, marks each case `new`/`covered`/`inferred`, and emits JSON for `/test-author`. Advises only. | (none yet) |
 | `/test-author` | Generates specs from those cases **in the repo's own framework** — never one it picks. Enforces a `data-testid` locator contract and flags brittle selectors (`nth-child`, text matching, XPath). Writes only inside detected test dirs; if testids are missing it **proposes** adding them rather than reaching into app source. Proposes the commit. | (none yet) |
 | `/test-data` | Fixtures and factories so **each spec owns its data** — unique per run, created by the spec, cleaned up after. Shared mutable fixtures are the usual cause of "flaky" suites that pass alone and fail in parallel. Credentials from env, never written to disk (§T8). Proposes the commit. | (none yet) |
 | `/test-repair` | Fixes a test **only where the test is at fault** — fires solely on `/test-triage`'s `test-bug` verdict; every other class BLOCKs, including `flake` (every repair for a flake is forbidden). May fix selectors, waits, setup, teardown. **May not weaken or delete an assertion, add a sleep, raise a retry, or add a skip** — assertion changes escalate rather than appearing in the diff. If the real fix is in app source it says so and stops. Proposes a diff; never commits. | (none yet) |
+| `/test-report` | Traceability: requirement → case → spec → status → defect, plus the release position. **Leads with what is NOT covered** — a report that lists passes reads as "we tested this", and a pass rate is not coverage. Weights passes by flake history: a green run resting on three known-flaky specs is not the same result. States the position; does not make the call. | (none yet) |
 | `/flake-watch` | Reads the **committed** flake ledger: fail rate per spec over the last N runs, what is trending worse, what crosses the quarantine threshold. Quarantine is **proposed, never applied** — each with an SLA and a tracking issue, because a spec dropped from the gate with no owner is a spec deleted slowly. Reports "insufficient history" rather than a rate from three runs, and routes a 100%-failing spec to `/test-triage` (that is a defect, not a flake). | (none yet) |
 | `/test-triage` | Explains a red build: classifies each failure as **real defect · test bug · environment · flake · data**, with a confidence and cited evidence, and blames suspect commits. Reads `/e2e-run`'s manifest, the diff since last green, and the flake ledger. **Never calls `flake` from a single run** — that needs ledger history, or a real race condition gets ignored for a quarter. Advises only; hands defects to `/pm-task` on your say-so. | (none yet) |
 
@@ -123,7 +125,8 @@ viewer command instead. But text *derived* from an artifact and published into a
 report or ticket is scrubbed first, because a bearer token in a query string leaves
 through a report with no artifact ever moving.
 
-Remaining skills (`/test-report`, `/e2e-suite`) are tracked under NAV-161.
+All nine skills in the class now exist. Agents (`e2e-runner`, `failure-triager`,
+`test-planner`, `test-repairer`) are tracked under NAV-161.
 
 ## Cost and loop control (applies to every skill and agent)
 

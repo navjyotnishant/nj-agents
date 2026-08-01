@@ -55,7 +55,7 @@ does as of this version, rather than how it was built.
   testable. **T14** puts the flake ledger at a *committed* `.nj-agents/flake-ledger.json`
   — gitignored it would start empty on every CI runner, which is exactly where
   intermittent failures accumulate and where the history is worth most.
-  First skills in the class (31 skills now): **`/e2e-run`** and **`/test-triage`**. Detects the repo's own
+  First skills in the class (33 skills now): **`/e2e-run`** and **`/test-triage`**. Detects the repo's own
   E2E runner — Playwright, Cypress, WebdriverIO, or whatever its config points at —
   BLOCKs unless the base URL is explicitly non-prod, runs the suite, and captures
   trace/HAR/video/console into a gitignored temp dir. It runs tests; it never writes
@@ -103,6 +103,20 @@ does as of this version, rather than how it was built.
   in the diff. Where the correct fix is in application source it reports that and
   stops. Evidence outranks the label: if a failure looks like a defect it stops even
   when triage said test-bug.
+  **`/e2e-suite`** is the umbrella: run, classify, one PASS/WARN/BLOCK, mirroring
+  `/pre-push-review`. Cost scales with *failures* rather than specs, so a green suite
+  is nearly free. It **never repairs anything** — `/test-repair` is deliberately
+  outside the pipeline, because a gate that fixes its own failures is not a gate.
+  A test bug is **WARN, never PASS**: the application is fine but the suite is lying,
+  and a broken test reporting green is how coverage quietly disappears.
+  **`/test-report`** is the traceability matrix — requirement → case → spec → status
+  → defect — and it **leads with what is not covered**. A report that lists passes
+  reads as "we tested this", and a pass rate is not coverage: 98% passing says
+  nothing about the untested 40% of a requirement. It also weights passes by flake
+  history, since a green run resting on three known-flaky specs is a different
+  result. It states the release position and stops; whether that is acceptable needs
+  business context this skill does not have.
+  All nine skills in the class now exist.
 - **`bin/nj-agents-review` drives any agent CLI** via `NJ_AGENT_CMD`
   (`NJ_AGENT_CMD="codex exec" nj-agents-review`). The verdict→exit-code mapping —
   0 PASS/WARN, 1 BLOCK, 2 harness error — is the value the wrapper adds, and it is
