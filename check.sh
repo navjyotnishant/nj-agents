@@ -1017,6 +1017,48 @@ check_e2e_fixtures() {
   return 0
 }
 
+check_push_gate() {
+  local h="$REPO_DIR/hooks/git/pre-push-e2e" bad=0
+  [ -f "$h" ] || return 0     # not built yet — not a finding
+
+  [ -x "$h" ] || {
+    finding check_push_gate structural \
+      "hooks/git/pre-push-e2e is not executable — git silently ignores a non-executable hook, so the gate would be installed and dead"
+    bad=1
+  }
+
+  # The gate must SPEND NOTHING. check.yml:7 and hooks/git/pre-push:8 both record
+  # that per-push LLM spend is unacceptable; a hook that calls a wrapper would
+  # reverse that decision without anyone deciding to.
+  # Strip comments FIRST, then look. The earlier spelling asked "does any commented
+  # line mention the wrapper?" — and the file's own header explains at length why it
+  # must not call one, so that guard passed no matter what the code did. Verified by
+  # planting a real call and watching it go undetected.
+  if grep -vE '^\s*#' "$h" | grep -qE '(nj-agents-e2e|nj-agents-review|claude -p|codex exec)'; then
+    finding check_push_gate behavioural \
+      "hooks/git/pre-push-e2e invokes an LLM wrapper — the push gate must spend nothing (see check.yml:7, hooks/git/pre-push:8)"
+    bad=1
+  fi
+
+  # GitHub #9 lives in TWO places now: the skill text, and this hook. The hook is
+  # the one that actually gates a push, so if they drift the hook is what ships.
+  has "$h" 'resolves to 0\|0 specs\|Total: 0 tests' i || {
+    finding check_push_gate referential \
+      "hooks/git/pre-push-e2e does not check that a detected runner resolves to specs — a stale config would pass the gate (GitHub #9)"
+    bad=1
+  }
+
+  # A gate that goes quiet is indistinguishable from one that was uninstalled.
+  has "$h" 'not configured' i || {
+    finding check_push_gate behavioural \
+      "hooks/git/pre-push-e2e can exit without saying why — a silent no-op reads as a passing gate"
+    bad=1
+  }
+
+  [ "$bad" = "0" ] && ok "push gate spends nothing, checks specs resolve, and never exits silently"
+  return 0
+}
+
 check_run_harness() {
   local h="$REPO_DIR/bin/nj-run" t="$REPO_DIR/tests/test-nj-run.sh"
   [ -f "$h" ] || return 0     # not yet built — not a finding
@@ -1137,6 +1179,7 @@ check_diagram_counts
 check_empty_input_pass
 check_e2e_fixtures
 check_run_harness
+check_push_gate
 check_installer_runners
 check_counts
 

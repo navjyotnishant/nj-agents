@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+#
+# nj-agents-e2e — run /e2e-suite headlessly and turn its verdict into an exit code,
+# so a CI job can gate on it.
+#
+# Author: Navjyot Nishant
+# Created: 2026-08-01
+# Last updated: 2026-08-01
+# Description: Headless runner for the testing class's execution umbrella.
+#
+# Usage:
+#   nj-agents-e2e                       # against NJ_E2E_BASE_URL
+#   nj-agents-e2e --base-url http://localhost:3000
+#   nj-agents-e2e --budget 5.00         # raise the spend cap (default 3.00 USD)
+#   nj-agents-e2e --dry-run             # print the command that would run, then stop
+#
+# Exit codes (CONVENTIONS.md §5):
+#   0  PASS, WARN, or SKIP — the pipeline may proceed
+#   1  BLOCK              — stop
+#   2  harness error      — no verdict was reached. Never treated as PASS.
+#
+# NOT FOR A PUSH HOOK. /e2e-suite spawns 1 + n agents — one per failure — so its
+# cost is unbounded in the number of failing specs. Both .github/workflows/check.yml
+# and hooks/git/pre-push already record the judgement that per-push LLM spend is
+# unacceptable, and that applies here more strongly, not less. Use this in a CI job
+# once per PR, against a staging URL. For the push gate, use hooks/git/pre-push-e2e,
+# which runs the repo's own suite and spends nothing.
+#
+# Why a second wrapper rather than a --skill flag on nj-agents-review: the exit
+# semantics genuinely differ. A repo with no E2E runner is a SKIP — a successful
+# run of a gate that correctly found nothing to do (§U) — whereas nj-agents-review
+# has no equivalent case. One wrapper that could invoke any skill would need to
+# know each skill's empty-input meaning anyway, so it would not be simpler.
+#
+# Runner: `claude -p` by default. Override with NJ_AGENT_CMD to drive another agent
+# CLI; Claude-only flags are dropped when it is set, exactly as in nj-agents-review.
+
+set -euo pipefail
+
+BUDGET="${NJ_AGENTS_BUDGET_USD:-3.00}"
+BASE_URL="${NJ_E2E_BASE_URL:-}"
+MODEL=""
+DRY_RUN=0
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --base-url) BASE_URL="$2"; shift 2 ;;
+    --budget) BUDGET="$2"; shift 2 ;;
+    --model) MODEL="$2"; shift 2 ;;
+    --dry-run) DRY_RUN=1; shift ;;
+    -h|--help) grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) echo "Unknown arg: $1" >&2; exit 2 ;;
+  esac
+done
+
+# Word-split on purpose: NJ_AGENT_CMD is "codex exec", not a bare binary.
+AGENT_CMD="${NJ_AGENT_CMD:-claude -p}"
+# shellcheck disable=SC2206
+AGENT=( $AGENT_CMD )
+AGENT_BIN="${AGENT[0]}"
+
+command -v "$AGENT_BIN" >/dev/null 2>&1 || {
+  echo "nj-agents-e2e: '$AGENT_BIN' is not on PATH — cannot run the suite." >&2
+  [ -n "${NJ_AGENT_CMD:-}" ] && echo "  (from NJ_AGENT_CMD=\"$NJ_AGENT_CMD\")" >&2
+  exit 2
+}
+git rev-parse --git-dir >/dev/null 2>&1 || {
+  echo "nj-agents-e2e: not a git repository." >&2
+  exit 2
+}
+
+PROMPT="/e2e-suite"
+[ -n "$BASE_URL" ] && PROMPT="$PROMPT --base-url $BASE_URL"
+
+if [ -n "${NJ_AGENT_CMD:-}" ]; then
+  set -- "$PROMPT"
+  [ -n "$MODEL" ] && echo "nj-agents-e2e: --model ignored — NJ_AGENT_CMD is set, so pass the model in it." >&2
+else
+  set -- "$PROMPT" --output-format json --max-budget-usd "$BUDGET"
+  [ -n "$MODEL" ] && set -- "$@" --model "$MODEL"
+fi
+
+if [ "$DRY_RUN" = "1" ]; then
+  echo "NJ_AGENTS_CI=1 $AGENT_CMD $*"
+  exit 0
+fi
+
+OUT="$(NJ_AGENTS_CI=1 "${AGENT[@]}" "$@" 2>&1)" || {
+  echo "nj-agents-e2e: '$AGENT_BIN' failed to run." >&2
+  printf '%s\n' "$OUT" >&2
+  exit 2
+}
+
+# jq if it's here, python3 if it isn't — detect, never require (§A5). A custom
+# NJ_AGENT_CMD gets no --output-format json, so read its output as raw text rather
+# than running a JSON parse that would return empty and turn a real verdict into a
+# spurious exit 2.
+if [ -n "${NJ_AGENT_CMD:-}" ]; then
+  IS_ERR=""
+  RESULT="$OUT"
+elif command -v jq >/dev/null 2>&1; then
+  IS_ERR="$(printf '%s' "$OUT" | jq -r '.is_error // empty' 2>/dev/null || true)"
+  RESULT="$(printf '%s' "$OUT" | jq -r '.result // empty' 2>/dev/null || true)"
+elif command -v python3 >/dev/null 2>&1; then
+  IS_ERR="$(printf '%s' "$OUT" | python3 -c 'import json,sys
+try: d=json.load(sys.stdin); print(str(d.get("is_error","")).lower())
+except Exception: print("")' 2>/dev/null || true)"
+  RESULT="$(printf '%s' "$OUT" | python3 -c 'import json,sys
+try: d=json.load(sys.stdin); print(d.get("result",""))
+except Exception: print("")' 2>/dev/null || true)"
+else
+  IS_ERR=""
+  RESULT="$OUT"
+fi
+
+if [ "$IS_ERR" = "true" ]; then
+  echo "nj-agents-e2e: the run did not complete (budget exhausted, or an API error)." >&2
+  printf '%s\n' "$OUT" | head -c 2000 >&2
+  exit 2
+fi
+
+# BLOCK wins over any other token: "2 PASS, 1 BLOCK" is a BLOCK. An absent verdict
+# is an error, never a pass — the whole point of the wrapper is that silence must
+# not read as approval.
+#
+# SKIP is checked BEFORE PASS/WARN but AFTER BLOCK. A repo with no E2E runner is a
+# successful run of a gate that correctly found nothing to do (§U), so it exits 0 —
+# but it is reported as SKIP rather than PASS, because "nothing ran" and "everything
+# passed" must not read the same in a CI log.
+case "$RESULT" in
+  *BLOCK*)
+    printf '%s\n' "$RESULT"
+    echo "nj-agents-e2e: BLOCK" >&2
+    exit 1 ;;
+  *SKIP*)
+    printf '%s\n' "$RESULT"
+    echo "nj-agents-e2e: SKIP — nothing to run (no E2E runner detected)" >&2
+    exit 0 ;;
+  *PASS*|*WARN*)
+    printf '%s\n' "$RESULT"
+    exit 0 ;;
+  *)
+    echo "nj-agents-e2e: no PASS/WARN/BLOCK/SKIP verdict found in the output." >&2
+    printf '%s\n' "$RESULT" | head -c 2000 >&2
+    exit 2 ;;
+esac

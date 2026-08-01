@@ -61,6 +61,11 @@ case "$prompt" in
     add "/test-report (requirement → case → spec → defect)" ;;
   *"fix the test"*|*"repair the test"*|*"selector changed"*|*"broken spec"*)
     add "/test-repair (test-bug only; never weakens an assertion)" ;;
+  # Wrapping-up phrasing. The standing rule is that a feature should ship with a
+  # test, and this is the moment that rule applies — after the code is written and
+  # before it leaves the machine.
+  *"ship this"*|*"ready to push"*|*"done with the feature"*|*"finished the feature"*)
+    add "/test-suite-author (a feature should ship with a test — ticket → specs)" ;;
   # Before /test-plan and /test-author: "write the tests for this ticket" wants the
   # whole chain, and both of those match it too. First match is the one that reads
   # as the answer.

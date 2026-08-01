@@ -1,0 +1,168 @@
+#!/bin/sh
+# nj-agents pre-push E2E gate — refuses a push whose test suite is red.
+#
+# Author: Navjyot Nishant
+# Created: 2026-08-01
+# Last updated: 2026-08-01
+# Description: Free (no-LLM) push gate for the testing class.
+#
+# SPENDS NOTHING. It runs the repo's OWN test command and honours its exit code —
+# no agent, no API call. That is deliberate: .github/workflows/check.yml and
+# hooks/git/pre-push both already record the judgement that per-push LLM spend is
+# unacceptable, and /e2e-suite costs 1 + n agents (one per failure), so it is a
+# worse fit for a push hook than the review those files already exclude.
+#
+# The paid triage — classify each failure, weigh it against flake history, produce
+# a report — belongs in CI once per PR, via bin/nj-agents-e2e. See hooks/README.md.
+#
+# What it does, in order:
+#   1. opt-in check      — not configured? say so and exit 0
+#   2. runner detection  — none? say so and exit 0
+#   3. resolves-to-specs — detected but matches 0 specs? SKIP, never a pass
+#   4. run it            — non-zero exit blocks the push
+#
+# Every exit path prints a reason. A gate that goes quiet is indistinguishable from
+# a gate that was uninstalled, and that is how one stops guarding anything.
+#
+# Bypass is a conscious, visible choice: git push --no-verify
+#
+# NOT COMMITTED — .git/ is not tracked, so this is per-clone and per-machine.
+# Install with: ./install.sh --git-hooks  (or --git-hooks --project DIR)
+
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+CONF="$ROOT/.nj-agents/e2e.conf"
+
+say()   { echo "pre-push-e2e: $*" >&2; }
+block() {
+  echo "" >&2
+  say "$1"
+  say "push stopped. Fix it, or override with: git push --no-verify"
+  exit 1
+}
+
+# ── 1. Opt-in ───────────────────────────────────────────────────────────────
+# Per-project and explicit. global/AGENTS.md is clear that push gating is never
+# global and never silent, so an unconfigured repo is a no-op that SAYS it is one.
+if [ ! -f "$CONF" ] && [ -z "${NJ_E2E_BASE_URL:-}" ]; then
+  say "not configured for this repo — skipping (create .nj-agents/e2e.conf or set NJ_E2E_BASE_URL)"
+  exit 0
+fi
+
+# e2e.conf is sourced, so it can set NJ_E2E_BASE_URL and E2E_CMD. Keep it to
+# assignments — it runs on every push.
+# shellcheck disable=SC1090
+[ -f "$CONF" ] && . "$CONF"
+
+# ── 2. Detect the runner ────────────────────────────────────────────────────
+# Same probe ORDER as skills/e2e-run/SKILL.md Step 2, and the order matters:
+# a documented command beats an inferred one because it carries the env, the
+# container hop and the flags a reconstructed invocation loses.
+CMD=""
+SRC=""
+
+# 2a. A command documented by someone who knows this repo.
+for doc in CLAUDE.md AGENTS.md GEMINI.md README.md; do
+  [ -f "$ROOT/$doc" ] || continue
+  line="$(grep -iEm1 '^ +(npm|npx|yarn|pnpm|pytest|python|make|just|docker) .*(e2e|test)' "$ROOT/$doc" 2>/dev/null | sed 's/^ *//')"
+  [ -n "$line" ] && { CMD="$line"; SRC="documented in $doc"; break; }
+done
+
+# 2b. A script the repo defines for itself.
+#
+# Deliberately NOT "test". A bare `npm test` is usually the unit suite, and running
+# it here would make this gate silently duplicate whatever already runs on commit
+# while reporting itself as an E2E gate — the same class of lie as a green run over
+# a deleted suite. If a repo's E2E entry point really is `npm test`, it says so in
+# .nj-agents/e2e.conf via E2E_CMD.
+if [ -z "$CMD" ] && [ -f "$ROOT/package.json" ] && command -v node >/dev/null 2>&1; then
+  for s in test:e2e e2e integration; do
+    if node -e "process.exit(require('$ROOT/package.json').scripts?.['$s']?0:1)" 2>/dev/null; then
+      CMD="npm run $s --silent"; SRC="package.json script '$s'"; break
+    fi
+  done
+fi
+
+# 2c. An E2E config file. This catches a repo whose E2E entry point is named
+# something ordinary like `npm test` — 2b deliberately skips that name, so without
+# this probe a real Playwright suite sitting behind `test` is invisible, and the
+# gate reports "no runner detected" over a suite that exists.
+if [ -z "$CMD" ]; then
+  for c in playwright.config.js playwright.config.ts tests/playwright.config.js \
+           e2e/playwright.config.ts cypress.config.js cypress.config.ts; do
+    [ -f "$ROOT/$c" ] || continue
+    case "$c" in
+      *cypress*)    CMD="npx cypress run" ;;
+      *playwright*) CMD="npx playwright test" ;;
+    esac
+    SRC="$c"
+    break
+  done
+fi
+
+# 2d. A non-JS convention. A suite is not only a JS suite — outside JS-first
+# projects this is the common shape, and probes 2a–2c miss it entirely.
+if [ -z "$CMD" ]; then
+  if ls "$ROOT"/tests/verify_*.py >/dev/null 2>&1; then
+    CMD="__verify_scripts__"; SRC="tests/verify_*.py"
+  elif [ -f "$ROOT/pytest.ini" ] || [ -f "$ROOT/tox.ini" ]; then
+    CMD="pytest"; SRC="pytest config"
+  fi
+fi
+
+# E2E_CMD from e2e.conf overrides everything: the repo owner knows better than
+# any probe.
+[ -n "${E2E_CMD:-}" ] && { CMD="$E2E_CMD"; SRC=".nj-agents/e2e.conf"; }
+
+if [ -z "$CMD" ]; then
+  say "no test runner detected — skipping (probed: docs, package.json, pytest, verify_*.py)"
+  exit 0
+fi
+
+# ── 3. Does it resolve to any specs? ────────────────────────────────────────
+# GitHub #9: a detected runner is not a working runner. A config left behind after
+# its specs were deleted detects cleanly and matches nothing — and a runner that
+# treats an empty match set as success would report GREEN over a suite that no
+# longer exists. Never delegate this to the runner's own exit code.
+# Look for the CONFIG, not for the word "playwright" in the command. A repo whose
+# E2E entry point is `npm run test:e2e` never has "playwright" in $CMD, so keying on
+# the command text means this check silently never fires — which is exactly how the
+# stale-config fixture slipped through to a spurious block on the first run.
+if [ "$CMD" = "__verify_scripts__" ]; then
+  n=$(ls "$ROOT"/tests/verify_*.py 2>/dev/null | wc -l | tr -d ' ')
+  [ "$n" -eq 0 ] && { say "SKIP — no verify_*.py scripts resolved"; exit 0; }
+else
+  pwcfg=""
+  for c in playwright.config.js playwright.config.ts tests/playwright.config.js e2e/playwright.config.ts; do
+    [ -f "$ROOT/$c" ] && { pwcfg="$c"; break; }
+  done
+  if [ -n "$pwcfg" ] && command -v npx >/dev/null 2>&1; then
+    listing="$(cd "$ROOT/$(dirname "$pwcfg")" && npx playwright test --list 2>&1 || true)"
+    case "$listing" in
+      *"Total: 0 tests"*|*"No tests found"*|*"no tests found"*)
+        say "SKIP — playwright detected ($pwcfg) but it resolves to 0 specs; the config looks stale"
+        exit 0 ;;
+    esac
+  fi
+fi
+
+# ── 4. Run it ───────────────────────────────────────────────────────────────
+say "running the suite ($SRC)"
+
+if [ "$CMD" = "__verify_scripts__" ]; then
+  failed=""
+  for f in "$ROOT"/tests/verify_*.py; do
+    python3 "$f" >/dev/null 2>&1 || failed="$failed $(basename "$f")"
+  done
+  [ -n "$failed" ] && block "failing:$failed"
+else
+  # Run from the config's directory when detection found one — `npx playwright test`
+  # at the repo root ignores tests/playwright.config.js and finds nothing.
+  rundir="$ROOT"
+  case "$SRC" in
+    */*.js|*/*.ts) rundir="$ROOT/$(dirname "$SRC")" ;;
+  esac
+  ( cd "$rundir" && eval "$CMD" ) || block "the suite failed ($SRC)"
+fi
+
+say "suite green"
+exit 0

@@ -79,11 +79,30 @@ Detected at runtime, never installed by this skill (`§T5`).
 - **No API key / no network for the analysis itself.** The suite talks to your app;
   this skill talks to nothing else.
 
-## Step 1 — Resolve the base URL and gate on it (`§T3`) — BEFORE anything else
+## Step 1 — Is there anything to run? (`§T3`) — BEFORE the URL gate
 
-Do this **first**, before detecting a runner or reading a config. Everything after
-this step costs time and touches an application; there is no point spending either if
-the target is wrong.
+**No runner detected and no base URL from any source → `SKIP`, exit 0.** Say what
+was probed and stop. Nothing will execute, so there is nothing to protect.
+
+Detect the runner (Step 2's probes) **before** resolving the URL. That ordering is
+load-bearing and was wrong here until GitHub #9: gating on the URL first collapses
+"this repo has no E2E tests" into the same BLOCK as "this URL points at production",
+because §T3 treats *unrecognised* and *absent* alike. Wired into a push hook, that
+refuses every push in every unconfigured repo — and it looks like the safety rail
+working, which is how it survives review.
+
+> The earlier rationale for URL-first was that detection costs time and there is no
+> point spending it if the target is wrong. True, and much cheaper than it sounds:
+> detection is a few file probes, no application is touched, and nothing executes
+> until Step 3. Paying that to tell a real BLOCK apart from an empty repo is worth
+> it.
+
+Once a runner **is** detected, the gate below applies in full and unchanged. This
+step narrows when §T3 applies; it never widens what §T3 allows.
+
+## Step 1a — Resolve the base URL and gate on it (`§T3`)
+
+Reached only when a runner exists, or a URL was supplied explicitly.
 
 Take the URL from an explicit argument, then `NJ_E2E_BASE_URL`, then the repo's own
 test config. **Never infer one, and never default to whatever the config happens to

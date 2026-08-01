@@ -11,7 +11,8 @@
 #   ./install.sh --project DIR --uninstall
 #   ./install.sh --check-only    # only check global/AGENTS.md is in sync; install nothing
 #   ./install.sh --with-hooks    # ALSO register the skill-suggestion hook in settings.json
-#   ./install.sh --git-hooks     # install this repo's own .git/hooks (per-clone, not committed)
+#   ./install.sh --git-hooks     # install .git/hooks into THIS clone (per-clone, not committed)
+#   ./install.sh --git-hooks --project DIR   # install the E2E push gate into another repo
 #
 # Runners (--runner):
 #   claude   ~/.claude    CLAUDE.md   default; unchanged from before
@@ -181,17 +182,43 @@ register_hook() {
 # source under hooks/git/ and copy it in on request — this is the local stand-in
 # for branch protection, which needs GitHub Pro on a private repo.
 if [ "$GIT_HOOKS" = "1" ]; then
-  gitdir="$(git -C "$REPO_DIR" rev-parse --git-dir 2>/dev/null)" || {
-    echo "  ! not a git repository — nothing to install" >&2; exit 2; }
+  # Composes with --project: `--git-hooks --project DIR` installs into DIR's repo,
+  # which is what makes the gate usable anywhere. Without a --project it targets
+  # this clone, as before.
+  HOOK_REPO="${PROJECT_DIR:-$REPO_DIR}"
+  gitdir="$(git -C "$HOOK_REPO" rev-parse --git-dir 2>/dev/null)" || {
+    echo "  ! $HOOK_REPO is not a git repository — nothing to install" >&2; exit 2; }
+  case "$gitdir" in /*) ;; *) gitdir="$HOOK_REPO/$gitdir" ;; esac   # rev-parse may return a relative path
+
   for h in "$REPO_DIR"/hooks/git/*; do
     [ -f "$h" ] || continue
-    dst="$gitdir/hooks/$(basename "$h")"
+    name="$(basename "$h")"
+
+    # `pre-push` runs THIS repo's check.sh + tests/assert.sh, so it is meaningless
+    # anywhere else — installing it into another project would fail every push on a
+    # missing script. The E2E gate is the portable one.
+    if [ -n "$PROJECT_DIR" ] && [ "$name" = "pre-push" ]; then
+      echo "  skipped $name — it validates nj-agents itself, not $HOOK_REPO"
+      continue
+    fi
+
+    dst="$gitdir/hooks/$name"
     if [ -e "$dst" ] && ! cmp -s "$h" "$dst"; then
       echo "  ! $dst exists and differs — leaving it alone" >&2
       continue
     fi
     cp "$h" "$dst" && chmod +x "$dst" && echo "  installed $dst"
   done
+
+  # A gate nobody opted into is a no-op that says so on every push. Point at the
+  # switch rather than letting someone conclude it is broken.
+  if [ -n "$PROJECT_DIR" ] && [ ! -f "$HOOK_REPO/.nj-agents/e2e.conf" ]; then
+    echo ""
+    echo "  The E2E gate is installed but NOT active — it needs opting in:"
+    echo "    mkdir -p $HOOK_REPO/.nj-agents"
+    echo "    echo 'NJ_E2E_BASE_URL=http://localhost:3000' > $HOOK_REPO/.nj-agents/e2e.conf"
+    echo "  Until then it exits 0 on every push and says it is not configured."
+  fi
   exit 0
 fi
 

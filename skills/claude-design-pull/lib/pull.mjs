@@ -57,6 +57,70 @@ export function extractStyle(html) {
   return m ? m[1].trim() : "";
 }
 
+/**
+ * Find CSS rules that the mockups define INCONSISTENTLY across files.
+ *
+ * Mockups are usually authored one page at a time, so the "same" component
+ * drifts between them: on the project this was written for, `.btn` was 30px on
+ * two pages, 29px on a third and 28px on a fourth, with the padding and
+ * font-size varying too.
+ *
+ * This matters because it makes "match the design exactly" unsatisfiable. Port
+ * one page's value into a shared stylesheet and the other pages start failing —
+ * that is not a regression to chase, it is a contradiction in the source. Run
+ * this BEFORE porting any shared rule, and pick deliberately rather than
+ * discovering the conflict through a rising finding count.
+ *
+ * `sources` maps a page name to its mockup HTML.
+ */
+export function conflictingRules(sources, selectors) {
+  const conflicts = [];
+
+  for (const sel of selectors) {
+    // Match the rule for exactly this selector: `.btn{...}` but never
+    // `.btn.primary{...}` or `.sp-btn{...}`.
+    const re = new RegExp(`(?:^|[},])\\s*${sel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*\\{([^}]*)\\}`, "m");
+    const byPage = {};
+
+    for (const [page, html] of Object.entries(sources)) {
+      const m = html.match(re);
+      if (!m) continue;
+      const decls = {};
+      for (const d of m[1].split(";")) {
+        const [k, ...v] = d.split(":");
+        if (k?.trim() && v.length) decls[k.trim()] = v.join(":").trim();
+      }
+      byPage[page] = decls;
+    }
+
+    const pages = Object.keys(byPage);
+    if (pages.length < 2) continue;
+
+    // Every property named anywhere, so a declaration present on one page and
+    // absent on another counts as a difference rather than passing silently.
+    const props = new Set(pages.flatMap((p) => Object.keys(byPage[p])));
+    for (const prop of props) {
+      const values = new Map();
+      for (const p of pages) {
+        const v = byPage[p][prop] ?? "(unset)";
+        if (!values.has(v)) values.set(v, []);
+        values.get(v).push(p);
+      }
+      if (values.size > 1) {
+        conflicts.push({
+          selector: sel,
+          property: prop,
+          variants: [...values.entries()]
+            .map(([value, pages]) => ({ value, pages }))
+            .sort((a, b) => b.pages.length - a.pages.length),
+        });
+      }
+    }
+  }
+
+  return conflicts;
+}
+
 /** Which manifest pages have no mockup file — a manifest that references a
  *  design nobody pulled would otherwise silently check nothing. */
 export function missingMockups(manifest, available) {
@@ -130,6 +194,47 @@ function demo() {
     const man = { pages: { a: { mockup: "mockups/a.html" }, b: { mockup: "mockups/b.html" } } };
     const missing = missingMockups(man, ["mockups/a.html"]);
     console.assert(missing.length === 1 && missing[0].page === "b", "missing mockups are named");
+  }
+
+  // THE CONTRADICTION. Mockups authored page-by-page disagree about the same
+  // component, which makes "match the design exactly" unsatisfiable until
+  // someone chooses. Porting one page's value silently breaks the others.
+  {
+    const sources = {
+      workflows: ".btn{height:30px;padding:0 12px;font-size:11.5px}",
+      skills:    ".btn{height:30px;padding:0 12px;font-size:11.5px}",
+      users:     ".btn{height:28px;padding:0 11px;font-size:11px}",
+      builder:   ".btn{height:29px;padding:0 11px;font-size:11px}",
+    };
+    const c = conflictingRules(sources, [".btn"]);
+    const h = c.find((x) => x.property === "height");
+    console.assert(h, "a height disagreement is reported");
+    console.assert(h.variants.length === 3, `three distinct heights, got ${h?.variants.length}`);
+    // The most common value leads, so the choice can be made on evidence.
+    console.assert(h.variants[0].value === "30px", "the dominant value sorts first");
+    console.assert(h.variants[0].pages.length === 2, "and carries the pages that agree on it");
+  }
+
+  // Agreement is not a conflict — a rule identical everywhere must stay quiet,
+  // or the report becomes noise nobody reads.
+  {
+    const same = { a: ".chip{border-radius:999px}", b: ".chip{border-radius:999px}" };
+    console.assert(conflictingRules(same, [".chip"]).length === 0, "identical rules are not conflicts");
+  }
+
+  // A property present on one page and missing on another IS a difference:
+  // the element renders differently, which is the whole question.
+  {
+    const partial = { a: ".x{color:red;font-weight:700}", b: ".x{color:red}" };
+    const c = conflictingRules(partial, [".x"]);
+    console.assert(c.length === 1 && c[0].property === "font-weight", "an absent declaration counts");
+  }
+
+  // Selector matching must be exact: `.btn` must never pick up `.btn.primary`
+  // or `.sp-btn`, or every compound variant reads as a conflict.
+  {
+    const s = { a: ".btn{height:30px}.btn.primary{height:40px}", b: ".btn{height:30px}" };
+    console.assert(conflictingRules(s, [".btn"]).length === 0, "compound rules are not confused for the base");
   }
 
   _done("pull");
