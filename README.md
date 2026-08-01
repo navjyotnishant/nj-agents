@@ -26,7 +26,7 @@ visual-QA gate).
 
 ![Suite architecture](docs/architecture/suite-overview.svg)
 
-**24 skills · 25 agents · 5 classes · 24 checks.** Counts live here rather than in
+**26 skills · 25 agents · 6 classes · 24 checks.** Counts live here rather than in
 the image: a number drawn into an SVG goes stale silently and needs the diagram
 redrawn to correct, while a number in the text is one edit — and on the docs site,
 generated from the file tree on every build.
@@ -262,7 +262,7 @@ skill once and every runner sees it. There is nothing to sync.
 
 | | Claude Code | Codex | Cursor | Gemini |
 |---|---|---|---|---|
-| **24 skills** | yes | yes | yes | yes |
+| **26 skills** | yes | yes | yes | yes |
 | **25 agents** | yes | yes (generated) | not yet | yes |
 | **Guidance file** | `CLAUDE.md` | `AGENTS.md` | `.mdc` (generated) | `GEMINI.md` |
 
@@ -281,7 +281,8 @@ the budget.
 
 **What is actually verified**, as distinct from inferred:
 
-- `gemini skills list` discovers all 24 skills through the symlinks, 0 errors.
+- `gemini skills list` discovered all skills through the symlinks, 0 errors (24 at
+  time of measurement; `/e2e-run` landed after).
 - `check.sh` installs into a temp directory on every run and asserts the layout,
   and separately generates the Codex TOML and parses every file.
 - **Not** verified: Codex loading the generated agents, or any runner *executing*
@@ -322,6 +323,7 @@ nj-agents/
 ├── CONVENTIONS.md              # shared rules for the review class
 ├── CONVENTIONS-authoring.md    # shared rules for the authoring class
 ├── CONVENTIONS-pm.md           # shared rules for the PM-authoring class
+├── CONVENTIONS-testing.md      # shared rules for the testing class (T1–T14)
 ├── global/AGENTS.md            # guidance; symlinked per runner (CLAUDE.md/AGENTS.md/GEMINI.md)
 ├── install.sh                  # symlinks skills/ + agents/ into a .claude/ dir
 └── README.md

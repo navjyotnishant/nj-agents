@@ -9,7 +9,7 @@ agents** for software-development workflows. Install it once (symlinks into `~/.
 and invoke the skills with `/name` in **any** git repo — nothing here is specific to one
 project, stack, or language.
 
-- **24 skills · 25 agents**, in four classes + a diagram-generation subsystem.
+- **26 skills · 25 agents**, in four classes + a diagram-generation subsystem.
 - Install: `./install.sh` (global, Claude Code), `./install.sh --runner gemini|codex|cursor|agents`
   for another agent, or `--project DIR` for one repo. Everything is a **symlink back into
   this clone**, so installing for several runners leaves them all reading the same files —
@@ -26,6 +26,7 @@ agents/<name>.md            # an agent is a FLAT .md file
 CONVENTIONS.md              # review-class shared rules
 CONVENTIONS-authoring.md    # authoring-class shared rules (§A1–A8)
 CONVENTIONS-pm.md           # PM-authoring-class shared rules (§P1–P8); skills in NAV-82..84
+CONVENTIONS-testing.md      # testing-class shared rules (§T1–T14); skills in NAV-161
 CONVENTIONS-orchestration.md # §U binds EVERY skill; §C cost + §R progress for spawning ones
 global/AGENTS.md            # advisory guidance → symlinked per runner (see install.sh)
 install.sh                  # symlink installer (idempotent; safe uninstall; never clobbers)
@@ -113,8 +114,7 @@ docs/architecture/          # generated diagrams + their JSON source models
 - **Testing class** — *writes test source into the repo **and executes it** against a
   running app.* The only class that does either, which is why it is its own class
   rather than a squeeze into authoring: `/review-tests-build` runs commands but writes
-  nothing, `/test-gap-finder` explicitly never writes tests. Shared rules:
-  `CONVENTIONS-testing.md` (T1–T12). Three of those are enforced by `check.sh`:
+  nothing, `/test-gap-finder` explicitly never writes tests. Shared rules: `CONVENTIONS-testing.md` (§T1–T14). Three of those are enforced by `check.sh`:
   **T1** writes only inside detected test directories, never app source · **T2** never
   weakens or deletes an assertion, and no sleeps/retries/skips to force green ·
   **T3** requires an explicit non-prod base URL, else BLOCK. A read-only testing

@@ -9,7 +9,7 @@
 -->
 
 A personal toolkit of Claude Code **skills and agents** covering the software
-development lifecycle is installed globally on this machine — **24 skills, 25
+development lifecycle is installed globally on this machine — **26 skills, 25
 agents**. It is **project-agnostic**: every skill works in any git repo, any stack,
 any language, and discovers per-repo details at runtime rather than assuming a
 stack, path, port, or tool.
@@ -98,6 +98,28 @@ create the tracked item.
 | `/pm-story` | Drafts one **INVEST user story** ("As a … I want … so that …") + acceptance criteria; on opt-in creates it in the connected tracker, else paste-ready markdown. Optional parent Epic. | (no dedicated agent) |
 | `/pm-task` | Drafts one scoped, actionable **Task** (optionally under a Story/Epic); on opt-in creates it, else markdown. | (no dedicated agent) |
 | `/pm-plan` | **Orchestrator.** Decomposes a feature-sized ask into an Epic→Stories→Tasks tree (via `pm-decomposer`), previews the **whole tree** for one approval, then creates it **sequentially, parent-first**, wiring links. Stops-and-reports on any partial failure; reconciles a re-run so it never double-creates. | `pm-decomposer` |
+
+## Testing suite — writes test source AND executes it
+
+The only class that does both, which is why it has its own contract
+(`CONVENTIONS-testing.md`, §T1–T14) rather than sitting under authoring. Three
+clauses are enforced by `check.sh`, not merely stated: **T1** writes only inside
+detected test directories, **T2** never weakens or deletes an assertion, **T3**
+requires an explicit non-prod base URL or it BLOCKs.
+
+| Skill | What it does | Agent |
+|---|---|---|
+| `/e2e-run` | Detects the repo's **own** E2E runner (Playwright/Cypress/WDIO/…), BLOCKs unless the base URL is explicitly non-prod, runs the suite, and captures trace/HAR/video/console into a **gitignored temp dir**. Raw artifacts never leave it; published text is secret-scrubbed. Runs tests, never writes them. | (none yet) |
+| `/test-triage` | Explains a red build: classifies each failure as **real defect · test bug · environment · flake · data**, with a confidence and cited evidence, and blames suspect commits. Reads `/e2e-run`'s manifest, the diff since last green, and the flake ledger. **Never calls `flake` from a single run** — that needs ledger history, or a real race condition gets ignored for a quarter. Advises only; hands defects to `/pm-task` on your say-so. | (none yet) |
+
+**Two rules worth knowing before using this class.** Raw artifacts stay local — a
+trace is never attached to a ticket, and an export attempt BLOCKs with the local
+viewer command instead. But text *derived* from an artifact and published into a
+report or ticket is scrubbed first, because a bearer token in a query string leaves
+through a report with no artifact ever moving.
+
+Remaining skills (`/flake-watch`, `/test-plan`, `/test-author`,
+`/test-data`, `/test-repair`, `/test-report`, `/e2e-suite`) are tracked under NAV-161.
 
 ## Cost and loop control (applies to every skill and agent)
 
