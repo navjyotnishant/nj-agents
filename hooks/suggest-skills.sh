@@ -98,6 +98,7 @@ case "$prompt" in
 esac
 case "$prompt" in
   *bug*|*regression*|*correctness*|*"edge case"*) add "/review-correctness" ;;
+  *mockup*|*"the design"*|*"design system"*|*"match the design"*|*figma*) add "/claude-design-pull" ;;
 esac
 case "$prompt" in
   *lint*|*"run the tests"*|*build*) add "/review-tests-build" ;;

@@ -142,6 +142,37 @@ does as of this version, rather than how it was built.
   duplicating it — and a re-run is the normal case, since a changed requirement
   regenerates the plan.
   All ten skills in the class now exist (34 skills total), across two umbrellas.
+- **`/claude-design-pull`** — a review gate that answers "does this page match its
+  approved design?" with measurements rather than an opinion. The mirror of
+  `/design-sync`: that pushes a component library **to** Claude Design, this pulls
+  approved mockups **into** a repo and holds the running code to them. Renders both
+  sides headless through identical extractor code, diffs structure and computed
+  styles element by element, and BLOCKs while they differ. Advise-only — it measures
+  and reports, never edits application code, because a gate that fixes its own
+  failures cannot tell you whether it ever failed.
+  Written after a session that spent ten commits converging on one visual direction
+  while repeatedly reporting success. Each of the four failures is now a case in the
+  regression suite: a page built from *memory* of a mockup; `--radius: 1.25rem`
+  making every control 18px instead of 6px, invisible to eyeballing and obvious in
+  one computed-style dump; a toolbar rebuilt while its table kept the old columns;
+  and "12/12 matching" reported as page-level success when it described twelve
+  properties.
+  That last one shapes the output: **no score, no percentage, no partial credit.**
+  Either the page matches or the report is the list of what differs — a number is
+  how a wrong page reads as progress. Data gaps are the deliberate exception and
+  **WARN rather than BLOCK**, so the gate never pressures anyone into faking data to
+  go green; when a design shows a field the API cannot supply, the honest fix is an
+  API change.
+  Playwright is **required with no eyeball fallback**, mirroring `/review-secrets`
+  blocking without a scanner — a "best-effort visual check" is precisely what
+  produced the four failures. Mockups are committed, so the gate runs offline and in
+  CI with no MCP connection, is reviewable in a PR, and cannot change silently when
+  someone edits the design project.
+  Ships with `design-parity-checker` (one agent per page, no fix loop, so cost is
+  bounded by page count) and four `lib/` modules, each carrying an assert-based
+  self-check plus `known-bad.test.mjs`, which replays the real failures. Every case
+  in it is a state the code was actually in and was reported as "done" at the time.
+
 - **`bin/nj-run`** — the testing class's run harness, implementing §T10 cost
   accounting, §T11 subagent records and deterministic aggregation, §T12 the
   structured log, and §T13 the run manifest. `/e2e-run` and `/e2e-suite` now go
