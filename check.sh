@@ -967,6 +967,32 @@ check_e2e_fixtures() {
   return 0
 }
 
+check_run_harness() {
+  local h="$REPO_DIR/bin/nj-run" t="$REPO_DIR/tests/test-nj-run.sh"
+  [ -f "$h" ] || return 0     # not yet built — not a finding
+
+  [ -x "$h" ] || {
+    finding check_run_harness structural \
+      "bin/nj-run is not executable — a skill invoking it gets a permission error"
+  }
+
+  # The harness records cost, subagent lifecycle and the log for the WHOLE class
+  # (§T13). If its own behavioural checks are absent or failing, every skill that
+  # reports a cost or a verdict through it is reporting something unverified.
+  [ -x "$t" ] || {
+    finding check_run_harness structural \
+      "bin/nj-run exists but tests/test-nj-run.sh does not — §T10/§T11/§T12 are asserted by nothing"
+    return 0
+  }
+  if ! "$t" >/dev/null 2>&1; then
+    finding check_run_harness behavioural \
+      "tests/test-nj-run.sh is failing — run it directly; the run harness is what every testing skill reports cost and verdicts through"
+    return 0
+  fi
+  ok "run harness passes its own §T10/§T11/§T12 checks"
+  return 0
+}
+
 check_installer_runners() {
   local tmp bad=0 r dir guide
   command -v mktemp >/dev/null 2>&1 || return 0
@@ -1060,6 +1086,7 @@ check_guidance_size
 check_diagram_counts
 check_empty_input_pass
 check_e2e_fixtures
+check_run_harness
 check_installer_runners
 check_counts
 

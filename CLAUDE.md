@@ -32,6 +32,8 @@ global/AGENTS.md            # advisory guidance → symlinked per runner (see in
 install.sh                  # symlink installer (idempotent; safe uninstall; never clobbers)
 check.sh                    # validator — frontmatter, refs, class contracts, cost/progress
 bin/nj-agents-review        # headless /pre-push-review → §5 exit codes (0 PASS/WARN, 1 BLOCK, 2 error)
+bin/nj-run                  # testing-class run harness — manifest §T13, cost §T10, subagents §T11, log §T12
+tests/test-nj-run.sh        # its behavioural checks (no LLM, free, CI-safe)
 README.md                   # public overview
 docs.html                  # multi-page reference SITE (Home/Suites/Workflows/Reference)
 docs/architecture/          # generated diagrams + their JSON source models
@@ -119,7 +121,23 @@ docs/architecture/          # generated diagrams + their JSON source models
   weakens or deletes an assertion, and no sleeps/retries/skips to force green ·
   **T3** requires an explicit non-prod base URL, else BLOCK. A read-only testing
   skill opts out of T1 by stating it is read-only, never by omission.
-  Skills land under NAV-161.
+  All ten skills exist; two are umbrellas — `/test-suite-author` generates,
+  `/e2e-suite` executes.
+
+  **Run state goes through `bin/nj-run`, not through per-skill JSON.** It owns the
+  §T13 manifest, §T10 cost accounting, §T11 subagent spawn/join, and the §T12
+  append-only log. One tool rather than ten because §T13's whole point is that an
+  umbrella can only report cost and subagent records uniformly if they are *recorded*
+  uniformly — ten skills each writing "the same" schema is how that stops being true,
+  and a cost baseline computed by two different code paths compares the code, not the
+  runs. It is detected-never-required like everything else (§A5): absent, a skill
+  hand-writes the §T13 fields and says the cost and log fields are missing.
+  Two properties are easy to lose in a hand-rolled reduce and are why `nj-run
+  aggregate` exists: a quarantined subagent **forces BLOCK** rather than being
+  outvoted by the dimensions that did complete, and no-dimensions-or-all-SKIP is a
+  **PASS** (§U) rather than an ambiguous exit 2 that blocks a push for no reason.
+  `tests/test-nj-run.sh` asserts both, plus the §T4 scrub on published log text;
+  `check_run_harness` fails the build if those checks stop passing.
 
 > The one rule both code-facing classes share: **the human decides what gets committed.**
 > (The user may explicitly say "commit and push" — then it's fine.)

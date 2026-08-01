@@ -142,6 +142,32 @@ does as of this version, rather than how it was built.
   duplicating it — and a re-run is the normal case, since a changed requirement
   regenerates the plan.
   All ten skills in the class now exist (34 skills total), across two umbrellas.
+- **`bin/nj-run`** — the testing class's run harness, implementing §T10 cost
+  accounting, §T11 subagent records and deterministic aggregation, §T12 the
+  structured log, and §T13 the run manifest. `/e2e-run` and `/e2e-suite` now go
+  through it instead of describing a manifest each would have written by hand.
+  One shared tool rather than per-skill JSON because that is §T13's actual point:
+  an umbrella can only report cost and subagent records uniformly if they are
+  *recorded* uniformly, and a cost baseline computed by two code paths compares the
+  code rather than the runs.
+  Two behaviours are easy to lose in a hand-rolled reduce, so the harness owns them:
+  a **quarantined subagent forces BLOCK** rather than being outvoted by the
+  dimensions that did complete (four of five triages completing is not a complete
+  triage), and **no dimensions, or all `SKIP`, is a PASS** (§U) rather than an
+  ambiguous exit 2 that blocks a push for no reason.
+  The append-only log is **published text**, so it passes the §T4 scrub even though
+  the artifact-export prohibition does not apply to it — a bearer token in a
+  heartbeat reaches a report with no artifact ever moving. Masked, never deleted:
+  `Bearer ***` tells a reader an auth header was present, which is often the
+  diagnostic detail.
+  `tests/test-nj-run.sh` (18 checks, no LLM, CI-safe) and `check_run_harness` keep
+  it honest. Writing those found a real leak: the vendor-key pattern used `\b`, a
+  GNU extension that BSD `sed` treats literally, so `sk-…` keys passed through
+  unmasked on macOS while the query-param mask worked — a weaker test would have
+  called it clean.
+  Detected-never-required like everything else (§A5): absent, a skill hand-writes
+  the §T13 fields and reports that cost and log fields are missing.
+
 - **`bin/nj-agents-review` drives any agent CLI** via `NJ_AGENT_CMD`
   (`NJ_AGENT_CMD="codex exec" nj-agents-review`). The verdict→exit-code mapping —
   0 PASS/WARN, 1 BLOCK, 2 harness error — is the value the wrapper adds, and it is

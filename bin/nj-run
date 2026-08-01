@@ -1,0 +1,476 @@
+#!/usr/bin/env bash
+#
+# nj-run — the testing class's run harness: manifest (§T13), cost accounting
+# (§T10), subagent records (§T11), and a structured append-only log (§T12).
+#
+# Author: Navjyot Nishant
+# Created: 2026-08-01
+# Last updated: 2026-08-01
+# Description: Shared run-state writer for the testing-class skills.
+#
+# Usage:
+#   eval "$(nj-run init --commit "$SHA" --env-url http://localhost:3000 --env-rule loopback)"
+#                                      # creates the run dir, exports NJ_RUN_*
+#   nj-run phase start detect          # phase transition (§T12)
+#   nj-run phase end   detect
+#   nj-run spawn  test-planner         # subagent lifecycle (§T11) -> prints its id
+#   nj-run join   sa-1 --status ok --tokens 4210 --calls 3
+#   nj-run cost   --skill /e2e-run --tokens 1200 --calls 8
+#   nj-run verdict --dimension specs --value PASS
+#   nj-run heartbeat "running 42/120 specs"
+#   nj-run report                      # human summary of the run
+#   nj-run manifest                    # print the manifest JSON
+#   nj-run finish --verdict PASS       # seal it; exit code per CONVENTIONS.md §5
+#
+# Why this exists as ONE tool rather than per-skill code: §T13 says cost, subagent
+# and log fields live in the manifest, not in each skill — "an umbrella can only
+# report them uniformly if they are recorded uniformly". Ten skills each writing
+# their own JSON is ten chances to disagree about the schema, and the umbrella
+# then cannot aggregate. It is also the only way a cost baseline means anything:
+# comparing two numbers computed by different code compares the code, not the run.
+#
+# Exit codes (CONVENTIONS.md §5) — `finish` only:
+#   0  PASS or WARN
+#   1  BLOCK
+#   2  harness error — no verdict reached. Never treated as PASS.
+#
+# The manifest is run state, not history (§T13): it lives in a temp dir OUTSIDE
+# the repo tree and dies with it. Anything that must outlive the run belongs in
+# the flake ledger (§T14), which this tool deliberately does not write.
+#
+# Dependencies: python3 for JSON (jq is used if present but never required).
+# Without python3 the tool degrades to append-only logging and reports that the
+# manifest is unavailable, rather than emitting JSON it cannot parse back.
+
+set -euo pipefail
+
+# ---------------------------------------------------------------------------
+# Locating the run
+#
+# NJ_RUN_DIR is exported by `init` and inherited by every later call. A skill
+# that forgets to eval `init` gets a clear error rather than silently writing a
+# second run into a fresh temp dir — two half-manifests is a worse failure than
+# no manifest, because the report looks complete.
+# ---------------------------------------------------------------------------
+need_run() {
+  if [ -z "${NJ_RUN_DIR:-}" ] || [ ! -d "${NJ_RUN_DIR:-/nonexistent}" ]; then
+    echo "nj-run: no active run (NJ_RUN_DIR unset or missing)." >&2
+    echo "        Start one with:  eval \"\$(nj-run init ...)\"" >&2
+    exit 2
+  fi
+  MANIFEST="$NJ_RUN_DIR/manifest.json"
+  LOG="$NJ_RUN_DIR/run.jsonl"
+}
+
+have_py() { command -v python3 >/dev/null 2>&1; }
+
+# Monotonic-ish timestamp. `date +%s` is seconds; phases shorter than a second
+# are real, so use milliseconds where the platform offers them.
+now_ms() {
+  if have_py; then python3 -c 'import time;print(int(time.time()*1000))'
+  else echo $(($(date +%s) * 1000)); fi
+}
+now_iso() { date -u +%Y-%m-%dT%H:%M:%SZ; }
+
+# ---------------------------------------------------------------------------
+# §T4 scrub — applied to every string this tool writes.
+#
+# The log is PUBLISHED TEXT, not an artifact: the export prohibition does not
+# apply to it, but the scrub does. A bearer token in a heartbeat message reaches
+# a report with no artifact ever moving, which is exactly the leak §T4 describes.
+#
+# Mask, never delete: "Bearer ***" tells a reader an auth header was present,
+# which is often the diagnostic detail. An absent line tells them nothing.
+# ---------------------------------------------------------------------------
+scrub() {
+  sed -E \
+    -e 's/([Aa]uthorization: *[A-Za-z]+ )[A-Za-z0-9._~+/=-]+/\1***/g' \
+    -e 's/([Ss]et-[Cc]ookie: *[^=]+=)[^;[:space:]]+/\1***/g' \
+    -e 's#(https?://)[^:/@[:space:]]+:[^@[:space:]]+@#\1***@#g' \
+    -e 's/(([?&])(token|sig|key|access_token|api_key|password|secret)=)[^&[:space:]]+/\1***/gI' \
+    -e 's/(sk-|ghp_|gho_|github_pat_)[A-Za-z0-9_]{8,}/\1***/g' \
+    -e 's/AKIA[A-Z0-9]{12,}/AKIA***/g'
+}
+
+# Append one JSON record to the log. Append-only and one-record-per-line
+# (§T12) so concurrent writers interleave records rather than corrupting each
+# other — a single write() under the pipe-buffer limit is atomic on POSIX,
+# which a pretty-printed multi-line JSON array would not be.
+log_event() {
+  local kind="$1"; shift
+  local payload="${1:-{\}}"
+  if have_py; then
+    NJ_KIND="$kind" NJ_TS="$(now_iso)" NJ_MS="$(now_ms)" NJ_PAYLOAD="$payload" \
+    python3 -c '
+import json, os, sys
+try:
+    payload = json.loads(os.environ["NJ_PAYLOAD"])
+except Exception:
+    payload = {"raw": os.environ["NJ_PAYLOAD"]}
+rec = {"ts": os.environ["NJ_TS"], "ms": int(os.environ["NJ_MS"]),
+       "kind": os.environ["NJ_KIND"], **payload}
+sys.stdout.write(json.dumps(rec, sort_keys=True) + "\n")
+' | scrub >> "$LOG"
+  else
+    printf '{"ts":"%s","kind":"%s","note":"python3 absent — payload not structured"}\n' \
+      "$(now_iso)" "$kind" | scrub >> "$LOG"
+  fi
+}
+
+# Merge a JSON fragment into the manifest, under a lock.
+#
+# CI matrix jobs and parallel shards write concurrently (§T11). flock is Linux;
+# macOS has no flock(1), so the lock is an O_EXCL mkdir — portable, and correct
+# for the "one writer at a time" case this needs. It is NOT a fair lock; under
+# heavy contention a writer can wait. Acceptable: manifest writes are infrequent
+# and short, unlike the log which is lock-free by being append-only.
+manifest_merge() {
+  local fragment="$1"
+  have_py || return 0
+  local lock="$NJ_RUN_DIR/.manifest.lock" waited=0
+  while ! mkdir "$lock" 2>/dev/null; do
+    sleep 0.05; waited=$((waited + 1))
+    if [ "$waited" -gt 200 ]; then       # 10s — a held lock this long is a crash
+      rm -rf "$lock"                      # steal it rather than hang the run
+      log_event lock_stolen '{"note":"stale manifest lock removed after 10s"}'
+    fi
+  done
+  # shellcheck disable=SC2064
+  trap "rm -rf '$lock'" RETURN
+
+  NJ_FRAGMENT="$fragment" NJ_MANIFEST="$MANIFEST" python3 -c '
+import json, os
+path = os.environ["NJ_MANIFEST"]
+try:
+    with open(path) as fh:
+        cur = json.load(fh)
+except Exception:
+    cur = {}
+frag = json.loads(os.environ["NJ_FRAGMENT"])
+
+def merge(dst, src):
+    for k, v in src.items():
+        if isinstance(v, dict) and isinstance(dst.get(k), dict):
+            merge(dst[k], v)
+        elif isinstance(v, list) and isinstance(dst.get(k), list):
+            dst[k].extend(v)          # spawn/join records accumulate
+        else:
+            dst[k] = v
+    return dst
+
+merge(cur, frag)
+tmp = path + ".tmp"
+with open(tmp, "w") as fh:
+    json.dump(cur, fh, indent=2, sort_keys=True)
+os.replace(tmp, path)                  # atomic: a reader never sees a partial file
+'
+}
+
+# ---------------------------------------------------------------------------
+# Subcommands
+# ---------------------------------------------------------------------------
+
+cmd_init() {
+  local commit="" env_url="" env_rule="" scope="" cap="${NJ_RUN_CONCURRENCY:-4}"
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --commit)      commit="$2"; shift 2 ;;
+      --env-url)     env_url="$2"; shift 2 ;;
+      --env-rule)    env_rule="$2"; shift 2 ;;
+      --scope)       scope="$2"; shift 2 ;;
+      --concurrency) cap="$2"; shift 2 ;;
+      *) echo "nj-run init: unknown arg $1" >&2; exit 2 ;;
+    esac
+  done
+
+  # OUTSIDE the repo tree (§T4): a manifest inside the working copy is a file the
+  # next `git add -A` commits.
+  local dir; dir="$(mktemp -d "${TMPDIR:-/tmp}/nj-run-XXXXXX")"
+  local run_id; run_id="$(basename "$dir" | sed 's/^nj-run-//')"
+  mkdir -p "$dir/artifacts"
+
+  NJ_RUN_DIR="$dir"; MANIFEST="$dir/manifest.json"; LOG="$dir/run.jsonl"
+  : > "$LOG"
+
+  if have_py; then
+    NJ_INIT="$(printf '%s' "{
+      \"run_id\": \"$run_id\",
+      \"started\": \"$(now_iso)\",
+      \"started_ms\": $(now_ms),
+      \"commit\": \"$commit\",
+      \"environment\": {\"url\": \"$env_url\", \"rule\": \"$env_rule\"},
+      \"scope\": \"$scope\",
+      \"artifacts_dir\": \"$dir/artifacts\",
+      \"log\": \"$LOG\",
+      \"concurrency_cap\": $cap,
+      \"cost\": {\"by_skill\": {}, \"by_agent\": {}, \"phases\": {}},
+      \"subagents\": [],
+      \"verdicts\": {}
+    }")"
+    printf '%s' "$NJ_INIT" > "$MANIFEST"
+    manifest_merge '{}'      # normalises formatting through the same writer
+  fi
+
+  log_event run_start "{\"run_id\":\"$run_id\",\"commit\":\"$commit\",\"cap\":$cap}"
+
+  # Printed for `eval` — the caller's shell needs these, and a subprocess cannot
+  # export into its parent.
+  echo "export NJ_RUN_DIR='$dir'"
+  echo "export NJ_RUN_ID='$run_id'"
+}
+
+cmd_phase() {
+  need_run
+  local action="${1:?nj-run phase start|end <name>}" name="${2:?phase name}"
+  case "$action" in
+    start)
+      echo "$(now_ms)" > "$NJ_RUN_DIR/.phase.$name"
+      log_event phase_start "{\"phase\":\"$name\"}"
+      echo "▶ $name" >&2
+      ;;
+    end)
+      local began ended elapsed=0
+      if [ -f "$NJ_RUN_DIR/.phase.$name" ]; then
+        began="$(cat "$NJ_RUN_DIR/.phase.$name")"; ended="$(now_ms)"
+        elapsed=$((ended - began)); rm -f "$NJ_RUN_DIR/.phase.$name"
+      fi
+      log_event phase_end "{\"phase\":\"$name\",\"ms\":$elapsed}"
+      manifest_merge "{\"cost\":{\"phases\":{\"$name\":$elapsed}}}"
+      echo "✓ $name (${elapsed}ms)" >&2
+      ;;
+    *) echo "nj-run phase: expected start|end" >&2; exit 2 ;;
+  esac
+}
+
+cmd_spawn() {
+  need_run
+  local agent="${1:?nj-run spawn <agent>}"
+  # Count with a glob rather than `ls .sa-*`: a no-match glob makes ls exit 1,
+  # which under `set -e` kills the run on the FIRST spawn — when there is
+  # legitimately nothing to count.
+  local n=0 f
+  for f in "$NJ_RUN_DIR"/.sa-*; do [ -e "$f" ] && n=$((n + 1)); done
+  local id="sa-$((n + 1))"
+  now_ms > "$NJ_RUN_DIR/.$id"
+  log_event subagent_spawn "{\"id\":\"$id\",\"agent\":\"$agent\"}"
+  manifest_merge "{\"subagents\":[{\"id\":\"$id\",\"agent\":\"$agent\",\"status\":\"running\"}]}"
+  echo "$id"
+}
+
+cmd_join() {
+  need_run
+  local id="${1:?nj-run join <id>}"; shift
+  local status="ok" tokens=0 calls=0
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --status) status="$2"; shift 2 ;;
+      --tokens) tokens="$2"; shift 2 ;;
+      --calls)  calls="$2";  shift 2 ;;
+      *) echo "nj-run join: unknown arg $1" >&2; exit 2 ;;
+    esac
+  done
+  local elapsed=0
+  if [ -f "$NJ_RUN_DIR/.$id" ]; then
+    elapsed=$(( $(now_ms) - $(cat "$NJ_RUN_DIR/.$id") ))
+  fi
+  log_event subagent_join \
+    "{\"id\":\"$id\",\"status\":\"$status\",\"ms\":$elapsed,\"tokens\":$tokens,\"calls\":$calls}"
+
+  # §T11: a failed subagent is reported and quarantined, never allowed to
+  # silently shrink the result set. Four of five shards passing is not a pass —
+  # so the failure is recorded as data the reduce step must look at, not dropped.
+  manifest_merge "{\"subagents\":[{\"id\":\"$id\",\"status\":\"$status\",\"ms\":$elapsed,\"tokens\":$tokens,\"calls\":$calls}]}"
+  [ "$status" = "ok" ] || echo "⚠ $id failed — quarantined, not dropped (§T11)" >&2
+}
+
+cmd_cost() {
+  need_run
+  local skill="" agent="" tokens=0 calls=0
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --skill)  skill="$2";  shift 2 ;;
+      --agent)  agent="$2";  shift 2 ;;
+      --tokens) tokens="$2"; shift 2 ;;
+      --calls)  calls="$2";  shift 2 ;;
+      *) echo "nj-run cost: unknown arg $1" >&2; exit 2 ;;
+    esac
+  done
+  have_py || return 0
+  # Accumulate rather than overwrite: a skill reports cost more than once.
+  NJ_MANIFEST="$MANIFEST" NJ_SKILL="$skill" NJ_AGENT="$agent" \
+  NJ_TOKENS="$tokens" NJ_CALLS="$calls" python3 -c '
+import json, os
+path = os.environ["NJ_MANIFEST"]
+try:
+    with open(path) as fh: m = json.load(fh)
+except Exception: raise SystemExit(0)
+cost = m.setdefault("cost", {})
+for key, bucket in (("NJ_SKILL", "by_skill"), ("NJ_AGENT", "by_agent")):
+    name = os.environ.get(key, "")
+    if not name: continue
+    b = cost.setdefault(bucket, {}).setdefault(name, {"tokens": 0, "calls": 0})
+    b["tokens"] += int(os.environ["NJ_TOKENS"])
+    b["calls"]  += int(os.environ["NJ_CALLS"])
+tmp = path + ".tmp"
+with open(tmp, "w") as fh: json.dump(m, fh, indent=2, sort_keys=True)
+os.replace(tmp, path)
+'
+  log_event cost "{\"skill\":\"$skill\",\"agent\":\"$agent\",\"tokens\":$tokens,\"calls\":$calls}"
+
+  # §T10: exceeding a budget is WARN with the breakdown — not a silent failure
+  # and not an indefinite continuation.
+  if [ -n "${NJ_RUN_BUDGET_TOKENS:-}" ] && have_py; then
+    local total; total="$(cmd_total_tokens)"
+    if [ "$total" -gt "$NJ_RUN_BUDGET_TOKENS" ]; then
+      log_event budget_exceeded "{\"total\":$total,\"budget\":$NJ_RUN_BUDGET_TOKENS}"
+      echo "⚠ WARN: budget exceeded — $total tokens against ${NJ_RUN_BUDGET_TOKENS} (§T10)" >&2
+      cmd_report >&2
+    fi
+  fi
+}
+
+cmd_total_tokens() {
+  have_py || { echo 0; return; }
+  NJ_MANIFEST="$MANIFEST" python3 -c '
+import json, os
+try:
+    with open(os.environ["NJ_MANIFEST"]) as fh: m = json.load(fh)
+except Exception: print(0); raise SystemExit(0)
+print(sum(v.get("tokens", 0) for v in m.get("cost", {}).get("by_skill", {}).values()))
+'
+}
+
+cmd_verdict() {
+  need_run
+  local dim="" value=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --dimension) dim="$2"; shift 2 ;;
+      --value)     value="$2"; shift 2 ;;
+      *) echo "nj-run verdict: unknown arg $1" >&2; exit 2 ;;
+    esac
+  done
+  case "$value" in
+    PASS|WARN|BLOCK|SKIP) ;;
+    *) echo "nj-run verdict: expected PASS|WARN|BLOCK|SKIP, got '$value'" >&2; exit 2 ;;
+  esac
+  log_event verdict "{\"dimension\":\"$dim\",\"value\":\"$value\"}"
+  manifest_merge "{\"verdicts\":{\"$dim\":\"$value\"}}"
+}
+
+# Heartbeat (§T12): a stalled run must be distinguishable from a slow one.
+cmd_heartbeat() {
+  need_run
+  local msg="${1:-working}"
+  log_event heartbeat "{\"message\":$(printf '%s' "$msg" | scrub | python3 -c 'import json,sys;print(json.dumps(sys.stdin.read().strip()))' 2>/dev/null || echo '"working"')}"
+  printf '  … %s\n' "$(printf '%s' "$msg" | scrub)" >&2
+}
+
+# Deterministic aggregation (§T11): the verdict depends on the SET of dimension
+# results, never on which subagent finished first.
+#
+# What makes that true is that the reduce is COMMUTATIVE — severity dominance
+# over set membership, not a fold over a sequence. Order genuinely cannot matter.
+# The sorted() below is for stable *reporting* only; deleting it would not change
+# a single verdict. Said plainly because the obvious guess is that sorting is
+# what provides the guarantee, and a future reader who believes that will add a
+# sort somewhere it does nothing and skip the property that does matter:
+# any new rule added here must stay order-independent. A "first BLOCK wins" or
+# "last verdict wins" rule would silently reintroduce completion-order dependence.
+cmd_aggregate() {
+  need_run
+  have_py || { echo "SKIP"; return; }
+  NJ_MANIFEST="$MANIFEST" python3 -c '
+import json, os
+try:
+    with open(os.environ["NJ_MANIFEST"]) as fh: m = json.load(fh)
+except Exception: print("SKIP"); raise SystemExit(0)
+v = m.get("verdicts", {})
+vals = [v[k] for k in sorted(v)]          # sorted: order-independent
+subs = m.get("subagents", [])
+# A quarantined subagent cannot be aggregated away (§T11).
+if any(s.get("status") not in (None, "ok", "running") for s in subs):
+    print("BLOCK"); raise SystemExit(0)
+if not vals or all(x == "SKIP" for x in vals):
+    print("PASS"); raise SystemExit(0)      # nothing to do is a PASS (§U)
+if "BLOCK" in vals: print("BLOCK")
+elif "WARN" in vals: print("WARN")
+else: print("PASS")
+'
+}
+
+cmd_report() {
+  need_run
+  have_py || { echo "nj-run: python3 absent — log at $LOG"; return; }
+  # Heredoc rather than `python3 -c '...'`: the report is the one block that
+  # needs both quote styles (f-strings with dict keys), and nesting those inside
+  # a single-quoted bash string is where this broke twice.
+  NJ_MANIFEST="$MANIFEST" python3 <<'PYREPORT'
+import json, os
+with open(os.environ["NJ_MANIFEST"]) as fh: m = json.load(fh)
+cost = m.get("cost", {})
+by_skill = cost.get("by_skill", {})
+tok = sum(b.get("tokens", 0) for b in by_skill.values())
+calls = sum(b.get("calls", 0) for b in by_skill.values())
+print(f"Run {m.get('run_id','?')}  commit {(m.get('commit') or '?')[:8]}")
+env = m.get("environment", {})
+if env.get("url"):
+    print(f"  env      {env['url']}  (allowed by: {env.get('rule','?')})")
+print(f"  cost     {tok} tokens, {calls} calls, cap {m.get('concurrency_cap','?')}")
+for name, b in sorted(by_skill.items()):
+    print(f"           {name}: {b.get('tokens',0)} tok / {b.get('calls',0)} calls")
+ph = cost.get("phases", {})
+if ph:
+    print("  phases   " + ", ".join(f"{k} {v}ms" for k, v in sorted(ph.items())))
+subs = m.get("subagents", [])
+done = [s for s in subs if s.get("status") in ("ok", "failed")]
+bad  = [s for s in done if s.get("status") != "ok"]
+if subs:
+    print(f"  agents   {len(done)} joined, {len(bad)} failed")
+for s in bad:
+    print(f"           QUARANTINED {s.get('id')} ({s.get('agent','?')})")
+v = m.get("verdicts", {})
+if v:
+    print("  verdicts " + ", ".join(f"{k}={v[k]}" for k in sorted(v)))
+print(f"  artifacts {m.get('artifacts_dir','?')}   (local only, never exported — §T4)")
+print(f"  log       {m.get('log','?')}")
+PYREPORT
+}
+
+cmd_finish() {
+  need_run
+  local verdict=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --verdict) verdict="$2"; shift 2 ;;
+      *) echo "nj-run finish: unknown arg $1" >&2; exit 2 ;;
+    esac
+  done
+  [ -n "$verdict" ] || verdict="$(cmd_aggregate)"
+  manifest_merge "{\"verdicts\":{\"aggregate\":\"$verdict\"},\"finished\":\"$(now_iso)\"}"
+  log_event run_end "{\"verdict\":\"$verdict\"}"
+  cmd_report
+  echo
+  echo "Verdict: $verdict"
+  case "$verdict" in
+    PASS|WARN) exit 0 ;;
+    BLOCK)     exit 1 ;;
+    *)         echo "nj-run: no verdict reached — harness error" >&2; exit 2 ;;
+  esac
+}
+
+case "${1:-}" in
+  init)      shift; cmd_init "$@" ;;
+  phase)     shift; cmd_phase "$@" ;;
+  spawn)     shift; cmd_spawn "$@" ;;
+  join)      shift; cmd_join "$@" ;;
+  cost)      shift; cmd_cost "$@" ;;
+  verdict)   shift; cmd_verdict "$@" ;;
+  heartbeat) shift; cmd_heartbeat "$@" ;;
+  aggregate) shift; need_run; cmd_aggregate ;;
+  report)    shift; need_run; cmd_report ;;
+  manifest)  shift; need_run; cat "$MANIFEST" ;;
+  finish)    shift; cmd_finish "$@" ;;
+  -h|--help|"") grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+  *) echo "nj-run: unknown command '$1' (try --help)" >&2; exit 2 ;;
+esac
