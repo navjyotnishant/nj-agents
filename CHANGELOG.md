@@ -67,7 +67,7 @@ does as of this version, rather than how it was built.
   testable. **T14** puts the flake ledger at a *committed* `.nj-agents/flake-ledger.json`
   — gitignored it would start empty on every CI runner, which is exactly where
   intermittent failures accumulate and where the history is worth most.
-  First skills in the class (33 skills now): **`/e2e-run`** and **`/test-triage`**. Detects the repo's own
+  First skills in the class: **`/e2e-run`** and **`/test-triage`**. Detects the repo's own
   E2E runner — Playwright, Cypress, WebdriverIO, or whatever its config points at —
   BLOCKs unless the base URL is explicitly non-prod, runs the suite, and captures
   trace/HAR/video/console into a gitignored temp dir. It runs tests; it never writes
@@ -128,7 +128,20 @@ does as of this version, rather than how it was built.
   history, since a green run resting on three known-flaky specs is a different
   result. It states the release position and stops; whether that is acceptable needs
   business context this skill does not have.
-  All nine skills in the class now exist.
+  **`/test-suite-author`** is the *generation* umbrella to `/e2e-suite`'s execution
+  one: ticket → cases → specs → fixtures, chaining `/test-plan` → `/test-author` →
+  `/test-data` in a single run. It **pauses after every stage**, because each is
+  wrong in a different way and the cheapest place to catch each is immediately after
+  it — the plan especially, where the judgement lives and the downstream stages are
+  mechanical. `--yes` skips the prompts for a workflow but removes no constraint:
+  it still never commits, still never weakens an assertion, still BLOCKs where it
+  would have BLOCKed interactively. On approval it files the *uncovered* cases as
+  `TEST-`-prefixed sub-tasks under the parent ticket via `/pm-task`, so an approved
+  plan stops living only in a temp file where nobody but the person who ran it can
+  see it. §P4 search-before-create makes a re-run link what exists rather than
+  duplicating it — and a re-run is the normal case, since a changed requirement
+  regenerates the plan.
+  All ten skills in the class now exist (34 skills total), across two umbrellas.
 - **`bin/nj-agents-review` drives any agent CLI** via `NJ_AGENT_CMD`
   (`NJ_AGENT_CMD="codex exec" nj-agents-review`). The verdict→exit-code mapping —
   0 PASS/WARN, 1 BLOCK, 2 harness error — is the value the wrapper adds, and it is
