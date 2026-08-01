@@ -12,6 +12,18 @@ does as of this version, rather than how it was built.
 
 ### Fixed
 
+- **A clean working tree made `/pre-push-review` exit 2.** The skill said "report
+  and stop" without naming a verdict, and `bin/nj-agents-review` maps a missing
+  verdict to exit 2 — a harness error. So a pre-push hook on a repo with nothing to
+  review **blocked the push**, silently and for no reason.
+  Two things were wrong, and 17 of 18 spawning skills had the same gap. **Nothing to
+  do is a PASS**, not an error — a gate that found nothing wrong ran successfully.
+  And the check belongs **before any dispatch**: five agents sent to confirm a clean
+  tree cost real money to repeat what `git status` already said.
+  Now a `§U` rule binding every skill, with `check_empty_input_pass` enforcing it.
+  Five skills were fixed to state their own empty case (`/pr-describe`,
+  `/review-correctness`, `/review-style`, `/dead-code-finder`, `/social-post`).
+
 - **`/commit-assistant` and `/pre-push-review` would not load on Codex CLI.** Their
   `description:` frontmatter was an unquoted YAML scalar containing `": "`, which
   YAML reads as a nested mapping — so the frontmatter was invalid, and Codex

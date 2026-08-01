@@ -55,6 +55,31 @@ not count — it has to be scannable.
 |---|---|---|
 | `example` | what it does here | the documented fallback, or BLOCK if genuinely required |
 
+**Nothing to do is a PASS, and it is checked BEFORE spawning anything.** If the
+input a skill exists to process is empty — no uncommitted changes, no failures, no
+outdated dependencies, no requirement — the skill reports that and **returns
+successfully**. It does not spawn an agent to confirm the absence.
+
+Two distinct failures here, and both are common:
+
+- **Spawning anyway.** Five agents dispatched to review a clean tree costs real
+  money to be told there is nothing to review. The precondition check is free and
+  comes first — before the roster is announced, before the cost is stated, before
+  any dispatch.
+- **Reporting it as an error.** "Nothing to review" is a *successful* run of a gate
+  that found nothing wrong. A skill that stops without naming a verdict leaves the
+  caller to guess, and `bin/nj-agents-review` maps a missing verdict to **exit 2,
+  harness error** — so a clean working tree fails a pre-push hook. That is the
+  opposite of the intended behaviour, and it is silent until someone's push is
+  blocked for no reason.
+
+So: **say PASS explicitly**, say why there was nothing to do, and exit 0. Reserve
+non-zero for a real finding (BLOCK, exit 1) or a run that could not reach a verdict
+(exit 2). An empty input is neither.
+
+The same holds per-dimension inside an umbrella: a dimension with nothing to review
+is a `SKIP` with a labeled reason, not a spawned agent and not a failure.
+
 **Degrade, don't fail.** External tools and MCP connectors are detected at runtime,
 never required; every path has a zero-dependency fallback. The one exception is secret
 scanning, which genuinely blocks without a scanner.

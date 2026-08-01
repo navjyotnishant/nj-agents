@@ -896,6 +896,35 @@ check_guidance_size() {
 # a suite — what needs proving here is what the skills decide, not whether a
 # browser launches, and installing browser binaries would make this slow and
 # network-dependent for no extra signal.
+# A skill that spawns agents must decide there is work to do BEFORE spawning, and
+# must call the empty case a PASS. Two failures otherwise, both silent:
+#
+#   - five agents dispatched to confirm a clean tree, at real cost
+#   - "nothing to review" with no verdict, which bin/nj-agents-review maps to
+#     exit 2 — so a clean working tree fails a pre-push hook
+#
+# Only spawning skills are held to this: a skill with no fleet has nothing to
+# short-circuit, and its empty case costs nothing.
+check_empty_input_pass() {
+  local d name f bad=0
+  for d in "$SKILLS_SRC"/*/; do
+    name="$(basename "${d%/}")"; f="${d%/}/SKILL.md"
+    [ -f "$f" ] || continue
+    has "$f" 'get a yes before\|and get a yes' i || continue   # spawning skills only
+    # Match the SHAPE — "no input → stop before spawning" — not one phrasing.
+    # Each skill's empty case is different ("nothing to describe", "isn't
+    # published", "no source to scan"), and a narrow pattern would push authors
+    # to paste a magic phrase rather than think about their own empty case.
+    has "$f" 'nothing to [a-z]*\|no .* to [a-z]*\|working tree clean\|is.*empty\|SKIP\|before spawning' i || {
+      finding check_empty_input_pass referential \
+        "skills/$name spawns agents but never says what happens when there is nothing to do — §U requires a PASS before any dispatch, not a spawned agent and not an error"
+      bad=1
+    }
+  done
+  [ "$bad" = "0" ] && ok "spawning skills handle an empty input without dispatching"
+  return 0
+}
+
 check_e2e_fixtures() {
   local f bad=0
   f="$REPO_DIR/tests/fixtures"
@@ -1029,6 +1058,7 @@ check_review_exit_codes
 check_cursor_rule
 check_guidance_size
 check_diagram_counts
+check_empty_input_pass
 check_e2e_fixtures
 check_installer_runners
 check_counts

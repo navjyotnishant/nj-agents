@@ -56,7 +56,9 @@ secret gate §3, findings format §4, CI mode §5, report §6, safety §7).
 ## Prerequisites
 
 - **A git repository** (`git rev-parse --git-dir`); else stop and say so.
-- **A diff to review** (staged + unstaged + unpushed); if empty, report and stop.
+- **A diff to review** (staged + unstaged + unpushed). If empty, report
+  **PASS — nothing to review** and exit 0 **before spawning** (`§U`). A clean tree
+  is a gate that found nothing wrong, not an error.
 - **No external API key** — uses the current AI session.
 
 ## Step 1 — Snapshot + hygiene + secret gate

@@ -30,8 +30,10 @@ copy to paste — it never posts anything itself.
 ## Prerequisites
 
 - **A published URL** to promote (blog post, repo, demo). If the thing isn't published
-  yet, say so — a social post needs a live link. If the user only has a local draft,
-  offer to promote it once it's published, or write the copy with a placeholder link.
+  yet, say so — a social post needs a live link — and stop **before spawning**
+  (`§U`): there is nothing to ground copy in, and that is a successful answer rather
+  than an error. If the user only has a local draft, offer to promote it once it's
+  published, or write the copy with a placeholder link.
 - **Platform** — default LinkedIn; also supports X/Twitter (shorter, different hashtag
   norms). Ask if unstated.
 
