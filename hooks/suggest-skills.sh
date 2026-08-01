@@ -55,6 +55,12 @@ case "$prompt" in
 esac
 case "$prompt" in
   # Triage first: "why did the e2e tests fail" is a triage question, not a run one.
+  *"test plan"*|*"what should we test"*|*"test cases for"*)
+    add "/test-plan (case matrix: boundaries, negative, authz)" ;;
+  *"write the tests"*|*"generate spec"*|*"scaffold test"*|*"page object"*)
+    add "/test-author (your framework; proposes the commit)" ;;
+  *fixture*|*"test data"*|*"seed data"*|*"tests interfere"*)
+    add "/test-data (per-spec data; credentials from env)" ;;
   *quarantin*|*"flaky test"*|*"flaky spec"*|*"which tests are flak"*)
     add "/flake-watch (ledger history; proposes quarantine, never applies)" ;;
   *"why did"*test*fail*|*"why are"*test*fail*|*triage*|*"real bug or"*|*flake*)

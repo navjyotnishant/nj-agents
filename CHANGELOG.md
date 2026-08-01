@@ -55,7 +55,7 @@ does as of this version, rather than how it was built.
   testable. **T14** puts the flake ledger at a *committed* `.nj-agents/flake-ledger.json`
   — gitignored it would start empty on every CI runner, which is exactly where
   intermittent failures accumulate and where the history is worth most.
-  First skills in the class (27 skills now): **`/e2e-run`** and **`/test-triage`**. Detects the repo's own
+  First skills in the class (30 skills now): **`/e2e-run`** and **`/test-triage`**. Detects the repo's own
   E2E runner — Playwright, Cypress, WebdriverIO, or whatever its config points at —
   BLOCKs unless the base URL is explicitly non-prod, runs the suite, and captures
   trace/HAR/video/console into a gitignored temp dir. It runs tests; it never writes
@@ -77,6 +77,22 @@ does as of this version, rather than how it was built.
   `/test-triage`** rather than quarantining it — that is a defect wearing a flake
   costume, and hiding it behind flake accounting is the failure the ledger exists to
   prevent. Quarantine is always a proposal carrying an SLA and a tracking issue.
+  **`/test-plan`** turns a requirement into a structured case matrix — equivalence
+  classes, boundaries, negative paths and authz, not just the happy path, which is
+  the case least likely to break and the one generation defaults to. Emits JSON for
+  `/test-author` rather than prose, and marks inferred cases so a reviewer knows
+  which came from the ticket and which from judgement.
+  **`/test-author`** generates specs in **the repo's own framework**, never one it
+  picks, matching the style of an existing spec. It enforces a `data-testid` locator
+  contract and flags brittle selectors — and where the app has no testids it
+  *proposes* adding them rather than reaching into application source, which T1
+  fences it out of.
+  **`/test-data`** generates fixtures and factories so each spec owns its data:
+  unique per run, created by the spec, cleaned up after. Shared mutable fixtures are
+  the usual cause of a suite that passes alone and fails in parallel — a data problem
+  that gets diagnosed as flake, quarantined, and eventually deleted.
+  Both writing skills propose the commit and never run git (T6), and neither writes
+  a credential to disk (T8).
 - **`bin/nj-agents-review` drives any agent CLI** via `NJ_AGENT_CMD`
   (`NJ_AGENT_CMD="codex exec" nj-agents-review`). The verdict→exit-code mapping —
   0 PASS/WARN, 1 BLOCK, 2 harness error — is the value the wrapper adds, and it is
