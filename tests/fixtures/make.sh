@@ -140,4 +140,87 @@ printf 'export const add = (a, b) => a + b;\n' > "$d/src/calc.js"
 printf "import {add} from '../src/calc.js';\n" > "$d/tests/calc.test.js"
 git -C "$d" add -A && git -C "$d" commit -qm "chore: unit tests only, no e2e"
 
+# ---------------------------------------------------------------------------
+# e2e-stale-config — a runner that DETECTS cleanly and resolves to nothing.
+#
+# Found in a real repo (GitHub #9): the specs were deleted pending a rewrite and
+# the config was left behind, so `playwright.config.js` + a `test` script both
+# detect while `testDir` points at a directory that no longer exists.
+#
+# This is NOT what e2e-none covers. There, nothing is detected and SKIP is
+# obvious. Here detection SUCCEEDS and the suite is empty, which is the more
+# dangerous shape: a runner that treats an empty match set as success reports
+# green over a suite that no longer exists.
+#
+# Playwright happens to exit non-zero on this, so the real repo surfaced a BLOCK
+# rather than a false PASS. That is luck. The skill must reach SKIP by checking
+# the config resolves to at least one spec, not by trusting the runner's exit
+# code to be the strict one.
+# ---------------------------------------------------------------------------
+d="$(new_repo e2e-stale-config)"
+mkdir -p "$d/tests" "$d/src"
+cat > "$d/package.json" <<'JSON'
+{
+  "name": "fixture-stale-config",
+  "private": true,
+  "scripts": { "test": "cd tests && npx playwright test" },
+  "devDependencies": { "@playwright/test": "^1.40.0" }
+}
+JSON
+# testDir points at ./specs — deliberately never created.
+cat > "$d/tests/playwright.config.js" <<'JS'
+module.exports = {
+  testDir: './specs',
+  use: { baseURL: process.env.BASE_URL },
+};
+JS
+printf 'export const add = (a, b) => a + b;\n' > "$d/src/calc.js"
+git -C "$d" add -A && git -C "$d" commit -qm "chore: specs removed, config left behind"
+
+# ---------------------------------------------------------------------------
+# e2e-python — a real suite that no JS probe can see.
+#
+# Standalone verification scripts with their own exit-code contract, run by a
+# documented command rather than a framework CLI. Outside JS-first projects this
+# is the common shape, not an exotic one — and detection that only probes for
+# playwright/cypress/wdio configs is blind to all of it.
+#
+# The documented-command probe is what should find this, which is why the
+# command lives in AGENTS.md here rather than in a package.json script.
+# ---------------------------------------------------------------------------
+d="$(new_repo e2e-python)"
+mkdir -p "$d/tests" "$d/app"
+cat > "$d/AGENTS.md" <<'MD'
+# Fixture: python verification suite
+
+## Running the tests
+
+    python tests/verify_login.py
+    python tests/verify_checkout.py
+
+Each script exits 0 when every check passes, 1 on a failed check, and 2 when it
+could not run at all (app unreachable, fixtures unusable).
+MD
+cat > "$d/tests/verify_login.py" <<'PY'
+"""Verification script — exits 0 pass / 1 fail / 2 harness error."""
+import os
+import sys
+
+BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:8000")
+
+
+def main():
+    checks = [("login rejects an empty password", True)]
+    for label, passed in checks:
+        print(f"  [{'PASS' if passed else 'FAIL'}] {label}")
+    return 0 if all(p for _, p in checks) else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+PY
+cp "$d/tests/verify_login.py" "$d/tests/verify_checkout.py"
+printf 'def add(a, b):\n    return a + b\n' > "$d/app/calc.py"
+git -C "$d" add -A && git -C "$d" commit -qm "chore: python verification suite"
+
 echo "fixtures built in $HERE"

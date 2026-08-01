@@ -931,6 +931,13 @@ check_e2e_fixtures() {
   [ -x "$f/../fixtures/make.sh" ] || return 0
   # Fixtures are generated and gitignored, so a fresh clone has none. Build them
   # if they are absent rather than reporting a false gap.
+  # Build only when NOTHING is there — a fresh clone. Deliberately not "rebuild if
+  # any one fixture is missing": that makes a deleted fixture unobservable, because
+  # make.sh restores it before the assertions below can see it is gone. Verified by
+  # trying it — the e2e-python assertion silently stopped biting.
+  #
+  # Cost of this choice: adding a fixture needs `tests/fixtures/make.sh` run once by
+  # hand in an existing tree. The assertions below then say exactly which is missing.
   [ -d "$f/e2e-playwright" ] || "$f/make.sh" >/dev/null 2>&1 || {
     finding check_e2e_fixtures structural "tests/fixtures/make.sh failed — the E2E fixtures cannot be built"
     return 0
@@ -963,7 +970,50 @@ check_e2e_fixtures() {
     bad=1
   }
 
-  [ "$bad" = "0" ] && ok "E2E fixtures cover two stacks plus the no-runner SKIP path"
+  # A runner that DETECTS cleanly and resolves to zero specs (GitHub #9). Distinct
+  # from e2e-none: there nothing is found and SKIP is obvious. Here detection
+  # succeeds and the suite is empty — the shape that reports green over a suite
+  # that no longer exists, if the skill trusts the runner's exit code.
+  [ -f "$f/e2e-stale-config/tests/playwright.config.js" ] || {
+    finding check_e2e_fixtures structural \
+      "fixture e2e-stale-config has no config — the detects-but-resolves-to-nothing path is unverifiable"
+    bad=1
+  }
+  [ -d "$f/e2e-stale-config/tests/specs" ] && {
+    finding check_e2e_fixtures structural \
+      "fixture e2e-stale-config HAS a specs dir — its whole point is that testDir does not resolve"
+    bad=1
+  }
+  # A real suite no JS probe can see. Detection that only knows playwright/cypress
+  # reports 'no runner' on a repo with a working suite.
+  [ -f "$f/e2e-python/tests/verify_login.py" ] || {
+    finding check_e2e_fixtures structural \
+      "fixture e2e-python has no verify_*.py — non-JS detection is proven by nothing"
+    bad=1
+  }
+  [ -f "$f/e2e-python/AGENTS.md" ] || {
+    finding check_e2e_fixtures structural \
+      "fixture e2e-python has no AGENTS.md — the documented-command probe has nothing to find"
+    bad=1
+  }
+
+  # The skill must actually say it checks a detected runner resolves to specs.
+  # Without this the fixtures above exist and nothing consults them.
+  local sk="$SKILLS_SRC/e2e-run/SKILL.md"
+  if [ -f "$sk" ]; then
+    has "$sk" 'resolves to\|resolve to.*spec\|0 specs\|zero.*spec' i || {
+      finding check_e2e_fixtures referential \
+        "skills/e2e-run does not say a detected runner is verified to resolve to specs — a stale config would be run as if live (GitHub #9)"
+      bad=1
+    }
+    has "$sk" 'verify_\|pytest\|non-JS\|not only a JS' i || {
+      finding check_e2e_fixtures referential \
+        "skills/e2e-run probes only JS runners — a pytest or verify_*.py suite is invisible to it (GitHub #9)"
+      bad=1
+    }
+  fi
+
+  [ "$bad" = "0" ] && ok "E2E fixtures cover JS, non-JS, no-runner, and stale-config detection"
   return 0
 }
 

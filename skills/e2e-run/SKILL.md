@@ -105,22 +105,63 @@ BLOCK — refusing to run against https://acme.com
 
 ## Step 2 — Detect the runner (`§T5`)
 
-Discover what this repo actually uses. Probe, do not assume:
+Discover what this repo actually uses. Probe, do not assume — and probe in **this
+order**, because the first match is the one that gets run:
 
-- a config file — `playwright.config.*`, `cypress.config.*`, `wdio.conf.*`,
-  `codecept.conf.*`, or a framework key in `package.json`
-- a script — an `e2e`, `test:e2e`, `integration` or similar entry in `package.json`,
-  `Makefile`, `justfile`, `Taskfile`
-- a documented command in `CLAUDE.md` / `AGENTS.md` / `README`
-- the directory layout — `e2e/`, `tests/e2e/`, `cypress/`, `playwright/`
+1. **A documented command** in `CLAUDE.md` / `AGENTS.md` / `GEMINI.md` / `README` —
+   "run the tests with `…`". Highest priority deliberately: it is the only source
+   written *by someone who knows this repo*, and it carries the env, container hop and
+   flags a reconstructed invocation loses. A repo that documents
+   `docker exec -w /app app python tests/verify_x.py` means it.
+2. **A script** — an `e2e`, `test:e2e`, `integration` or similar entry in
+   `package.json`, `Makefile`, `justfile`, `Taskfile`, `pyproject.toml`.
+3. **A config file** — `playwright.config.*`, `cypress.config.*`, `wdio.conf.*`,
+   `codecept.conf.*`, or a framework key in `package.json`.
+4. **A non-JS convention** — `pytest.ini` / `tox.ini` / a `tests/` directory of
+   `test_*.py` or `verify_*.py`, a Go `*_test.go` E2E build tag, an `rspec`/`minitest`
+   layout, a `tests/*.sh` harness. **A suite is not only a JS suite.** Outside
+   JS-first projects this is the common shape, and probes 1–3 are blind to it.
+5. **The directory layout** — `e2e/`, `tests/e2e/`, `cypress/`, `playwright/`.
+
+> Order matters, and it was wrong before. Probing configs ahead of documented
+> commands means a repo with a **stale** config never reaches the command that
+> actually works — which is exactly the failure below.
+
+### Then verify it resolves to specs — before running anything
+
+**A detected runner is not a working runner.** Confirm the thing you found resolves
+to **at least one spec**, and treat zero as a `SKIP`:
+
+```bash
+npx playwright test --list      # "Total: 0 tests in 0 files" → SKIP, do not run
+npx cypress run --spec …        # empty match → SKIP
+ls tests/verify_*.py            # documented convention → count them
+```
+
+This is not defensive padding. A real repo had `playwright.config.js` with
+`testDir: './specs'` and a matching `package.json` script, both detecting cleanly —
+while `tests/specs/` had been **deleted pending a rewrite** and the config left
+behind. Thirteen real Python test scripts sat in the same directory, unseen.
+
+That repo surfaced a BLOCK only because Playwright exits non-zero on an empty match
+set. **That is luck, not a guarantee** — a runner that treats "no tests matched" as
+success would report **green over a suite that no longer exists**, which is the worst
+outcome this class can produce. Do not delegate this check to the runner's exit code.
+
+**Report every candidate you found, not just the winner.** Where a stale config and a
+live suite both exist, saying so is what lets someone delete the dead config:
+
+```
+SKIP — detected playwright.config.js, but it resolves to 0 specs
+  testDir './specs' does not exist
+  also found: 13 tests/verify_*.py, documented in CLAUDE.md
+  → nothing was run; the config looks stale
+```
 
 **Nothing detected → SKIP with the reason**, and say what was probed. Never install a
 runner, never scaffold a config, never substitute a different framework. "No E2E
 runner detected" is a useful report; installing Playwright into someone's repo so
 there is something to run is not.
-
-Prefer the repo's **own script** (`npm run test:e2e`) over a reconstructed command —
-it carries flags and env the raw binary invocation would lose.
 
 ## Step 3 — Open the run, then execute (`§T4`, `§T13`)
 
