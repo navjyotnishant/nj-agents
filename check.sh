@@ -888,6 +888,56 @@ check_guidance_size() {
 # The installer's whole premise is that ONE clone feeds every runner via symlinks.
 # That is cheap to assert for real — install into a temp dir and look — and it is
 # the kind of claim that rots silently, so assert it rather than trusting the docs.
+# The testing skills claim to DETECT a runner rather than assume one (§T5). That
+# claim is cheap to assert and expensive to leave untested: a skill hardcoded to
+# Playwright passes every review and fails silently in a Cypress repo.
+#
+# These assert the fixtures give detection something real to find. They do not run
+# a suite — what needs proving here is what the skills decide, not whether a
+# browser launches, and installing browser binaries would make this slow and
+# network-dependent for no extra signal.
+check_e2e_fixtures() {
+  local f bad=0
+  f="$REPO_DIR/tests/fixtures"
+  [ -x "$f/../fixtures/make.sh" ] || return 0
+  # Fixtures are generated and gitignored, so a fresh clone has none. Build them
+  # if they are absent rather than reporting a false gap.
+  [ -d "$f/e2e-playwright" ] || "$f/make.sh" >/dev/null 2>&1 || {
+    finding check_e2e_fixtures structural "tests/fixtures/make.sh failed — the E2E fixtures cannot be built"
+    return 0
+  }
+
+  # Two different stacks. One would pass against a hardcoded runner; two is the
+  # minimum that shows detection is real.
+  [ -f "$f/e2e-playwright/playwright.config.ts" ] || {
+    finding check_e2e_fixtures structural "fixture e2e-playwright has no playwright config — nothing for §T5 detection to find"
+    bad=1
+  }
+  [ -f "$f/e2e-cypress/cypress.config.js" ] || {
+    finding check_e2e_fixtures structural "fixture e2e-cypress has no cypress config — detection is only proven by a second stack"
+    bad=1
+  }
+  # The SKIP path. A silent pass here is the worst of the three outcomes, so the
+  # fixture that produces it has to exist.
+  if [ -d "$f/e2e-none" ]; then
+    ls "$f/e2e-none"/*.config.* >/dev/null 2>&1 && {
+      finding check_e2e_fixtures structural "fixture e2e-none has a runner config — it exists to prove the §T5 SKIP path"
+      bad=1
+    }
+  else
+    finding check_e2e_fixtures structural "fixture e2e-none is missing — nothing exercises the §T5 SKIP path"
+    bad=1
+  fi
+  # /test-author must flag brittle locators, so a brittle one has to be present.
+  grep -rq 'nth-child' "$f/e2e-playwright/e2e" 2>/dev/null || {
+    finding check_e2e_fixtures structural "no brittle locator in the playwright fixture — /test-author's flagging has nothing to catch"
+    bad=1
+  }
+
+  [ "$bad" = "0" ] && ok "E2E fixtures cover two stacks plus the no-runner SKIP path"
+  return 0
+}
+
 check_installer_runners() {
   local tmp bad=0 r dir guide
   command -v mktemp >/dev/null 2>&1 || return 0
@@ -979,6 +1029,7 @@ check_review_exit_codes
 check_cursor_rule
 check_guidance_size
 check_diagram_counts
+check_e2e_fixtures
 check_installer_runners
 check_counts
 
