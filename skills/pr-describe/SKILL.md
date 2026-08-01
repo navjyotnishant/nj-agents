@@ -75,7 +75,10 @@ Detected at runtime, never installed by this skill (`§A5`).
 
 - **A git repository** (`git rev-parse --git-dir`); else stop and say so.
 - **A branch with a delta versus its base.** If the branch equals its base (no
-  commits ahead), report "nothing to describe — this branch matches <base>" and stop.
+  commits ahead), report **"nothing to describe — this branch matches <base>"** as
+  a **successful** result and stop **before spawning** (`§U`). There is no PR to
+  draft, which is an answer, not a failure — and dispatching an agent to discover
+  that costs money to repeat `git log`.
 - **No API key / no network for the drafting itself.** `gh` (GitHub CLI) is used
   **only if present and only if you opt in**, to create a draft PR (§A5). Absent or
   declined → the skill prints the title + body for you to paste.

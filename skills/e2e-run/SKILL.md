@@ -1,7 +1,7 @@
 ---
 name: e2e-run
 description: "Use this skill when the user asks to \"run the e2e tests\", \"run the browser tests\", \"execute the end-to-end suite\", or wants the repo's own E2E suite run with full failure evidence captured. Detects the repo's E2E runner at runtime (Playwright, Cypress, WebdriverIO, or whatever its config points at), BLOCKs unless an explicit non-prod base URL is given, runs the suite, and captures trace, HAR, video and console into a gitignored temp dir. Raw artifacts never leave that dir; anything published is scrubbed first. Works in any git repo; nothing here is project-specific."
-version: 0.1.0
+version: 0.2.0
 class: testing
 author: navjyotnishant
 ---
@@ -49,6 +49,7 @@ Detected at runtime, never installed by this skill (`§T5`).
 
 | Tool | Used for | Without it |
 |---|---|---|
+| `nj-run` (this toolkit, `bin/`) | run manifest, cost, structured log (`§T10`/`§T12`/`§T13`) | hand-write the manifest per `§T13`; report that cost and log fields are missing |
 | the repo's own E2E runner | running the suite | **SKIP** with a labeled reason — never installed, never substituted |
 | the runner's trace/video flags | capturing evidence | run anyway, report which evidence was unavailable |
 | `gitleaks` *or* `trufflehog` *or* `detect-secrets` | scrubbing published text (`§T4`) | **BLOCK** before publishing anything — no heuristic-only fallback |
@@ -121,31 +122,71 @@ there is something to run is not.
 Prefer the repo's **own script** (`npm run test:e2e`) over a reconstructed command —
 it carries flags and env the raw binary invocation would lose.
 
-## Step 3 — Run, capturing evidence into a temp dir (`§T4`)
+## Step 3 — Open the run, then execute (`§T4`, `§T13`)
 
-Create a run directory **outside the repo tree** — the scratchpad or `mktemp -d`,
-never `.nj-agents-reports/` and never a path inside the working copy. Record it as
-`artifacts_dir` in the manifest.
+**Start the run through the shared harness** rather than hand-rolling a temp dir and
+a manifest. `bin/nj-run` creates the run directory outside the repo tree, seeds the
+manifest, and opens the append-only log:
+
+```bash
+eval "$(nj-run init \
+  --commit    "$(git rev-parse HEAD)" \
+  --env-url   "$BASE_URL" \
+  --env-rule  "<the §T3 rule that allowed it>" \
+  --scope     "<specs or shards this run covers>")"
+# exports NJ_RUN_DIR and NJ_RUN_ID for every later call
+```
+
+Use it rather than writing JSON yourself. §T13 puts cost, subagent and log fields in
+the manifest precisely so an umbrella can report them uniformly — and two skills
+hand-writing "the same" schema is how that stops being true. It also keeps
+`artifacts_dir` outside the working copy by construction, which is the `§T4`
+requirement that a hand-made path gets wrong quietly.
+
+**Not available?** Degrade rather than fail (`§U`): write the manifest by hand with
+the fields listed in `§T13`, and say in the report that the harness was absent so
+cost and log fields are missing.
+
+Then run the suite, marking phases as you go:
+
+```bash
+nj-run phase start execute
+# … run the repo's own E2E command …
+nj-run heartbeat "42/120 specs"      # while it runs — §T12
+nj-run phase end execute
+```
 
 Enable whatever evidence the detected runner supports — trace, HAR, video, console —
-using **that runner's own flags**. Do not hand-roll capture. If a flag is unavailable,
-run without it and record which evidence is missing rather than failing the run.
+using **that runner's own flags**, writing into `$NJ_RUN_DIR/artifacts`. Do not
+hand-roll capture. If a flag is unavailable, run without it and record which evidence
+is missing rather than failing the run.
 
 Keep the runner's own exit code. A suite that fails is a *result*, not an error: this
 skill exits non-zero only when it could not produce one (`CONVENTIONS.md §5`).
 
-**A long run must not look like a hung one** (`§T12`): emit progress at phase
-boundaries, and a heartbeat while the suite runs.
+**A long run must not look like a hung one** (`§T12`). The heartbeat above is what
+makes a stalled run distinguishable from a slow one — emit it at phase boundaries and
+periodically during the suite, not only at the end.
 
-## Step 4 — Write the run manifest (`§T13`)
+## Step 4 — Record results and cost (`§T10`, `§T13`)
 
-Everything downstream reads this, and nothing downstream is called from here. Write
-at minimum: `run_id`, `commit`, `environment` (the resolved URL **and which `§T3` rule
-allowed it**), `scope`, `artifacts_dir`, per-spec results, `cost`, and the `log`
-pointer.
+Everything downstream reads the manifest, and nothing downstream is called from here.
+
+```bash
+nj-run cost    --skill /e2e-run --tokens <n> --calls <n>
+nj-run verdict --dimension specs --value PASS|WARN|BLOCK|SKIP
+```
+
+`init` already recorded `run_id`, `commit`, `environment` (the URL **and which `§T3`
+rule allowed it**), `scope`, `artifacts_dir` and the `log` pointer. Add per-spec
+results, the cost, and the verdict.
 
 Recording the matching rule matters more than it looks: a triage six hours later that
 cannot tell which environment produced a failure is guessing.
+
+Set `NJ_RUN_BUDGET_TOKENS` to have the harness report **WARN with a breakdown** when a
+run exceeds its budget (`§T10`) — not a silent failure, and not an indefinite
+continuation.
 
 ## Step 5 — Report, scrubbing anything published (`§T4`)
 
@@ -165,8 +206,31 @@ trace: /tmp/nj-e2e-4f2a/trace.zip
 **Published text gets scrubbed.** Failure messages, request URLs and assertion diffs
 in the report pass the secret scrub first. A bearer token in a query string or a
 session ID in an error message travels out through a report with no artifact ever
-moving — that is the leak this catches. Strip or mask query strings unless provably
-credential-free.
+moving — that is the leak this catches, and it is why the scrub is not optional even
+though the raw artifacts never move.
+
+What the scrub covers, at minimum:
+
+| Pattern | Example | Published as |
+|---|---|---|
+| `Authorization` header values | `Authorization: Bearer eyJ…` | `Authorization: Bearer ***` |
+| session and auth cookies | `Set-Cookie: sid=abc123` | `Set-Cookie: sid=***` |
+| credentials in a URL | `https://user:pw@host/…` | `https://***@host/…` |
+| token-ish query params | `?token=`, `?sig=`, `?key=`, `?access_token=` | value masked |
+| vendor-prefixed keys | `sk-…`, `ghp_…`, `AKIA…` | masked |
+
+**Strip the query string entirely unless it is provably credential-free.** Query
+strings are the common leak and are rarely load-bearing for diagnosing a failure —
+`GET /api/orders?token=***` tells you as much as the original did.
+
+**Use the scanner the repo already requires** (`gitleaks` / `trufflehog` /
+`detect-secrets`) rather than inventing a second pattern set. This repo has a
+standing rule against heuristic-only secret detection, and two pattern sets means two
+things to keep correct. Where the scanner is impractical for a short string, say
+which fallback matched rather than scrubbing silently.
+
+Mask, do not delete: `Bearer ***` tells a reader an auth header was present, which is
+often the diagnostic detail. An absent line tells them nothing.
 
 Report format:
 
@@ -188,6 +252,39 @@ Next:    /test-triage reads the manifest to classify these
 
 Say plainly what was **not** done: evidence the runner could not capture, specs
 skipped, a partial run. A silent gap reads as a clean result.
+
+## Step 6 — CI mode, exit codes, and the report artifact
+
+**Detect CI mode** the same way the review class does (`CONVENTIONS.md §5`):
+`NJ_AGENTS_CI=1`, a `--ci` argument, or the user saying it is for a pipeline. In CI
+mode: never prompt, and resolve ambiguity to the safe outcome rather than guessing.
+
+**Write the report** to `${NJ_AGENTS_REPORT_DIR:-<repo>/.nj-agents-reports}/`,
+timestamped. That directory is gitignored — the report is a record of a run, not a
+repo artifact, and `§T1` still holds.
+
+> Note the two directories are different and the difference matters. The **report**
+> goes to `NJ_AGENTS_REPORT_DIR` and is scrubbed text a human reads. The **raw
+> artifacts** — trace, HAR, video — stay in the run's temp dir and never move
+> (`§T4`). Writing a trace into the report dir would be an export, and the report
+> dir is inside the repo tree.
+
+**Exit codes** (`CONVENTIONS.md §5`):
+
+| Code | When |
+|---|---|
+| `0` | PASS or WARN — the suite ran and produced a result, pass or fail |
+| `1` | BLOCK — the `§T3` gate refused, or a secret scan hit |
+| `2` | harness error — no verdict was reached |
+
+**A failing suite is exit 0.** This skill reports what the suite did; it does not
+decide whether failures should stop a pipeline. That is `/e2e-suite`'s job, and
+conflating the two means a red suite and a broken runner become indistinguishable to
+a caller.
+
+**No runner detected is exit 0 too** — a SKIP with a labeled reason is a successful
+run of a skill that correctly found nothing to do (`§U`). Reserve exit 2 for the case
+where the skill genuinely could not tell you anything.
 
 ## Safety rails
 

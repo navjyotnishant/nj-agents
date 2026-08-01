@@ -61,6 +61,11 @@ case "$prompt" in
     add "/test-report (requirement → case → spec → defect)" ;;
   *"fix the test"*|*"repair the test"*|*"selector changed"*|*"broken spec"*)
     add "/test-repair (test-bug only; never weakens an assertion)" ;;
+  # Before /test-plan and /test-author: "write the tests for this ticket" wants the
+  # whole chain, and both of those match it too. First match is the one that reads
+  # as the answer.
+  *"tests for this ticket"*|*"test suite for"*|*"ticket to specs"*|*"whole test suite"*)
+    add "/test-suite-author (plan → specs → fixtures; pauses each stage)" ;;
   *"test plan"*|*"what should we test"*|*"test cases for"*)
     add "/test-plan (case matrix: boundaries, negative, authz)" ;;
   *"write the tests"*|*"generate spec"*|*"scaffold test"*|*"page object"*)

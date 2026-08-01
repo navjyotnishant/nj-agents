@@ -888,6 +888,111 @@ check_guidance_size() {
 # The installer's whole premise is that ONE clone feeds every runner via symlinks.
 # That is cheap to assert for real — install into a temp dir and look — and it is
 # the kind of claim that rots silently, so assert it rather than trusting the docs.
+# The testing skills claim to DETECT a runner rather than assume one (§T5). That
+# claim is cheap to assert and expensive to leave untested: a skill hardcoded to
+# Playwright passes every review and fails silently in a Cypress repo.
+#
+# These assert the fixtures give detection something real to find. They do not run
+# a suite — what needs proving here is what the skills decide, not whether a
+# browser launches, and installing browser binaries would make this slow and
+# network-dependent for no extra signal.
+# A skill that spawns agents must decide there is work to do BEFORE spawning, and
+# must call the empty case a PASS. Two failures otherwise, both silent:
+#
+#   - five agents dispatched to confirm a clean tree, at real cost
+#   - "nothing to review" with no verdict, which bin/nj-agents-review maps to
+#     exit 2 — so a clean working tree fails a pre-push hook
+#
+# Only spawning skills are held to this: a skill with no fleet has nothing to
+# short-circuit, and its empty case costs nothing.
+check_empty_input_pass() {
+  local d name f bad=0
+  for d in "$SKILLS_SRC"/*/; do
+    name="$(basename "${d%/}")"; f="${d%/}/SKILL.md"
+    [ -f "$f" ] || continue
+    has "$f" 'get a yes before\|and get a yes' i || continue   # spawning skills only
+    # Match the SHAPE — "no input → stop before spawning" — not one phrasing.
+    # Each skill's empty case is different ("nothing to describe", "isn't
+    # published", "no source to scan"), and a narrow pattern would push authors
+    # to paste a magic phrase rather than think about their own empty case.
+    has "$f" 'nothing to [a-z]*\|no .* to [a-z]*\|working tree clean\|is.*empty\|SKIP\|before spawning' i || {
+      finding check_empty_input_pass referential \
+        "skills/$name spawns agents but never says what happens when there is nothing to do — §U requires a PASS before any dispatch, not a spawned agent and not an error"
+      bad=1
+    }
+  done
+  [ "$bad" = "0" ] && ok "spawning skills handle an empty input without dispatching"
+  return 0
+}
+
+check_e2e_fixtures() {
+  local f bad=0
+  f="$REPO_DIR/tests/fixtures"
+  [ -x "$f/../fixtures/make.sh" ] || return 0
+  # Fixtures are generated and gitignored, so a fresh clone has none. Build them
+  # if they are absent rather than reporting a false gap.
+  [ -d "$f/e2e-playwright" ] || "$f/make.sh" >/dev/null 2>&1 || {
+    finding check_e2e_fixtures structural "tests/fixtures/make.sh failed — the E2E fixtures cannot be built"
+    return 0
+  }
+
+  # Two different stacks. One would pass against a hardcoded runner; two is the
+  # minimum that shows detection is real.
+  [ -f "$f/e2e-playwright/playwright.config.ts" ] || {
+    finding check_e2e_fixtures structural "fixture e2e-playwright has no playwright config — nothing for §T5 detection to find"
+    bad=1
+  }
+  [ -f "$f/e2e-cypress/cypress.config.js" ] || {
+    finding check_e2e_fixtures structural "fixture e2e-cypress has no cypress config — detection is only proven by a second stack"
+    bad=1
+  }
+  # The SKIP path. A silent pass here is the worst of the three outcomes, so the
+  # fixture that produces it has to exist.
+  if [ -d "$f/e2e-none" ]; then
+    ls "$f/e2e-none"/*.config.* >/dev/null 2>&1 && {
+      finding check_e2e_fixtures structural "fixture e2e-none has a runner config — it exists to prove the §T5 SKIP path"
+      bad=1
+    }
+  else
+    finding check_e2e_fixtures structural "fixture e2e-none is missing — nothing exercises the §T5 SKIP path"
+    bad=1
+  fi
+  # /test-author must flag brittle locators, so a brittle one has to be present.
+  grep -rq 'nth-child' "$f/e2e-playwright/e2e" 2>/dev/null || {
+    finding check_e2e_fixtures structural "no brittle locator in the playwright fixture — /test-author's flagging has nothing to catch"
+    bad=1
+  }
+
+  [ "$bad" = "0" ] && ok "E2E fixtures cover two stacks plus the no-runner SKIP path"
+  return 0
+}
+
+check_run_harness() {
+  local h="$REPO_DIR/bin/nj-run" t="$REPO_DIR/tests/test-nj-run.sh"
+  [ -f "$h" ] || return 0     # not yet built — not a finding
+
+  [ -x "$h" ] || {
+    finding check_run_harness structural \
+      "bin/nj-run is not executable — a skill invoking it gets a permission error"
+  }
+
+  # The harness records cost, subagent lifecycle and the log for the WHOLE class
+  # (§T13). If its own behavioural checks are absent or failing, every skill that
+  # reports a cost or a verdict through it is reporting something unverified.
+  [ -x "$t" ] || {
+    finding check_run_harness structural \
+      "bin/nj-run exists but tests/test-nj-run.sh does not — §T10/§T11/§T12 are asserted by nothing"
+    return 0
+  }
+  if ! "$t" >/dev/null 2>&1; then
+    finding check_run_harness behavioural \
+      "tests/test-nj-run.sh is failing — run it directly; the run harness is what every testing skill reports cost and verdicts through"
+    return 0
+  fi
+  ok "run harness passes its own §T10/§T11/§T12 checks"
+  return 0
+}
+
 check_installer_runners() {
   local tmp bad=0 r dir guide
   command -v mktemp >/dev/null 2>&1 || return 0
@@ -979,6 +1084,9 @@ check_review_exit_codes
 check_cursor_rule
 check_guidance_size
 check_diagram_counts
+check_empty_input_pass
+check_e2e_fixtures
+check_run_harness
 check_installer_runners
 check_counts
 

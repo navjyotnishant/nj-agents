@@ -57,6 +57,7 @@ Detected at runtime, never installed by this skill (`§T5`).
 
 | Tool | Used for | Without it |
 |---|---|---|
+| `nj-run` (this toolkit, `bin/`) | manifest, cost, subagent records, deterministic aggregation (`§T10`–`§T13`) | aggregate by hand per Step 4's table; say cost and subagent records are missing |
 | `/e2e-run` | executing the suite and capturing evidence | **BLOCK** — nothing to aggregate |
 | `/test-triage` | classifying each failure | report raw failures, verdict **WARN**, and say classification was unavailable |
 | `/flake-watch` + the ledger | flake history | triage runs without the flake class; say so |
@@ -115,6 +116,18 @@ confirming nothing is wrong.
 Otherwise fan out per failure under a **concurrency cap**, join on a barrier, and
 **schema-validate every result** before aggregating (`§T9`).
 
+Record the fan-out through the harness so the cap, the spawns and the joins land in
+the manifest rather than only in your narration:
+
+```bash
+id="$(nj-run spawn failure-triager)"     # per failure — returns its id
+# … triage that failure …
+nj-run join "$id" --status ok|failed --tokens <n> --calls <n>
+```
+
+The concurrency cap comes from `--concurrency` at `init` (or `NJ_RUN_CONCURRENCY`),
+so the cap in force is recorded with the run instead of being an unwritten decision.
+
 Three rules make the verdict trustworthy:
 
 - **Aggregation order is deterministic**, independent of completion order. The same
@@ -127,6 +140,26 @@ Three rules make the verdict trustworthy:
   to a named failure rather than to the suite.
 
 ## Step 4 — Aggregate one verdict
+
+Record each dimension, then let the harness reduce them:
+
+```bash
+nj-run verdict --dimension <name> --value PASS|WARN|BLOCK|SKIP
+nj-run finish                    # aggregates, prints the report, exits per §5
+```
+
+`finish` applies the table below, and applies it the same way every time. Two
+properties it enforces that a hand-written reduce tends to lose:
+
+- **A quarantined subagent forces BLOCK** — it cannot be outvoted by the dimensions
+  that did complete. Four of five triages completing is not a complete triage.
+- **No dimensions, or all `SKIP`, is a PASS** (`§U`), not an ambiguous result that
+  exits 2 and blocks a push for no reason.
+
+The aggregation is order-independent because the reduce is over *set membership*, not
+a sequence — so it stays correct however the subagents finish. Any new rule added here
+must preserve that; "first BLOCK wins" or "last verdict wins" would quietly
+reintroduce completion-order dependence.
 
 | Verdict | When |
 |---|---|

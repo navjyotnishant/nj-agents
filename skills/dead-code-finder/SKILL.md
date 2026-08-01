@@ -69,7 +69,10 @@ Detected at runtime, never installed by this skill (`§A5`).
 ## Prerequisites
 
 - **A git repository** (`git rev-parse --git-dir`); else stop.
-- **Source to scan.** Empty repo → report and stop.
+- **Source to scan.** Nothing to scan → report **PASS — no source to scan** and
+  exit 0 **before spawning** (`§U`). Likewise if the changed set is empty on a
+  default (non-`--full`) run: there is no debt to find in zero files, and an agent
+  dispatched to confirm that costs money to repeat `git status`.
 - **No external API / no network.** A dead-code tool is used **only if already
   installed** (detected, never installed by this skill).
 

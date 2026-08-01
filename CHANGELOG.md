@@ -12,6 +12,18 @@ does as of this version, rather than how it was built.
 
 ### Fixed
 
+- **A clean working tree made `/pre-push-review` exit 2.** The skill said "report
+  and stop" without naming a verdict, and `bin/nj-agents-review` maps a missing
+  verdict to exit 2 — a harness error. So a pre-push hook on a repo with nothing to
+  review **blocked the push**, silently and for no reason.
+  Two things were wrong, and 17 of 18 spawning skills had the same gap. **Nothing to
+  do is a PASS**, not an error — a gate that found nothing wrong ran successfully.
+  And the check belongs **before any dispatch**: five agents sent to confirm a clean
+  tree cost real money to repeat what `git status` already said.
+  Now a `§U` rule binding every skill, with `check_empty_input_pass` enforcing it.
+  Five skills were fixed to state their own empty case (`/pr-describe`,
+  `/review-correctness`, `/review-style`, `/dead-code-finder`, `/social-post`).
+
 - **`/commit-assistant` and `/pre-push-review` would not load on Codex CLI.** Their
   `description:` frontmatter was an unquoted YAML scalar containing `": "`, which
   YAML reads as a nested mapping — so the frontmatter was invalid, and Codex
@@ -55,7 +67,7 @@ does as of this version, rather than how it was built.
   testable. **T14** puts the flake ledger at a *committed* `.nj-agents/flake-ledger.json`
   — gitignored it would start empty on every CI runner, which is exactly where
   intermittent failures accumulate and where the history is worth most.
-  First skills in the class (33 skills now): **`/e2e-run`** and **`/test-triage`**. Detects the repo's own
+  First skills in the class: **`/e2e-run`** and **`/test-triage`**. Detects the repo's own
   E2E runner — Playwright, Cypress, WebdriverIO, or whatever its config points at —
   BLOCKs unless the base URL is explicitly non-prod, runs the suite, and captures
   trace/HAR/video/console into a gitignored temp dir. It runs tests; it never writes
@@ -116,7 +128,46 @@ does as of this version, rather than how it was built.
   history, since a green run resting on three known-flaky specs is a different
   result. It states the release position and stops; whether that is acceptable needs
   business context this skill does not have.
-  All nine skills in the class now exist.
+  **`/test-suite-author`** is the *generation* umbrella to `/e2e-suite`'s execution
+  one: ticket → cases → specs → fixtures, chaining `/test-plan` → `/test-author` →
+  `/test-data` in a single run. It **pauses after every stage**, because each is
+  wrong in a different way and the cheapest place to catch each is immediately after
+  it — the plan especially, where the judgement lives and the downstream stages are
+  mechanical. `--yes` skips the prompts for a workflow but removes no constraint:
+  it still never commits, still never weakens an assertion, still BLOCKs where it
+  would have BLOCKed interactively. On approval it files the *uncovered* cases as
+  `TEST-`-prefixed sub-tasks under the parent ticket via `/pm-task`, so an approved
+  plan stops living only in a temp file where nobody but the person who ran it can
+  see it. §P4 search-before-create makes a re-run link what exists rather than
+  duplicating it — and a re-run is the normal case, since a changed requirement
+  regenerates the plan.
+  All ten skills in the class now exist (34 skills total), across two umbrellas.
+- **`bin/nj-run`** — the testing class's run harness, implementing §T10 cost
+  accounting, §T11 subagent records and deterministic aggregation, §T12 the
+  structured log, and §T13 the run manifest. `/e2e-run` and `/e2e-suite` now go
+  through it instead of describing a manifest each would have written by hand.
+  One shared tool rather than per-skill JSON because that is §T13's actual point:
+  an umbrella can only report cost and subagent records uniformly if they are
+  *recorded* uniformly, and a cost baseline computed by two code paths compares the
+  code rather than the runs.
+  Two behaviours are easy to lose in a hand-rolled reduce, so the harness owns them:
+  a **quarantined subagent forces BLOCK** rather than being outvoted by the
+  dimensions that did complete (four of five triages completing is not a complete
+  triage), and **no dimensions, or all `SKIP`, is a PASS** (§U) rather than an
+  ambiguous exit 2 that blocks a push for no reason.
+  The append-only log is **published text**, so it passes the §T4 scrub even though
+  the artifact-export prohibition does not apply to it — a bearer token in a
+  heartbeat reaches a report with no artifact ever moving. Masked, never deleted:
+  `Bearer ***` tells a reader an auth header was present, which is often the
+  diagnostic detail.
+  `tests/test-nj-run.sh` (18 checks, no LLM, CI-safe) and `check_run_harness` keep
+  it honest. Writing those found a real leak: the vendor-key pattern used `\b`, a
+  GNU extension that BSD `sed` treats literally, so `sk-…` keys passed through
+  unmasked on macOS while the query-param mask worked — a weaker test would have
+  called it clean.
+  Detected-never-required like everything else (§A5): absent, a skill hand-writes
+  the §T13 fields and reports that cost and log fields are missing.
+
 - **`bin/nj-agents-review` drives any agent CLI** via `NJ_AGENT_CMD`
   (`NJ_AGENT_CMD="codex exec" nj-agents-review`). The verdict→exit-code mapping —
   0 PASS/WARN, 1 BLOCK, 2 harness error — is the value the wrapper adds, and it is

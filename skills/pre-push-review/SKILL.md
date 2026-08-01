@@ -89,7 +89,9 @@ Before running any git command or reading any diff, print this banner verbatim:
 
 - **A git repository.** If `git rev-parse --git-dir` fails, stop and say so.
 - **A diff to review.** If staged + unstaged + unpushed is all empty, report
-  "nothing to review" and stop.
+  **PASS — nothing to review** and exit 0, *before spawning anything*. A clean tree
+  is a successful gate, not an error: reporting it as one makes a pre-push hook
+  reject a push that has nothing wrong with it (`§U`).
 - **No external API key / no network.** Uses the current AI session; never asks
   for or requires any credential.
 - **REQUIRED:** a dedicated secret scanner on PATH (`gitleaks` / `trufflehog` /
@@ -110,7 +112,16 @@ exit-code contract.
 git rev-parse --git-dir >/dev/null 2>&1 || echo "Not a git repository."
 ```
 
-If not a git repo, or the combined diff is empty, report and stop (do not proceed).
+If not a git repo, **stop with a harness error** — the skill cannot run at all.
+
+If the combined diff is **empty**, that is different: report **PASS — nothing to
+review**, exit 0, and **spawn nothing**. Do this here, before the roster is
+announced and before any cost is stated. Five agents dispatched to confirm an empty
+diff cost real money to tell you what `git status` already did.
+
+The distinction matters because `bin/nj-agents-review` maps a missing verdict to
+exit 2. "Nothing to review" without an explicit PASS reads as a harness error, and a
+pre-push hook then blocks a clean push (`§U`).
 
 ## Step 2 — Build the snapshot and apply diff hygiene
 
