@@ -1,7 +1,7 @@
 ---
 name: e2e-run
 description: "Use this skill when the user asks to \"run the e2e tests\", \"run the browser tests\", \"execute the end-to-end suite\", or wants the repo's own E2E suite run with full failure evidence captured. Detects the repo's E2E runner at runtime (Playwright, Cypress, WebdriverIO, or whatever its config points at), BLOCKs unless an explicit non-prod base URL is given, runs the suite, and captures trace, HAR, video and console into a gitignored temp dir. Raw artifacts never leave that dir; anything published is scrubbed first. Works in any git repo; nothing here is project-specific."
-version: 0.1.0
+version: 0.2.0
 class: testing
 author: navjyotnishant
 ---
@@ -165,8 +165,31 @@ trace: /tmp/nj-e2e-4f2a/trace.zip
 **Published text gets scrubbed.** Failure messages, request URLs and assertion diffs
 in the report pass the secret scrub first. A bearer token in a query string or a
 session ID in an error message travels out through a report with no artifact ever
-moving — that is the leak this catches. Strip or mask query strings unless provably
-credential-free.
+moving — that is the leak this catches, and it is why the scrub is not optional even
+though the raw artifacts never move.
+
+What the scrub covers, at minimum:
+
+| Pattern | Example | Published as |
+|---|---|---|
+| `Authorization` header values | `Authorization: Bearer eyJ…` | `Authorization: Bearer ***` |
+| session and auth cookies | `Set-Cookie: sid=abc123` | `Set-Cookie: sid=***` |
+| credentials in a URL | `https://user:pw@host/…` | `https://***@host/…` |
+| token-ish query params | `?token=`, `?sig=`, `?key=`, `?access_token=` | value masked |
+| vendor-prefixed keys | `sk-…`, `ghp_…`, `AKIA…` | masked |
+
+**Strip the query string entirely unless it is provably credential-free.** Query
+strings are the common leak and are rarely load-bearing for diagnosing a failure —
+`GET /api/orders?token=***` tells you as much as the original did.
+
+**Use the scanner the repo already requires** (`gitleaks` / `trufflehog` /
+`detect-secrets`) rather than inventing a second pattern set. This repo has a
+standing rule against heuristic-only secret detection, and two pattern sets means two
+things to keep correct. Where the scanner is impractical for a short string, say
+which fallback matched rather than scrubbing silently.
+
+Mask, do not delete: `Bearer ***` tells a reader an auth header was present, which is
+often the diagnostic detail. An absent line tells them nothing.
 
 Report format:
 
@@ -188,6 +211,39 @@ Next:    /test-triage reads the manifest to classify these
 
 Say plainly what was **not** done: evidence the runner could not capture, specs
 skipped, a partial run. A silent gap reads as a clean result.
+
+## Step 6 — CI mode, exit codes, and the report artifact
+
+**Detect CI mode** the same way the review class does (`CONVENTIONS.md §5`):
+`NJ_AGENTS_CI=1`, a `--ci` argument, or the user saying it is for a pipeline. In CI
+mode: never prompt, and resolve ambiguity to the safe outcome rather than guessing.
+
+**Write the report** to `${NJ_AGENTS_REPORT_DIR:-<repo>/.nj-agents-reports}/`,
+timestamped. That directory is gitignored — the report is a record of a run, not a
+repo artifact, and `§T1` still holds.
+
+> Note the two directories are different and the difference matters. The **report**
+> goes to `NJ_AGENTS_REPORT_DIR` and is scrubbed text a human reads. The **raw
+> artifacts** — trace, HAR, video — stay in the run's temp dir and never move
+> (`§T4`). Writing a trace into the report dir would be an export, and the report
+> dir is inside the repo tree.
+
+**Exit codes** (`CONVENTIONS.md §5`):
+
+| Code | When |
+|---|---|
+| `0` | PASS or WARN — the suite ran and produced a result, pass or fail |
+| `1` | BLOCK — the `§T3` gate refused, or a secret scan hit |
+| `2` | harness error — no verdict was reached |
+
+**A failing suite is exit 0.** This skill reports what the suite did; it does not
+decide whether failures should stop a pipeline. That is `/e2e-suite`'s job, and
+conflating the two means a red suite and a broken runner become indistinguishable to
+a caller.
+
+**No runner detected is exit 0 too** — a SKIP with a labeled reason is a successful
+run of a skill that correctly found nothing to do (`§U`). Reserve exit 2 for the case
+where the skill genuinely could not tell you anything.
 
 ## Safety rails
 
