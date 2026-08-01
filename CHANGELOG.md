@@ -55,7 +55,7 @@ does as of this version, rather than how it was built.
   testable. **T14** puts the flake ledger at a *committed* `.nj-agents/flake-ledger.json`
   — gitignored it would start empty on every CI runner, which is exactly where
   intermittent failures accumulate and where the history is worth most.
-  First skills in the class (30 skills now): **`/e2e-run`** and **`/test-triage`**. Detects the repo's own
+  First skills in the class (31 skills now): **`/e2e-run`** and **`/test-triage`**. Detects the repo's own
   E2E runner — Playwright, Cypress, WebdriverIO, or whatever its config points at —
   BLOCKs unless the base URL is explicitly non-prod, runs the suite, and captures
   trace/HAR/video/console into a gitignored temp dir. It runs tests; it never writes
@@ -93,6 +93,16 @@ does as of this version, rather than how it was built.
   that gets diagnosed as flake, quarantined, and eventually deleted.
   Both writing skills propose the commit and never run git (T6), and neither writes
   a credential to disk (T8).
+  **`/test-repair`** fixes a test only where the *test* is at fault. It fires solely
+  on `/test-triage`'s `test-bug` verdict; every other classification BLOCKs —
+  including `flake`, deliberately, because every available repair for a flake is
+  forbidden (a sleep, a retry, a loosened assertion) and the honest responses are a
+  real fix or quarantine with an SLA. It may fix selectors, waits, setup and
+  teardown; it may **not** weaken or delete an assertion, add a sleep, raise a retry,
+  or add a skip, and anything touching an assertion escalates rather than appearing
+  in the diff. Where the correct fix is in application source it reports that and
+  stops. Evidence outranks the label: if a failure looks like a defect it stops even
+  when triage said test-bug.
 - **`bin/nj-agents-review` drives any agent CLI** via `NJ_AGENT_CMD`
   (`NJ_AGENT_CMD="codex exec" nj-agents-review`). The verdict→exit-code mapping —
   0 PASS/WARN, 1 BLOCK, 2 harness error — is the value the wrapper adds, and it is
