@@ -98,6 +98,31 @@ This is the only clause whose blast radius is outside the repo, so it is mechani
 rather than judged. Two skills disagreeing about `https://staging.acme.com` would
 make the gate advisory, which is the same as not having one.
 
+### Does this clause even apply? Check that first
+
+**No test runner detected AND no base URL from any source → `SKIP`, exit 0.**
+
+There is nothing to execute and nowhere it would go, so there is nothing to protect.
+Say which probes ran and move on.
+
+Check this **before** the table below, and detect the runner **before** resolving the
+URL. Without that ordering, "this repo has no E2E tests" and "this URL points at
+production" produce the same BLOCK — and a gate wired into a push hook then refuses
+every push in every unconfigured repo. The failure looks like the safety rail
+working, which is why it survives review.
+
+The two cases are genuinely different:
+
+| Situation | Outcome | Why |
+|---|---|---|
+| No runner **and** no URL | **SKIP**, exit 0 | Nothing to run, nowhere to run it |
+| Runner detected, no URL | **BLOCK** | Tests exist and would execute somewhere unknown |
+| Any URL that is prod-looking or unrecognised | **BLOCK** | The clause below, unchanged |
+
+This narrows **when the gate applies**. It does not widen **what the gate allows** —
+once a runner exists, everything below holds exactly as written, and a URL nobody
+anticipated still stops the run.
+
 **Allow** — an explicit opt-in (env var or config) always wins, plus:
 
 | Form | Example |

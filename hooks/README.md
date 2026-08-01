@@ -82,3 +82,61 @@ Three things it is not:
 
 The installer never overwrites a hook that differs from the source — it reports and
 leaves it alone.
+
+---
+
+## `git/pre-push-e2e` — the E2E gate (per project)
+
+Refuses a push whose test suite is red. Unlike `pre-push` above, which validates
+*this* repo, this one is portable: install it into any project.
+
+```bash
+./install.sh --git-hooks --project /path/to/your/repo
+mkdir -p /path/to/your/repo/.nj-agents
+echo 'NJ_E2E_BASE_URL=http://localhost:3000' > /path/to/your/repo/.nj-agents/e2e.conf
+```
+
+Until `.nj-agents/e2e.conf` exists it exits 0 on every push **and says it is not
+configured**. That is deliberate: a gate that goes quiet is indistinguishable from
+one that was uninstalled.
+
+**It spends nothing.** It runs the repo's own test command and honours the exit
+code — no agent, no API call. `.github/workflows/check.yml` and `git/pre-push` both
+already record the judgement that per-push LLM spend is unacceptable, and
+`/e2e-suite` costs 1 + n agents (one per failure), so it is a worse fit for a push
+hook than the review those files exclude.
+
+What it does, in order — each step exits with a reason rather than silently:
+
+1. **Opt-in** — no `e2e.conf` and no `NJ_E2E_BASE_URL` → skip
+2. **Detect the runner** — documented command → `package.json` script → E2E config
+   → pytest/`verify_*.py`. Deliberately *not* a bare `test` script: that is usually
+   the unit suite, and running it here would make the gate silently duplicate what
+   already runs on commit while reporting itself as an E2E gate
+3. **Resolves to specs?** — a detected runner matching zero specs is a SKIP, never a
+   pass. This is GitHub #9: a config left behind after its specs were deleted
+   detects cleanly and matches nothing
+4. **Run it** — non-zero blocks the push
+
+`E2E_CMD` in `e2e.conf` overrides detection entirely.
+
+### The paid pass belongs in CI
+
+`/e2e-suite` triage — classify each failure, weigh it against flake history, produce
+a report — costs real money and belongs once per PR, not once per push:
+
+```yaml
+# .github/workflows/e2e.yml
+on: pull_request
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bin/nj-agents-e2e --base-url "${{ secrets.STAGING_URL }}"
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+```
+
+`bin/nj-agents-e2e` maps the verdict to an exit code (0 PASS/WARN/SKIP, 1 BLOCK,
+2 harness error), which `claude -p` alone does not — it exits 0 whatever the verdict.

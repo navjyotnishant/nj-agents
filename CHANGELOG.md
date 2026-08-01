@@ -142,6 +142,35 @@ does as of this version, rather than how it was built.
   duplicating it — and a re-run is the normal case, since a changed requirement
   regenerates the plan.
   All ten skills in the class now exist (34 skills total), across two umbrellas.
+- **A per-project push gate for the testing class** — `hooks/git/pre-push-e2e`,
+  installed with `./install.sh --git-hooks --project DIR`. It refuses a push whose
+  test suite is red, and **spends nothing**: it runs the repo's own test command and
+  honours the exit code, with no agent and no API call. `check.yml` and
+  `hooks/git/pre-push` had both already recorded that per-push LLM spend is
+  unacceptable, and `/e2e-suite` costs 1 + n agents (one per failure), so it is a
+  worse fit for a push hook than the review those files exclude. The paid triage
+  moves to CI once per PR via the new **`bin/nj-agents-e2e`**, which maps the verdict
+  to an exit code — `claude -p` alone exits 0 whatever the verdict.
+  **§T3 had inverted on an unconfigured repo, and the gate is what exposed it.**
+  `/e2e-run` resolved the base URL *before* detecting a runner, and §T3 says
+  "unrecognised is BLOCK" — so a repo with no E2E tests and no `NJ_E2E_BASE_URL`
+  produced the same BLOCK as one pointed at production. Wired into a hook that
+  refuses every push in every unconfigured repo, while looking exactly like the
+  safety rail working. Detection now runs first, and "nothing to run" is a SKIP.
+  The clause is narrowed in **when it applies**, never in **what it allows**: once a
+  runner exists, an unrecognised URL still stops the run.
+  Three things the gate refuses to do, each enforced by `check_push_gate` rather
+  than merely intended: **call an LLM**, **trust a runner that resolves to zero
+  specs** (GitHub #9 — a config left behind after its specs were deleted detects
+  cleanly and matches nothing), and **exit silently** (a gate that goes quiet is
+  indistinguishable from one that was uninstalled, so every path prints its reason).
+  Writing those found two real defects. The gate's runner probe originally accepted
+  a bare `test` script — usually the *unit* suite, so it would have duplicated what
+  already runs on commit while reporting itself as an E2E gate. And the
+  resolves-to-specs check keyed on the word "playwright" in the command, which is
+  absent when the entry point is `npm run test:e2e`, so it never fired. Both caught
+  by running against `tests/fixtures/`, not by reading the code.
+
 - **`/claude-design-pull`** — a review gate that answers "does this page match its
   approved design?" with measurements rather than an opinion. The mirror of
   `/design-sync`: that pushes a component library **to** Claude Design, this pulls

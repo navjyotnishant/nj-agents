@@ -235,6 +235,19 @@ Apply these to related work even when no skill is invoked:
   carry the same stamp** as an `author:` frontmatter key rather than a comment header
   — they install as symlinks and run from any repo, so at the point of use the file
   is the only record of where it came from.
+- **Before shipping a feature, there should be a test.** Not a suite, not coverage —
+  a test that would fail if the feature broke. Offer `/test-suite-author` (ticket →
+  cases → specs → fixtures, pausing at each stage) or `/test-plan` alone when the
+  question is only "what should we test?".
+  **Detect-never-require:** no test framework, a throwaway repo, or the user
+  declines → note it and proceed. Never hard-block work on a missing test. A project
+  whose own `CLAUDE.md` mandates a stricter gate overrides this softer default.
+  **The push gate is per-project and opt-in**, consistent with the rule below:
+  `./install.sh --git-hooks --project DIR` installs `pre-push-e2e`, which runs the
+  repo's own suite and blocks a red push. It **spends nothing** — no agent, no API
+  call — and until `.nj-agents/e2e.conf` exists it exits 0 on every push and says it
+  is not configured. The paid `/e2e-suite` triage belongs in CI once per PR
+  (`bin/nj-agents-e2e`), never on push.
 - **Ground everything in the actual repo.** Read README/docs/code; never invent an
   API, file path, version, or benchmark. Unverifiable claims get cut or marked.
 - **Degrade, don't fail.** External tools and MCP connectors are detected at runtime,
