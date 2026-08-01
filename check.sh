@@ -1081,7 +1081,23 @@ check_run_harness() {
       "tests/test-nj-run.sh is failing — run it directly; the run harness is what every testing skill reports cost and verdicts through"
     return 0
   fi
-  ok "run harness passes its own §T10/§T11/§T12 checks"
+  # §T14: the ledger must have a WRITER, and something must call it. /flake-watch
+  # and /test-triage both read it, and both degrade silently without it —
+  # /flake-watch reports "insufficient history" forever, and /test-triage is barred
+  # from calling `flake` without history, so it files genuine flakes as defects.
+  # Neither errors, which is why this needs a check rather than a bug report.
+  grep -q 'cmd_ledger' "$h" || {
+    finding check_run_harness structural \
+      "bin/nj-run has no ledger writer — §T14's ledger is read by /flake-watch and /test-triage and written by nothing"
+    return 0
+  }
+  local er="$SKILLS_SRC/e2e-run/SKILL.md"
+  if [ -f "$er" ] && ! has "$er" 'ledger record' i; then
+    finding check_run_harness referential \
+      "skills/e2e-run never calls 'nj-run ledger record' — the ledger stays empty, so /test-triage can never reach a flake verdict"
+  fi
+
+  ok "run harness passes its own §T10/§T11/§T12 checks, and §T14's ledger has a writer"
   return 0
 }
 
