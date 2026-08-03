@@ -142,6 +142,42 @@ does as of this version, rather than how it was built.
   duplicating it — and a re-run is the normal case, since a changed requirement
   regenerates the plan.
   All ten skills in the class now exist (34 skills total), across two umbrellas.
+- **The flake ledger is written, not just read** (NAV-219). `/flake-watch` read
+  `.nj-agents/flake-ledger.json` and nothing wrote it, so it reported "insufficient
+  history" in every repo forever. Worse, `/test-triage` is deliberately barred from
+  calling `flake` without ledger history — a single run cannot distinguish a flake
+  from a real race condition — so with an empty ledger it could never reach that
+  verdict and classified genuine flakes as defects. The read path was complete; the
+  write path did not exist.
+  `nj-run ledger record` accumulates runs, fails, first/last seen, and a
+  fixed-length recent window. Bounded by construction: the file grows with the
+  number of **specs**, not runs, which is what makes committing it tolerable.
+  `/e2e-run` records every spec, **pass and fail** — a fail rate needs a
+  denominator, and a ledger of failures alone cannot tell a flake from a spec that
+  always fails.
+  **Basename merging for renamed specs was implemented, tested, and removed.** It
+  fails in both directions and the failures are not symmetric: a missed merge loses
+  history and is recoverable by passing `--id`, while a wrong merge *fabricates* a
+  fail rate someone acts on. Three files named `login.spec.ts` in different
+  directories collapsed into one record under every "merge only when unambiguous"
+  rule attempted, because each merge rewrites the record's path so the next scan
+  sees a single match again. §T14 asks for "a stable identifier plus a path
+  fallback": `--id` is the identifier, exact-path is the fallback, and guessing an
+  identity the caller never supplied is neither.
+
+- **`/test-report --html`** renders the same report as a self-contained page. Not a
+  second report — one model, two renderings, because a dashboard computing its own
+  idea of "covered" would eventually disagree with the markdown and then neither is
+  trustworthy. What the page adds is what a table cannot show: **per-spec trend**
+  from the ledger's recent window, since §T14 holds that trend matters more than
+  magnitude — a spec that went 0% → 15% is a regression someone introduced, a steady
+  4% is a known cost. Fail rates always carry their denominator (`18% (9/50)`, never
+  a bare `18%`), and specs below the sample floor render as "insufficient history"
+  rather than a number that will be believed. NOT COVERED stays first and visually
+  dominant; that ordering is the whole argument of the report and had to survive the
+  change of medium. Output stays in the gitignored report dir unless given an
+  explicit path, so `§T1` still holds.
+
 - **A per-project push gate for the testing class** — `hooks/git/pre-push-e2e`,
   installed with `./install.sh --git-hooks --project DIR`. It refuses a push whose
   test suite is red, and **spends nothing**: it runs the repo's own test command and
