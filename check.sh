@@ -124,6 +124,17 @@ has() {
   printf '%s' "$txt" | grep -q${3:-} -- "$2"
 }
 
+# A skill may declare `self_contained: true` in frontmatter when it deliberately
+# carries its whole method inline so it runs on any agentic platform (e.g.
+# em-newsletter/vertical-pulse) rather than leaning on this repo's shared
+# CONVENTIONS. Such a skill is EXEMPT from the citation checks — cites-a-conventions
+# -file, the readlink block, §A3/§A4, §U, and internal §N section validation — because
+# those rules assume the skill reads files that ship only with this toolkit. It is NOT
+# exempt from frontmatter validity, naming, cost/progress, or any other structural
+# rule. The marker is the whole opt-out: no hardcoded skill list (§ the same trap the
+# spawn-detection comment calls out).
+is_self_contained() { grep -qm1 '^self_contained: *true' "$1"; }
+
 # Frontmatter is the one thing every skill must get right — it is what makes the
 # skill loadable at all. name must equal the directory so a rename can't leave a
 # skill answering to a stale name; class is what every class-conditional check
@@ -377,6 +388,7 @@ check_class_conventions() {
   for d in "$SKILLS_SRC"/*/; do
     name="$(basename "${d%/}")"
     [ -f "${d%/}/SKILL.md" ] || continue
+    is_self_contained "${d%/}/SKILL.md" && continue
     class="$(grep -m1 '^class:' "${d%/}/SKILL.md" | sed 's/^class: *//' || true)"
     [ -n "$class" ] || continue
     # Workflow class "sits between review and authoring" (CLAUDE.md): it borrows
@@ -412,6 +424,7 @@ check_conventions_reachable() {
   local f name bad=0
   for f in "$SKILLS_SRC"/*/SKILL.md; do
     name="$(basename "$(dirname "$f")")"
+    is_self_contained "$f" && continue
     grep -q 'readlink -f' "$f" || {
       finding check_conventions_reachable referential \
         "skills/$name has no 'Finding the conventions file' block (needs the readlink -f note)"
@@ -442,6 +455,7 @@ check_class_contract() {
   for d in "$SKILLS_SRC"/*/; do
     name="$(basename "${d%/}")"; f="${d%/}/SKILL.md"
     [ -f "$f" ] || continue
+    is_self_contained "$f" && continue
     class="$(grep -m1 '^class:' "$f" | sed 's/^class: *//' || true)"
     case "$class" in
       review)
@@ -568,6 +582,7 @@ check_universal_rules() {
   for d in "$SKILLS_SRC"/*/; do
     name="$(basename "${d%/}")"
     [ -f "${d%/}/SKILL.md" ] || continue
+    is_self_contained "${d%/}/SKILL.md" && continue
     has "${d%/}/SKILL.md" '§U' || {
       finding check_universal_rules referential \
         "skills/$name never cites §U — the rules that bind every skill (grounding, no secrets, human commits, changelog)"
@@ -646,6 +661,9 @@ check_progress_reporting() {
 check_conventions_sections() {
   local f sec num doc bad=0
   for f in "$SKILLS_SRC"/*/SKILL.md "$AGENTS_SRC"/*.md; do
+    # A self-contained skill numbers its OWN sections (§9, §11 …); those are internal
+    # cross-references, not citations of a CONVENTIONS doc — don't validate them here.
+    case "$f" in "$SKILLS_SRC"/*/SKILL.md) is_self_contained "$f" && continue ;; esac
     for sec in $(grep -o '§[APTU]\{0,1\}[0-9]\{1,2\}' "$f" 2>/dev/null | sort -u); do
       num="${sec#§}"
       case "$num" in

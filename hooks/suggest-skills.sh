@@ -119,6 +119,11 @@ case "$prompt" in
   *"break.*into"*|*epic*|*"user story"*|*backlog*|*"plan.*feature"*)
     add "/pm-plan, /pm-epic, /pm-story, /pm-task" ;;
 esac
+# EM intelligence report
+case "$prompt" in
+  *newsletter*|*"vertical pulse"*|*"engagement manager"*|*"account intelligence"*|*"account deep-dive"*)
+    add "/em-newsletter, /vertical-pulse" ;;
+esac
 
 [ -z "$matches" ] && exit 0
 
