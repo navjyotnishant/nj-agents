@@ -105,13 +105,19 @@ Writes a **work item into a project-management tracker** (Linear / Jira / Notion
 GitHub Issues) — the artifact is a tracker object, not a repo file. Tool-agnostic (via a
 connected MCP), **draft-first**, MCP-detect-never-require with a **paste-ready-markdown
 fallback**, and it **proposes the create — never bulk-creates silently**. Shared rules
-in [`CONVENTIONS-pm.md`](CONVENTIONS-pm.md) (§P1–P7).
+in [`CONVENTIONS-pm.md`](CONVENTIONS-pm.md) (§P0–P8).
+
+**Every item is drafted to a recognized agile/PM standard, not house style** — the
+format traces to **INVEST** (stories), the **Scrum Guide** (Gherkin acceptance criteria,
+Definition of Done), and **SAFe** (Epic→Story→Task hierarchy, epic hypothesis). §P0 pins
+the complete required field set per type, so the item you get on any tracker is one a
+PMP / CSM / PSM-trained team would recognize.
 
 | Skill | What it does | Agent it uses |
 |---|---|---|
-| `/pm-epic` | Drafts one **Epic** (goal, problem, success measure, scope / out-of-scope) plus a **suggested** decomposition into candidate stories (a list — it does not create them). On opt-in creates the epic only. To build the whole tree, use `/pm-plan`. | (no dedicated agent) |
-| `/pm-story` | Drafts one **INVEST user story** ("As a … I want … so that …") with explicit **acceptance criteria** and an estimate hint; on opt-in creates it in the connected tracker (optional parent Epic), else hands you paste-ready markdown. Grounded in your intent — no invented scope. | (no dedicated agent) |
-| `/pm-task` | Drafts one scoped, actionable **Task** (optionally under a parent Story/Epic); on opt-in creates it, else markdown. Keeps it small and single-purpose. | (no dedicated agent) |
+| `/pm-epic` | Drafts one **Epic** to the **industry-standard SAFe epic-hypothesis** format (goal/outcome, problem, success measure, scope / out-of-scope) plus a **suggested** decomposition into candidate stories (a list — it does not create them). On opt-in creates the epic only. To build the whole tree, use `/pm-plan`. | (no dedicated agent) |
+| `/pm-story` | Drafts one **INVEST user story** ("As a … I want … so that …") with **Gherkin (Given/When/Then) acceptance criteria** per the **Scrum Guide** and an estimate hint; on opt-in creates it in the connected tracker (optional parent Epic), else hands you paste-ready markdown. Grounded in your intent — no invented scope. | (no dedicated agent) |
+| `/pm-task` | Drafts one scoped, actionable **Task** with an explicit **done-when (Scrum Definition of Done)** exit condition (optionally under a parent Story/Epic); on opt-in creates it, else markdown. Keeps it small and single-purpose. | (no dedicated agent) |
 | `/pm-plan` | **Orchestrator.** Decomposes a feature-sized ask into an **Epic→Stories→Tasks** tree (via `pm-decomposer`), previews the **whole tree** for one approval, then creates it in the connected tracker **sequentially, parent-first** — Epic, then Stories under it, then Tasks under each — wiring parent links as it goes. **Stops and reports on any partial failure**; searches + reconciles first so a re-run never double-creates. No MCP → the whole tree as markdown. | `pm-decomposer` |
 
 ## ⚠️ What it does with your code — read this

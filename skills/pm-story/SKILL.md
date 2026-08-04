@@ -1,6 +1,6 @@
 ---
 name: pm-story
-description: Use this skill when the user asks to "write a user story", "create a story in Linear/Jira", "draft a story for this feature", or wants a well-formed Story issue. Drafts one INVEST-style user story ("As a … I want … so that …") with explicit acceptance criteria and an estimate hint, then — on opt-in — creates it in whatever PM tracker is connected via MCP (Linear/Jira/Notion/GitHub Issues), else hands you paste-ready markdown. Never bulk-creates; grounds scope in your intent, never invents. Optional parent Epic link. Works with any connected tracker; nothing here is project-specific.
+description: Use this skill when the user asks to "write a user story", "create a story in Linear/Jira", "draft a story for this feature", or wants a well-formed Story issue. Drafts one industry-standard INVEST user story ("As a … I want … so that …") with Gherkin (Given/When/Then) acceptance criteria per the Scrum Guide and an estimate hint, then — on opt-in — creates it in whatever PM tracker is connected via MCP (Linear/Jira/Notion/GitHub Issues), else hands you paste-ready markdown. Never bulk-creates; grounds scope in your intent, never invents. Optional parent Epic link. Works with any connected tracker; nothing here is project-specific.
 version: 0.1.0
 class: pm
 author: navjyotnishant
@@ -10,8 +10,14 @@ author: navjyotnishant
 
 Drafts one well-formed **user Story** and, on opt-in, creates it in the connected PM
 tracker. A leaf skill of the **PM-authoring class** — follow `CONVENTIONS-pm.md`
-(§P1 ground, §P2 neutral-model→per-tracker map, §P3 propose-the-create, §P4 tracker
-idempotence, §P6 MCP-detect-never-require, §P7 safety, §P8 report-the-tree).
+(§P0 standards, §P1 ground, §P2 neutral-model→per-tracker map, §P3 propose-the-create,
+§P4 tracker idempotence, §P6 MCP-detect-never-require, §P7 safety, §P8 report-the-tree).
+
+> **Standards-grounded, not house style.** The story follows **INVEST** (Wake) and the
+> **Scrum Guide** — a proper "As a / I want / so that" sentence, **Gherkin
+> (Given/When/Then)** acceptance criteria that double as the story's Definition of Done.
+> See `CONVENTIONS-pm.md §P0` for the full field set and its sources. You get a story a
+> CSM/PSM-trained team would accept into a sprint, on whatever tracker you use.
 
 > **Finding the conventions file.** It lives at the toolkit repo root, two levels
 > above this skill — not beside `SKILL.md`. Skills are usually installed as
@@ -55,31 +61,37 @@ a requirement.
 
 ## Step 2 — Draft into the neutral issue model (§P2)
 
-Fill the neutral model with `type: story`:
+Fill the neutral model with `type: story`, covering the **full §P0 story field set** so
+the item is standard-complete (mark a genuinely unknown field `TBD`, never drop it):
 
 - **title** — a short capability, not a task ("Cursor-based pagination on search").
 - **description** — the story sentence: **"As a `<persona>`, I want `<capability>`, so
   that `<value>`."** Plus any context/constraints from Step 1.
-- **acceptance_criteria** — a concrete, checkable "done when" list (Given/When/Then or
-  bullet form). This is the heart of the story; don't ship a story without it.
+- **acceptance_criteria** — concrete, checkable, in **Gherkin (Given/When/Then)** or
+  bullet form. The heart of the story and its Definition of Done; don't ship a story
+  without it.
+- **non-functional constraints** — perf/security/a11y where they apply (§P0 optional).
 - **parent** — the Epic ID if the user names one (optional).
-- **labels / estimate / priority** — only if the user supplies or the tracker needs them.
+- **labels / estimate / priority / dependencies** — only if the user supplies, the
+  tracker needs them, or they sharpen scope.
 
-Sanity-check against **INVEST**: Independent, Negotiable, Valuable, Estimable, Small,
-Testable. If the story is really an Epic (too big, many criteria), say so and suggest
-`/pm-epic` + `/pm-plan` instead.
+Run the **INVEST self-check**: Independent, Negotiable, Valuable, Estimable, Small,
+Testable. If the story fails Small/Independent (too big, many criteria) it's really an
+Epic — say so and route to `/pm-epic` + `/pm-plan` instead.
 
 ## Step 3 — Resolve the tracker + destination (§P2/§P6)
 
 Detect which PM MCP is connected (Linear / Jira / Notion / GitHub Issues). If several,
 ask which. Resolve the **team/project/board** from the workspace or ask — never assume
-it (§P7). Map the neutral fields onto that tracker per the §P2 table (mind the real
-gaps: Jira description is ADF; GitHub Issues has no epic-link — reference in body).
+it (§P7). Map the neutral fields onto that tracker per the §P2 table. On **GitHub** the
+story is an **Issue** titled `[Story] <title>` with a `story` label, linked to its epic
+as a **native sub-issue** (`addSubIssue`); on **Jira** the description is ADF.
 
 ## Step 4 — Search before create (§P4)
 
-Search the target project for an existing story matching this work. If found, **offer
-to update it** (append criteria, set status) rather than creating a duplicate.
+Search the target project for an existing story matching this work — **strip any
+`[Story]` title prefix when matching**. If found, **offer to update it** (append
+criteria, set status) rather than creating a duplicate.
 
 ## Step 5 — Propose the create, never silently (§P3)
 

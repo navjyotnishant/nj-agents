@@ -91,13 +91,16 @@ class (§A3) but its artifact is a **PR, not a repo file** — so it never write
 Tool-agnostic (Linear / Jira / Notion / GitHub Issues via a connected MCP), draft-first,
 MCP-detect-never-require, with a paste-ready-markdown fallback. Shared rules in
 `CONVENTIONS-pm.md`. This is what the "track work in a PM tool" standing rule uses to
-create the tracked item.
+create the tracked item. **Every item is drafted to a recognized standard** — INVEST
+(stories), the Scrum Guide (Gherkin acceptance criteria, Definition of Done), and SAFe
+(Epic→Story→Task hierarchy, epic hypothesis); `CONVENTIONS-pm.md §P0` pins the complete
+field set per type.
 
 | Skill | What it does | Agent |
 |---|---|---|
-| `/pm-epic` | Drafts one **Epic** (goal, problem, success measure, scope/out-of-scope) + a **suggested** story breakdown; on opt-in creates the epic only. Use `/pm-plan` to build the whole tree. | (no dedicated agent) |
-| `/pm-story` | Drafts one **INVEST user story** ("As a … I want … so that …") + acceptance criteria; on opt-in creates it in the connected tracker, else paste-ready markdown. Optional parent Epic. | (no dedicated agent) |
-| `/pm-task` | Drafts one scoped, actionable **Task** (optionally under a Story/Epic); on opt-in creates it, else markdown. | (no dedicated agent) |
+| `/pm-epic` | Drafts one **Epic** to the **SAFe epic-hypothesis** standard (goal/outcome, problem, success measure, scope/out-of-scope) + a **suggested** story breakdown; on opt-in creates the epic only. Use `/pm-plan` to build the whole tree. | (no dedicated agent) |
+| `/pm-story` | Drafts one **INVEST user story** ("As a … I want … so that …") + **Gherkin (Given/When/Then) acceptance criteria** per the Scrum Guide; on opt-in creates it in the connected tracker, else paste-ready markdown. Optional parent Epic. | (no dedicated agent) |
+| `/pm-task` | Drafts one scoped, actionable **Task** with an explicit **done-when (Scrum Definition of Done)** exit condition (optionally under a Story/Epic); on opt-in creates it, else markdown. | (no dedicated agent) |
 | `/pm-plan` | **Orchestrator.** Decomposes a feature-sized ask into an Epic→Stories→Tasks tree (via `pm-decomposer`), previews the **whole tree** for one approval, then creates it **sequentially, parent-first**, wiring links. Stops-and-reports on any partial failure; reconciles a re-run so it never double-creates. | `pm-decomposer` |
 
 ## Testing suite — writes test source AND executes it

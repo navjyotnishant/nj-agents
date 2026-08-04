@@ -10,6 +10,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Initial public release of the toolkit. Everything below describes what nj-agents
 does as of this version, rather than how it was built.
 
+### Changed
+
+- **PM-authoring items are now drafted to a cited industry standard, not house style.**
+  `CONVENTIONS-pm.md` gains a **§P0** block pinning each type's complete required field
+  set to its source — **INVEST** (stories), the **Scrum Guide** (Gherkin acceptance
+  criteria, Definition of Done), and **SAFe** (Epic→Story→Task hierarchy, epic
+  hypothesis). `/pm-epic`, `/pm-story`, `/pm-task` and `/pm-plan` reference §P0 and
+  expand their Step-2 field lists to be standard-complete; each skill's description and
+  the README/AGENTS.md tables now surface the standard as a selling point. (PMP/CSM/PSM
+  certify practitioners, not issue formats — the docs cite the format-governing
+  standards instead.)
+
+- **GitHub Issues mapping now uses native sub-issues, not a body-reference workaround.**
+  §P2's GitHub column was stale ("no native Epic/subtask — reference in body"). GitHub
+  ships native sub-issues (100 children/parent, 8 levels deep, same on the free tier),
+  so the model is now: **Epic = Issue** `[Epic] …`, **Story = sub-issue** `[Story] …`,
+  **Task = sub-issue** `[Task] …` — each with a `[Type]` title prefix **and** an
+  `epic`/`story`/`task` label (GitHub free has no native issue-type). The Project (v2)
+  board is a cross-epic roadmap filtered by label, never a hierarchy level. `parent` is
+  wired with `addSubIssue` (GraphQL). §P4 search-before-create strips the `[Type]` prefix
+  when matching so a re-run links instead of duplicating. `§P2` and all four `/pm-*`
+  skills updated.
+
 ### Fixed
 
 - **A clean working tree made `/pre-push-review` exit 2.** The skill said "report
