@@ -9,7 +9,7 @@
 -->
 
 A personal toolkit of Claude Code **skills and agents** covering the software
-development lifecycle is installed globally on this machine — **34 skills, 25
+development lifecycle is installed globally on this machine — **37 skills, 27
 agents**. It is **project-agnostic**: every skill works in any git repo, any stack,
 any language, and discovers per-repo details at runtime rather than assuming a
 stack, path, port, or tool.
@@ -26,7 +26,7 @@ umbrella that runs them all.
 
 | Skill | What it does | Agent |
 |---|---|---|
-| `/pre-push-review` | **Umbrella.** Secret scan as a gate, then the rest in parallel; aggregates one PASS / WARN / BLOCK verdict + report artifact. | orchestrates the below |
+| `/pre-push-review` | **Umbrella.** Secret scan as a gate, then the rest in parallel; aggregates one PASS / WARN / BLOCK verdict, then renders an HTML report and prints its `file://` URL. | orchestrates the below + `review-report-writer` |
 | `/review-secrets` | Scanner over the diff **first** as a hard gate, then a semantic security pass. | `secrets-reviewer` |
 | `/review-correctness` | Bugs, regressions, edge cases, missing validation in changed lines + blast radius. | `correctness-reviewer` |
 | `/review-tests-build` | Auto-detects and runs the repo's own test/lint/build commands. Never installs tooling. | `tests-build-runner` |
@@ -85,6 +85,18 @@ can't verify against the repo, and `/arch-diagram` runs a mandatory
 Reads a diff like the review class but invents nothing; proposes like the authoring
 class (§A3) but its artifact is a **PR, not a repo file** — so it never writes to
 `docs/`. `gh` is detected, never required (§A5).
+
+## EM intelligence suite — self-contained weekly briefings (runs anywhere)
+
+Two **self-contained** skills (`self_contained: true`) that carry their whole method
+inline — research → adversarial verification → synthesis → render — so they run on any
+agentic platform with code execution + web search, not just this toolkit. Every claim
+is corroborated or visibly quarantined; nothing is invented.
+
+| Skill | What it does | Agent |
+|---|---|---|
+| `/em-newsletter` | Weekly account-intelligence report for an Engagement Manager — book of accounts, market pulse, leadership moves, competitive landscape. Full setup path + account deep-dive. | (self-contained) |
+| `/vertical-pulse` | One-line shortcut into the same pipeline — `/vertical-pulse <Vertical>` resolves accounts/tech from saved config or a short prompt, defaults to the cheap verification mode. | (self-contained) |
 
 ## PM-authoring suite — writes a work item into a tracker, PROPOSES the create
 
@@ -274,6 +286,13 @@ Apply these to related work even when no skill is invoked:
 - **Push gating is opt-in and per-project**, never global — a `.git/hooks/pre-push`,
   or a `PreToolUse` hook matching `Bash(git push*)`. `/pre-push-review` offers to
   set one up; never install one silently.
+  The ready-made one is `hooks/git/pre-push-review`, installed with
+  `./install.sh --review-gate --project DIR`. It fires **only when the push targets
+  `main` / `master` / `PRD` / `release/*`** — the inner loop stays free, the branch
+  that reaches production does not. `NJ_REVIEW_SKIP=1` bypasses (loudly),
+  `NJ_REVIEW_AUTO=1` runs it unattended for a workflow. Deliberately *not* a merge
+  hook: git skips `pre-merge-commit` on a fast-forward, and most merges to `main`
+  are fast-forwards, so that gate would silently pass on the common case.
 
 ## Suggesting a skill
 

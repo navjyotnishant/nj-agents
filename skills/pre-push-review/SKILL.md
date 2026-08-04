@@ -45,7 +45,8 @@ is defined once in **`CONVENTIONS.md`** — read it; the steps below reference i
 
 > **Spawning subagents — `CONVENTIONS-orchestration.md`.** This skill spawns agents,
 > so `§C` (cost) and `§R` (progress reporting) apply. **Cost shape:** up to 5 dimension
-> agents in parallel after the secret-scan gate. State it and get a yes before the
+> agents in parallel after the secret-scan gate, plus 1 report-writer after
+> aggregation (Step 5.5) — so up to 6. State it and get a yes before the
 > first dispatch; cap fix rounds at 2; halt on any signal to stop. Announce the
 > **roster** before dispatch — every agent and what it will do — then mark each one
 > `✓`/`✗` with its verdict as it lands (`§R`).
@@ -192,6 +193,7 @@ Scope: 12 files, 340 reviewable lines (2 lockfiles, 1 image excluded)
 Plan:  4 dimension agents in parallel
        (secrets-semantic, correctness, tests/build, style)
        SKIP dependencies — no manifest changes in this diff
+       + 1 report-writer after aggregation (HTML report) — 5 agents total
 Proceed? [Y/n/pick dimensions]
 ```
 
@@ -250,6 +252,41 @@ the review was partial, say so beside the verdict — PASS-with-gaps ≠ PASS.
 
 **Exit-code contract** (when run for a hook/CI, `CONVENTIONS.md §5`): PASS/WARN → 0,
 BLOCK → non-zero. The suite still advises only — it never runs `git push`.
+
+## Step 5.5 — Render the HTML report (spawn `review-report-writer`)
+
+The `§6` markdown artifact stays exactly as it is — it is what CI greps and what a
+`diff` between two runs reads cleanly. This step adds a **sibling `.html`** for the
+human, because a terminal table scrolls away the moment the next command runs and a
+finding with a five-line fix is unreadable in it.
+
+Spawn **`review-report-writer`** with the aggregated result: the verdict and
+recommendation, per-dimension verdicts (and each `SKIP`'s reason), every finding with
+its severity / `file:line` / claim / failure scenario / fix, the scope and exclusion
+metadata, the scanner name and version, the fleet size, and the output directory. It
+renders; it does not re-review, re-scan, or re-run anything.
+
+Then **print the `file://` URL** on its own line, so it is clickable in the terminal:
+
+```
+Report: file:///Users/you/.nj-agents-reports/review-20260804T174233Z-e6307dc.html
+        (markdown sibling: review-20260804T174233Z-e6307dc.md)
+```
+
+Three conditions on this step:
+
+- **Skip it entirely when there is nothing to review.** The empty-diff PASS in Step 1
+  exits before any agent is spawned; do not spawn one to render "nothing happened".
+- **Skip it in CI mode by default** (`CONVENTIONS.md §5`) — a pipeline consumes the
+  exit code and the markdown, and nobody opens a browser mid-build. Render it only if
+  the caller asks (`--html`), e.g. to attach to a build artifact.
+- **A failure here never changes the verdict.** If the agent errors or the directory
+  is unwritable, say so and fall back to the markdown artifact. The review's result is
+  the review's result; a rendering problem is not a finding.
+
+This is the one agent that runs *after* aggregation rather than in parallel with the
+dimensions, so it costs one extra call on top of the fleet stated in Step 3.5 —
+mention it there when stating the cost.
 
 ## Step 6 — Optional: offer to gate on git push (propose, never silently add)
 
