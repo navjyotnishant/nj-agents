@@ -45,7 +45,7 @@ is defined once in **`CONVENTIONS.md`** — read it; the steps below reference i
 
 > **Spawning subagents — `CONVENTIONS-orchestration.md`.** This skill spawns agents,
 > so `§C` (cost) and `§R` (progress reporting) apply. **Cost shape:** up to 5 dimension
-> agents in parallel, after the secret-scan gate. State it and get a yes before the
+> agents in parallel after the secret-scan gate. State it and get a yes before the
 > first dispatch; cap fix rounds at 2; halt on any signal to stop. Announce the
 > **roster** before dispatch — every agent and what it will do — then mark each one
 > `✓`/`✗` with its verdict as it lands (`§R`).
@@ -144,6 +144,33 @@ lines, per `skills/review-secrets/SKILL.md` and `CONVENTIONS.md §3`:
   remove/rotate (or allowlist a confirmed false positive) and re-run. CI: BLOCK,
   exit 1.
 - **Clean → proceed to Step 4.**
+
+**Run the scanner as ONE plain command — never chained.** A sandboxed/non-interactive
+runner gates each part of a compound command (`&&`, `|`, `;`, `$(…)`) separately and
+may **deny** it with no one to approve — which looks like "the scanner failed" when it
+did not. Invoke it bare:
+
+```bash
+gitleaks git --log-opts="main..HEAD" --redact --no-banner -v
+```
+
+not folded into an `echo … && gitleaks … | tail` one-liner. If you need the exit code,
+read `$?` on the *next* line, don't `&&`-chain it.
+
+**Distinguish "no scanner" from "scanner blocked by the sandbox" — they are NOT the
+same verdict.** Before declaring BLOCK-no-scanner, confirm the scanner is actually
+absent (`command -v gitleaks`). If it **exists but the run was denied/approval-gated**,
+that is an **operator/environment problem, not a code BLOCK** — say so plainly, do not
+report the change as failing a secret scan, and unblock by either running the bare
+command above or allow-listing it once:
+
+```jsonc
+// .claude/settings.json — makes the gate run unattended (read-only, safe)
+{ "permissions": { "allow": ["Bash(gitleaks:*)"] } }
+```
+
+Only a genuinely missing scanner or a real hit is a BLOCK; a permission denial is a
+setup fix.
 
 Non-negotiable ordering: handing the diff to any subagent counts as "sharing with
 AI," so secrets clears first.

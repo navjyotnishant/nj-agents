@@ -35,6 +35,15 @@ does as of this version, rather than how it was built.
 
 ### Fixed
 
+- **A permission-denied secret scanner was misread as a failed scan.** In a sandboxed
+  or non-interactive runner, a compound gitleaks command (`echo … && gitleaks … | tail`)
+  gets each part approval-gated and can be **denied** — which looked like the scanner
+  failing when it never ran. `CONVENTIONS.md §3`, `/review-secrets`, and
+  `/pre-push-review` now say: run the scanner as **one bare command, never chained**;
+  and **"no scanner" (BLOCK) is not the same as "scanner blocked by the sandbox"**
+  (an operator fix — confirm with `command -v`, run bare, or allow-list
+  `Bash(gitleaks:*)`). Only a genuinely missing scanner or a real hit is a BLOCK.
+
 - **A clean working tree made `/pre-push-review` exit 2.** The skill said "report
   and stop" without naming a verdict, and `bin/nj-agents-review` maps a missing
   verdict to exit 2 — a harness error. So a pre-push hook on a repo with nothing to

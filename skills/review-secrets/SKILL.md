@@ -155,6 +155,14 @@ Do **not** install anything yourself — only the user installs tooling
 exit code 1. The umbrella treats a missing scanner as an overall **BLOCK** — a
 push must not proceed without an authoritative secret scan.
 
+**But first confirm the scanner is actually missing, not merely blocked** (`CONVENTIONS.md
+§3`). Run the scanner as **one bare command, never chained** — a sandboxed runner
+approval-gates each part of a compound command and may deny it, which looks like a
+scanner failure. If `command -v gitleaks` shows it exists but the run was
+**permission-denied**, that is an operator/environment fix (run the bare command, or
+allow-list `Bash(gitleaks:*)` in `.claude/settings.json`) — **not** a code BLOCK. Only a
+genuinely absent scanner is the BLOCK above.
+
 ## Step 4 — Gate decision
 
 - **Any scanner hit → HARD STOP.** Print `file:line`, the rule/pattern class, and

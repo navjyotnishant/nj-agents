@@ -109,6 +109,16 @@ full procedure. Universal rules:
 
 - **A scanner is mandatory** — a missing scanner is a BLOCK, never a silent skip or
   a model-only pass.
+- **Run the scanner as ONE bare command, never chained.** A sandboxed or
+  non-interactive runner approval-gates each part of a compound command (`&&`, `|`,
+  `;`, `$(…)`) separately and may **deny** it — which reads as "the scanner failed"
+  when it never ran. Invoke it plain (`gitleaks git --log-opts="…" --redact -v`); read
+  `$?` on the next line if you need the exit code.
+- **"No scanner" ≠ "scanner blocked by the sandbox."** Only a genuinely missing
+  scanner (confirm with `command -v`) or a real hit is a **BLOCK**. A scanner that
+  exists but was **permission-denied** is an operator/environment fix, not a code
+  BLOCK — say so, don't report the change as failing a scan, and unblock by running
+  the bare command or allow-listing `Bash(<scanner>:*)` in `.claude/settings.json`.
 - **Never echo a raw secret** — always mask (`AKIA****************`).
 - **Newly-added vs. pre-existing**: focus on secrets **added by this change**
   (`+` lines). A secret already committed upstream is still worth flagging, but the
