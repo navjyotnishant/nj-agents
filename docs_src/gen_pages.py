@@ -53,6 +53,11 @@ CLASSES = {
         "Social",
         "Produces paste-ready copy. Never writes to the repo, never auto-posts.",
     ),
+    "testing": (
+        "Testing",
+        "Writes test source into the repo **and executes it** — the only class that "
+        "does both. Shared rules: [`CONVENTIONS-testing.md`]({REPO_URL}/CONVENTIONS-testing.md).",
+    ),
 }
 
 
