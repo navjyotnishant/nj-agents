@@ -85,6 +85,65 @@ leaves it alone.
 
 ---
 
+## `git/pre-push-review` — the LLM review gate (per project, opt-in)
+
+Runs `/pre-push-review` and blocks the push when the verdict is BLOCK — but **only
+when the push targets a protected branch**: `main`, `master`, `PRD`, or `release/*`.
+Feature branches push free and silent.
+
+```bash
+./install.sh --review-gate --project /path/to/your/repo
+```
+
+### Why it is not part of `git/pre-push`
+
+That hook fires on every push and is deliberately LLM-free. This one spends **~5
+agents per run**, and three files in this repo already record the judgement that
+per-push LLM spend is unacceptable. Gating on the target ref is what makes it
+affordable: the inner loop stays free, and the branch that reaches production does
+not.
+
+### Why not a merge hook
+
+`pre-merge-commit` looks like the right hook and is not — git does not run it for a
+**fast-forward** merge. Measured against one real project's history, 6 of 8 merges
+to `main` were fast-forwards, so a merge hook would have silently passed on the
+majority. A gate that looks installed and does nothing is worse than no gate.
+
+### Controls
+
+| | |
+|---|---|
+| `NJ_REVIEW_SKIP=1` | Bypass — but it says so on the way past. |
+| `NJ_REVIEW_AUTO=1` | No confirmation prompt. For CI and unattended workflows. |
+| `NJ_REVIEW_REFS` | Override the protected list, space-separated short names. |
+| `git push --no-verify` | Git's own escape hatch, as with any hook. |
+
+Without a terminal (a workflow, a CI runner, an editor's git integration) it
+auto-proceeds rather than hanging on a prompt nobody can answer.
+
+### Degrades rather than blocks
+
+A missing `nj-agents-review` on PATH, or a harness error from it, **warns and lets
+the push through**. Only a real BLOCK verdict stops one. Blocking every push to
+`main` over a setup gap would get the hook deleted within a day, and a tooling
+failure is not a code finding.
+
+It says so every time, though — a gate that goes quiet is indistinguishable from one
+that was uninstalled.
+
+### The pre-push slot is shared
+
+Git only runs a hook named `pre-push`, so this cannot coexist with another one by
+itself. If the slot is taken, the installer **leaves your hook alone**, drops the
+source at `.git/hooks/pre-push-review`, and prints the line to chain it:
+
+```sh
+"$(git rev-parse --git-dir)"/hooks/pre-push-review "$@" || exit 1
+```
+
+---
+
 ## `git/pre-push-e2e` — the E2E gate (per project)
 
 Refuses a push whose test suite is red. Unlike `pre-push` above, which validates

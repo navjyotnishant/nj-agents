@@ -13,6 +13,10 @@
 #   ./install.sh --with-hooks    # ALSO register the skill-suggestion hook in settings.json
 #   ./install.sh --git-hooks     # install .git/hooks into THIS clone (per-clone, not committed)
 #   ./install.sh --git-hooks --project DIR   # install the E2E push gate into another repo
+#   ./install.sh --review-gate --project DIR # ALSO gate pushes to main/PRD on the LLM review
+#                                            # (~5 agents per push to a protected branch;
+#                                            #  NJ_REVIEW_SKIP=1 bypasses, NJ_REVIEW_AUTO=1
+#                                            #  runs it unattended)
 #
 # Runners (--runner):
 #   claude   ~/.claude    CLAUDE.md   default; unchanged from before
@@ -62,6 +66,7 @@ while [ $# -gt 0 ]; do
     --check-only) CHECK_ONLY=1; shift ;;
     --with-hooks) WITH_HOOKS=1; shift ;;
     --git-hooks) GIT_HOOKS=1; shift ;;
+    --review-gate) REVIEW_GATE=1; GIT_HOOKS=1; shift ;;
     -h|--help) grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "Unknown arg: $1" >&2; exit 2 ;;
   esac
@@ -199,6 +204,29 @@ if [ "$GIT_HOOKS" = "1" ]; then
     # missing script. The E2E gate is the portable one.
     if [ -n "$PROJECT_DIR" ] && [ "$name" = "pre-push" ]; then
       echo "  skipped $name — it validates nj-agents itself, not $HOOK_REPO"
+      continue
+    fi
+
+    # `pre-push-review` is opt-in and named for what it is, but git only runs a hook
+    # called `pre-push`. Copying it under its own name would install a file git never
+    # executes — a gate that looks present and does nothing, which is worse than an
+    # absent one. Installed only when asked, and only where the slot is free.
+    if [ "$name" = "pre-push-review" ]; then
+      if [ "$REVIEW_GATE" != "1" ]; then
+        echo "  skipped $name — opt in with --review-gate (spends ~5 agents per push to main)"
+        continue
+      fi
+      dst="$gitdir/hooks/pre-push"
+      if [ -e "$dst" ]; then
+        echo "  ! $dst already exists — not replacing it." >&2
+        echo "    The review gate and an existing pre-push hook both want that slot;" >&2
+        echo "    merge them by hand, or chain this one from yours:" >&2
+        echo "      \"\$(git rev-parse --git-dir)\"/hooks/pre-push-review \"\$@\" || exit 1" >&2
+        cp "$h" "$gitdir/hooks/pre-push-review" && chmod +x "$gitdir/hooks/pre-push-review"
+        echo "    source copied to $gitdir/hooks/pre-push-review (not active on its own)"
+        continue
+      fi
+      cp "$h" "$dst" && chmod +x "$dst" && echo "  installed $dst (review gate: main, master, PRD, release/*)"
       continue
     fi
 

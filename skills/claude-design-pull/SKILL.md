@@ -286,6 +286,27 @@ Each checker then does the following:
 2. Render the live page at `baseUrl + route` and extract with the same
    extractor, live side.
 
+   **Walk the tabs.** A tabbed page hides most of itself — component libraries
+   mount only the active panel — so measuring the default view reports
+   everything behind another tab as missing, which is indistinguishable from
+   never having been built. On the project this was written for that was three
+   of four tabs: real, styled, verified by hand, and invisible to the gate.
+
+   After the first extraction, click each `[role=tab]` in turn, re-extract, and
+   merge. Anything **found** in a later tab wins; absence never overwrites a
+   hit, so the merge cannot mask a genuine gap.
+
+   Use real input events (CDP `Input.dispatchMouseEvent`, or Playwright's
+   `click()`). `element.click()` and synthetic `dispatchEvent` do **not**
+   activate a Radix tab — it listens for trusted pointer events, so a synthetic
+   click leaves the panel closed and the gate reports the same false failures it
+   would have without walking at all.
+
+   Without this you end up waiving real elements as "not mounted at measure
+   time", which is a waiver for a limitation of the measurement rather than a
+   property of the page — and a waived selector is one the gate has stopped
+   checking.
+
 Both sides run through identical code, so a difference in the output is a
 difference in the pages.
 
