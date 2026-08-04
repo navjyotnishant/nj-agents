@@ -18,6 +18,56 @@ tool before non-trivial code"* is the motivation for this class; `/pm-story` and
 
 ---
 
+## §P0 — Standards this class follows (shared)
+
+The item formats below are **not house style** — they trace to the recognized
+agile/PM craft standards. Cite the standard, not a people-certification: **PMP** and
+**CSM/PSM** certify *practitioners*, they do not define an issue's fields. What defines
+the fields is:
+
+- **INVEST** (Bill Wake, 2003) — a good story is **I**ndependent, **N**egotiable,
+  **V**aluable, **E**stimable, **S**mall, **T**estable.
+- **Scrum Guide** — acceptance criteria, **Definition of Ready** (DoR) and **Definition
+  of Done** (DoD) as the entry/exit gates of a work item.
+- **SAFe** — the **Epic → Story → Task** hierarchy, and the Epic **hypothesis
+  statement** (outcome + leading indicator, not just a feature list).
+- **Gherkin** — the **Given / When / Then** form for acceptance criteria.
+
+**Per-type complete field set (a "done when it's complete" checklist for the drafter).**
+Every field marked ✔ is required for the item to be standard-complete; mark a genuinely
+unknown one `TBD` (§P1) rather than omitting it silently.
+
+**Epic** (SAFe epic hypothesis):
+- ✔ **Goal / outcome** — the change in the world, one or two sentences.
+- ✔ **Problem / why now** — the business rationale.
+- ✔ **Success measure** — a leading indicator or observable end-state (the hypothesis'
+  metric), not "it works".
+- ✔ **Scope / Out-of-scope** — bounded both ways; out-of-scope is what stops creep.
+- ○ **Stakeholders / affected users**, **Dependencies / risks** — when known.
+- Acceptance = its stories are Done; an epic carries no acceptance criteria of its own.
+
+**Story** (INVEST + Scrum):
+- ✔ **User-story sentence** — "As a `<persona>`, I want `<capability>`, so that
+  `<value>`."
+- ✔ **Acceptance criteria** — Gherkin (Given/When/Then) or a checkable bullet list; the
+  heart of the story, and the DoD for *this* story.
+- ✔ **INVEST self-check** — if it fails Small/Independent it's an epic; say so and route
+  to `/pm-epic` + `/pm-plan`.
+- ○ **Non-functional constraints** (perf, security, a11y), **Dependencies**,
+  **Estimate**, **DoR note** (what must be true before it's pulled in) — when they
+  sharpen scope.
+
+**Task** (unit of work):
+- ✔ **Imperative title** — the concrete action.
+- ✔ **Done-when** — a one-line exit condition (the task's DoD).
+- ○ **How / constraints**, **Dependencies / blocked-by** — when they matter.
+- Small and single-purpose; if it holds several actions, split it (§P2 sanity).
+
+Skills reference this block by name (`per §P0`) rather than re-listing the fields, so
+the standard lives in one place.
+
+---
+
 ## §P1 — Ground the item (shared)
 
 Before drafting, gather just enough to write a real work item, not a hollow one:
@@ -38,7 +88,9 @@ detail isn't known, mark it `TBD` or ask; don't fabricate a requirement.
 ## §P2 — The neutral issue model → per-tracker mapping (shared)
 
 PM skills draft into **one neutral issue model**, then map it onto whichever tracker
-is connected. This keeps the skills tool-agnostic and the mapping in one place.
+is connected. This keeps the skills tool-agnostic and the mapping in one place. The
+model's fields are what §P0 requires per type — this is where the standard becomes
+concrete data.
 
 **Neutral model:**
 
@@ -59,17 +111,39 @@ is connected. This keeps the skills tool-agnostic and the mapping in one place.
 
 | Neutral field | Linear | Jira | GitHub Issues | Notion |
 |---|---|---|---|---|
-| `type` | issue + parent (epic = parent issue / project) | `issuetype` (Epic/Story/Task/Bug) | label (`epic`/`story`) — flat | DB `Type` select |
-| `title` | `title` | `summary` | title | page title |
+| `type` | issue + parent (epic = parent issue / project) | `issuetype` (Epic/Story/Task/Bug) | **`[Type]` title prefix + `type` label** (see below) | DB `Type` select |
+| `title` | `title` | `summary` | `[Epic]`/`[Story]`/`[Task]` + title | page title |
 | `description` | markdown | **ADF** (convert) | markdown | blocks |
 | `acceptance_criteria` | append as a `## Acceptance criteria` checklist in the description | same, in description | task-list in body | checklist blocks |
-| `parent` | `parentId` | epic-link / parent | (no native subtasks — reference in body) | `Parent` relation |
+| `parent` | `parentId` | epic-link / parent | **native sub-issue** (`addSubIssue` GraphQL) | `Parent` relation |
 | `labels` | `labels` | `labels` | `labels` | multi-select |
 | `estimate` | `estimate` | story points field | (none — note in body) | number prop |
 
+**The GitHub Issues hierarchy model** (native sub-issues — up to 100 children/parent,
+8 levels deep, same on the free tier):
+
+```
+Issue  [Epic]  <title>   label: epic
+ └─ sub-issue  [Story] <title>   label: story
+     └─ sub-issue  [Task] <title>   label: task
+```
+
+- **Epic = Issue** (not a Project). The Project (v2) board is a *cross-epic view/roadmap*
+  filtered by the `type` label — never a hierarchy level. This keeps all epics on one
+  board and gives the epic a real body for its §P0 fields + a native `n/m done` rollup.
+- **Type is carried twice**, on purpose: a **`[Epic]`/`[Story]`/`[Task]` title prefix**
+  (readable in any flat list, board, or `gh issue list`) **and** a matching **`epic`/
+  `story`/`task` label** (filterable/colored). GitHub free has no native issue-type, so
+  neither alone is enough.
+- **`parent` at every level is a native sub-issue** — `gh` has no create-flag for it;
+  wire it with `gh api graphql` `addSubIssue` (or the web UI). Never fake it with a body
+  reference now that the native link exists.
+- **§P4 search-before-create must strip the `[Type]` prefix when matching**, or a re-run
+  won't find `[Story] X` while searching `X` and will duplicate it.
+
 Two truths to respect:
-- **Not every tracker has every level.** GitHub Issues has no native Epic/subtask
-  hierarchy — represent parentage by reference/task-list and say so, don't pretend.
+- **Not every tracker has native hierarchy the same way.** GitHub *does* (sub-issues) —
+  use it per the model above. Notion uses a `Parent` relation; Jira its epic-link/parent.
 - **Jira descriptions are ADF, not markdown.** Convert (via the MCP's own field), or
   send plain text if conversion isn't available — never send raw markdown as if it
   renders.

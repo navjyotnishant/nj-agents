@@ -20,6 +20,8 @@
 #   nj-run heartbeat "running 42/120 specs"
 #   nj-run report                      # human summary of the run
 #   nj-run manifest                    # print the manifest JSON
+#   nj-run ledger record --spec e2e/login.spec.ts --status fail --id LOGIN-01
+#   nj-run ledger show                 # the committed flake history (§T14)
 #   nj-run finish --verdict PASS       # seal it; exit code per CONVENTIONS.md §5
 #
 # Why this exists as ONE tool rather than per-skill code: §T13 says cost, subagent
@@ -36,7 +38,8 @@
 #
 # The manifest is run state, not history (§T13): it lives in a temp dir OUTSIDE
 # the repo tree and dies with it. Anything that must outlive the run belongs in
-# the flake ledger (§T14), which this tool deliberately does not write.
+# the flake ledger (§T14) — `nj-run ledger`, the one thing here that writes INTO
+# the repo, deliberately and at a committed path.
 #
 # Dependencies: python3 for JSON (jq is used if present but never required).
 # Without python3 the tool degrades to append-only logging and reports that the
@@ -437,6 +440,172 @@ print(f"  log       {m.get('log','?')}")
 PYREPORT
 }
 
+# ---------------------------------------------------------------------------
+# The flake ledger (§T14) — the one thing that OUTLIVES the run.
+#
+#   nj-run ledger record --spec e2e/login.spec.ts --status pass|fail [--id <stable>]
+#   nj-run ledger show
+#
+# Everything else this tool writes is run state and dies with the temp dir. The
+# ledger is the opposite: it is only useful as accumulated history, which is why
+# §T14 puts it at a COMMITTED .nj-agents/flake-ledger.json. Gitignored it would
+# start empty on every CI runner — exactly where the same spec fails intermittently
+# across a hundred runs nobody is watching, and exactly what it exists to detect.
+#
+# Until this existed, /flake-watch read a file nothing wrote, so it always reported
+# "insufficient history"; and /test-triage is barred from calling `flake` without
+# ledger history, so it could never reach that verdict and filed genuine flakes as
+# defects. The read path was complete and the write path did not exist.
+#
+# Three §T14 requirements that shape the format:
+#
+#   * RENAME SURVIVAL. Keyed on a stable id with a path fallback, never path alone —
+#     otherwise the first directory reshuffle silently resets every record and a
+#     chronically unstable spec gets a clean slate it did not earn. `--id` supplies
+#     the stable key; without one the path IS the key, and the fallback match is
+#     reported so a reader knows the history was matched loosely.
+#   * READABLE DIFFS. Sorted keys, one record per line. The file is committed, so a
+#     quarantine proposal shows up as a reviewable diff rather than a state change
+#     nobody sees.
+#   * NOTHING FROM AN ARTIFACT. Spec identity, counts and dates only. No failure
+#     text, no URLs, no headers — so §T4's scrub has nothing to do here and cannot
+#     be forgotten.
+#
+# Bounded by construction: counters plus a fixed-length recent window, so the file
+# grows with the number of SPECS, not the number of runs.
+LEDGER_WINDOW="${NJ_LEDGER_WINDOW:-50}"
+
+ledger_path() {
+  local root; root="$(git rev-parse --show-toplevel 2>/dev/null)" || return 1
+  echo "$root/.nj-agents/flake-ledger.json"
+}
+
+cmd_ledger() {
+  local action="${1:-show}"; shift || true
+  local path; path="$(ledger_path)" || {
+    echo "nj-run ledger: not a git repository — the ledger is committed, so it needs one." >&2
+    exit 2
+  }
+
+  case "$action" in
+    show)
+      [ -f "$path" ] || { echo "no ledger yet at ${path#"$(git rev-parse --show-toplevel)"/}"; return 0; }
+      cat "$path" ;;
+
+    record)
+      local spec="" status="" id=""
+      while [ $# -gt 0 ]; do
+        case "$1" in
+          --spec)   spec="$2"; shift 2 ;;
+          --status) status="$2"; shift 2 ;;
+          --id)     id="$2"; shift 2 ;;
+          *) echo "nj-run ledger record: unknown arg $1" >&2; exit 2 ;;
+        esac
+      done
+      [ -n "$spec" ] || { echo "nj-run ledger record: --spec is required" >&2; exit 2; }
+      case "$status" in
+        pass|fail) ;;
+        *) echo "nj-run ledger record: --status must be pass or fail" >&2; exit 2 ;;
+      esac
+      have_py || { echo "nj-run ledger: python3 absent — cannot write the ledger" >&2; return 0; }
+
+      mkdir -p "$(dirname "$path")"
+      NJ_LEDGER="$path" NJ_SPEC="$spec" NJ_STATUS="$status" NJ_ID="$id" \
+      NJ_WINDOW="$LEDGER_WINDOW" NJ_DATE="$(now_iso)" python3 <<'PYLEDGER'
+import json, os
+
+path   = os.environ["NJ_LEDGER"]
+spec   = os.environ["NJ_SPEC"]
+status = os.environ["NJ_STATUS"]
+stable = os.environ.get("NJ_ID") or ""
+window = int(os.environ["NJ_WINDOW"])
+today  = os.environ["NJ_DATE"]
+
+try:
+    with open(path) as fh:
+        led = json.load(fh)
+except Exception:
+    led = {"version": 1, "specs": {}}
+
+specs = led.setdefault("specs", {})
+key = stable or spec
+
+# Rename survival (§T14). Three ways a record is found, in descending confidence:
+#   1. the stable id, if one was supplied — survives any move
+#   2. the exact path, for specs that have never moved
+#   3. the BASENAME, when a spec with a stable id has moved: the id is the key, so
+#      a path change alone must not create a second record
+rec = specs.get(key)
+matched = "identity" if rec else None
+
+if rec is None and stable:
+    for k, v in specs.items():
+        if v.get("path") == spec:
+            rec, key, matched = v, k, "path"
+            break
+
+# 3. NO BASENAME GUESSING. A spec with no --id that moves starts a fresh record,
+#    and the caller is told why.
+#
+#    Merging on basename was tried and removed. It fails in both directions and the
+#    failures are not symmetric: a missed merge loses history (recoverable — pass
+#    --id and the next run links it), while a wrong merge FABRICATES history, and a
+#    fabricated 30% fail rate is acted on. Three files named login.spec.ts in
+#    admin/, shop/ and other/ collapsed into one record with 3 runs under every
+#    "only merge when unambiguous" rule attempted, because each merge rewrites the
+#    path and the next candidate scan then sees exactly one match again.
+#
+#    §T14 asks for "a stable identifier plus a path fallback". The stable
+#    identifier is --id, and this IS the path fallback: exact path match (rung 2).
+#    What it will not do is invent an identity the caller never supplied.
+if rec is None and not stable:
+    base_matches = [k for k, v in specs.items()
+                    if os.path.basename(v.get("path", "")) == os.path.basename(spec)]
+    if base_matches:
+        matched = "unlinked-move"
+
+if rec is None:
+    rec = {"id": stable, "path": spec, "runs": 0, "fails": 0,
+           "first_seen": today, "last_seen": today, "recent": "", "quarantined": False}
+    specs[key] = rec
+    # Keep "ambiguous" — it is a NEW record that arguably should not be, and the
+    # reader needs to know a same-named spec already had history. Collapsing it to
+    # "new" would hide exactly the split §T14 warns about.
+    if matched != "unlinked-move":
+        matched = "new"
+
+# A moved spec keeps its history and records where it is now.
+if rec.get("path") != spec:
+    rec["path"] = spec
+
+rec["runs"]  += 1
+rec["fails"] += 1 if status == "fail" else 0
+rec["last_seen"] = today
+
+# Fixed-length window as a compact string — "FPPFP", newest last. A list of dicts
+# per run would grow the file without bound; this keeps it proportional to the
+# number of specs, which is what makes committing it tolerable.
+rec["recent"] = (rec.get("recent", "") + ("F" if status == "fail" else "P"))[-window:]
+
+tmp = path + ".tmp"
+with open(tmp, "w") as fh:
+    json.dump(led, fh, indent=2, sort_keys=True)
+    fh.write("\n")
+os.replace(tmp, path)     # atomic: a reader never sees a partial file
+
+if matched == "unlinked-move":
+    print(f"nj-run ledger: '{spec}' looks like a moved spec (same basename as an "
+          f"existing record) but has no --id, so it starts fresh. Pass --id to keep "
+          f"its history across moves.")
+elif matched not in ("identity", "new"):
+    print(f"nj-run ledger: matched '{spec}' by {matched} — history preserved")
+PYLEDGER
+      ;;
+
+    *) echo "nj-run ledger: expected 'record' or 'show'" >&2; exit 2 ;;
+  esac
+}
+
 cmd_finish() {
   need_run
   local verdict=""
@@ -470,6 +639,7 @@ case "${1:-}" in
   aggregate) shift; need_run; cmd_aggregate ;;
   report)    shift; need_run; cmd_report ;;
   manifest)  shift; need_run; cat "$MANIFEST" ;;
+  ledger)    shift; cmd_ledger "$@" ;;
   finish)    shift; cmd_finish "$@" ;;
   -h|--help|"") grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
   *) echo "nj-run: unknown command '$1' (try --help)" >&2; exit 2 ;;

@@ -241,6 +241,28 @@ nj-run verdict --dimension specs --value PASS|WARN|BLOCK|SKIP
 rule allowed it**), `scope`, `artifacts_dir` and the `log` pointer. Add per-spec
 results, the cost, and the verdict.
 
+**Then record every spec in the flake ledger** (`§T14`) — one call per spec, pass or
+fail:
+
+```bash
+nj-run ledger record --spec e2e/login.spec.ts --status pass --id LOGIN-01
+```
+
+**Record passes too, not only failures.** A fail rate needs a denominator: three
+failures mean nothing without knowing whether there were four runs or four hundred,
+and a ledger of failures alone cannot tell a flake from a spec that always fails.
+
+**Pass `--id` whenever the spec has a stable identifier** — a test ID, a ticket key,
+anything that survives a move. Without one the path is the key, so the first
+directory reshuffle starts the history over and a chronically unstable spec gets a
+clean slate it did not earn (`§T14`). The ledger says so when it spots a likely
+unlinked move rather than guessing, because a wrong merge fabricates a fail rate
+someone will act on.
+
+This is what makes `/flake-watch` and `/test-triage` work at all: triage is barred
+from calling `flake` without ledger history, so until something writes it, a genuine
+flake is classified as a defect every time.
+
 Recording the matching rule matters more than it looks: a triage six hours later that
 cannot tell which environment produced a failure is guessing.
 

@@ -1,6 +1,6 @@
 ---
 name: test-report
-description: "Use this skill when the user asks \"are we ready to release\", \"show test coverage against the requirements\", \"write the test report\", or wants a traceability matrix linking requirement to case to run status to defect. Reads the run manifest and the flake ledger, and reports what is covered, what is not, and what open risk a release carries. States coverage gaps rather than implying completeness. Advises only: it writes no test and makes no release decision. Works in any git repo; nothing here is project-specific."
+description: "Use this skill when the user asks \"are we ready to release\", \"show test coverage against the requirements\", \"write the test report\", or wants a traceability matrix linking requirement to case to run status to defect. Reads the run manifest and the flake ledger, and reports what is covered, what is not, and what open risk a release carries. States coverage gaps rather than implying completeness. Advises only: it writes no test and makes no release decision. --html renders the same model as a self-contained page with per-spec trend sparklines from the flake ledger. Works in any git repo; nothing here is project-specific."
 version: 0.1.0
 class: testing
 author: navjyotnishant
@@ -37,9 +37,13 @@ anything published, `§T13` read the manifest, `§T14` read the flake ledger.
 > keep `CHANGELOG.md` current when the change is user-facing, degrade rather than
 > fail, and say what you did not do.
 
-**This skill is read-only.** It writes no test and no repo file — `§T1`'s fence has
-nothing to fence. Its output is a report artifact outside the repo tree, and it makes
-no release decision: it states the position and a human decides.
+**This skill writes no test** — `§T1`'s fence has nothing to fence — and makes no
+release decision: it states the position and a human decides.
+
+Its output is a report artifact **outside the repo tree** (`NJ_AGENTS_REPORT_DIR`),
+in markdown and, on `--html`, as a page. The single exception is an explicit path
+argument (`--html docs/test-report.html`), which is the only way anything lands in
+the repo — and then the commit is proposed, never run (`§T6`).
 
 ## Dependencies
 
@@ -50,6 +54,7 @@ Detected at runtime, never installed by this skill (`§T5`).
 | the run manifest (`§T13`) | cases, specs, results | **BLOCK** — a report with no run behind it is fiction |
 | `/test-plan` cases | the requirement → case half of the matrix | report spec → result only, and **say the requirement link is missing** |
 | the flake ledger (`§T14`) | which passes are trustworthy | report without confidence weighting, and say so |
+| `docs-designer` (this toolkit) | rendering `--html` | markdown only; say the page was not rendered |
 | a connected tracker (MCP) | linking defects by key | list defects inline; paste-ready (`§A5`) |
 
 ## Step 0 — Print the banner FIRST
@@ -63,7 +68,8 @@ Detected at runtime, never installed by this skill (`§T5`).
 ║  lists passes reads as "we tested this".                          ║
 ║                                                                   ║
 ║  ADVISES ONLY. It states the release position; it does not make   ║
-║  the call, and it writes nothing into your repo.                  ║
+║  the call. Output goes to the gitignored report dir; --html        ║
+║  renders the same model as a self-contained page.                 ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
@@ -160,9 +166,56 @@ Run: <manifest>   Environment: <url>   Ledger: <n> specs with history
 Not in this report: <what could not be linked, and why>
 ```
 
+## Step 5a — `--html`: the same report as a page
+
+Markdown is right for a ticket, a PR comment, or a terminal. It is wrong for the
+question *"is this spec getting worse?"*, which is a shape, not a number — and the
+ledger has held that shape since `nj-run ledger` started writing it.
+
+On `--html`, render the **same model** to a self-contained page. Not a second report:
+one model, two renderings. A dashboard computing its own idea of "covered" would
+eventually disagree with the markdown, and then neither is trustworthy.
+
+**Where it goes.** Default `${NJ_AGENTS_REPORT_DIR:-<repo>/.nj-agents-reports}/` —
+gitignored, same as every other report artifact, so `§T1` still holds and this skill
+still writes nothing into the repo tree. Only on an explicit path argument
+(`--html docs/test-report.html`) does it write into the repo, and then it **proposes
+the commit** rather than running git.
+
+**What the page adds over the markdown**, and nothing else — a dashboard that merely
+re-renders a table has earned no complexity:
+
+- **Per-spec trend from the ledger** — the `recent` window as a sparkline, so a spec
+  that went 0% → 15% reads differently from a steady 4%. `§T14` says trend matters
+  more than magnitude; a table cannot show trend.
+- **Fail rate with its denominator visible.** `18% (9/50)`, never a bare `18%` — and
+  specs below the sample floor render as **"insufficient history"**, not as a rate.
+  A percentage from three runs will be believed.
+- **NOT COVERED first**, and visually dominant. The ordering is the whole argument of
+  this report and must survive the change of medium.
+
+**Self-contained, no exceptions.** Inline CSS, no CDN, no external fonts, no
+analytics. It gets opened from a file:// path, attached to a ticket, and viewed
+offline; anything fetched at load time is a broken page later, and a beacon now.
+`docs-designer` already builds pages to exactly this constraint — reuse it rather
+than writing a second renderer.
+
+**Scrub before rendering** (`§T4`), not after. HTML-escape every interpolated value:
+a failure message containing markup is a real input, and this page is more likely to
+be attached to a ticket than any other artifact the class produces.
+
+The verdict, the release position, and the refusal to make the call are unchanged.
+A page is easier to skim than a table, which makes it easier to mistake for an
+approval — so the "this is the position, not a decision" line belongs on it too,
+where it will be read.
+
 ## Safety rails
 
-- **Advises only.** Writes no test, no repo file (`§T1`). Makes no release decision.
+- **Advises only.** Writes no test (`§T1`). Makes no release decision.
+- **The report artifact is gitignored by default**, including `--html`. It lands in
+  `NJ_AGENTS_REPORT_DIR`, not the repo tree. A path argument is the only way it
+  writes into the repo, and then it **proposes** the commit and never runs git
+  (`§T6`) — a report that commits itself is a report nobody reviewed.
 - **BLOCK without a manifest.** A report with no run behind it is fiction, and this
   artifact carries more trust than any other in the class.
 - **Never presents a pass rate as coverage.** They are different numbers and the

@@ -12,8 +12,12 @@ Turns a feature-sized initiative into a **created Epic → Stories → Tasks tre
 umbrella of the **PM-authoring class**: it decomposes (via `pm-decomposer`), previews
 the whole tree, and — on one explicit opt-in — creates it **sequentially, parent-first**
 in the connected tracker. Follow `CONVENTIONS-pm.md`, especially **§P5 (sequential
-parent-first creation, stop-on-partial-failure)**, plus §P1 ground, §P2 map, §P3
-propose, §P4 idempotence, §P6 MCP-detect, §P7 safety, §P8 report-the-tree.
+parent-first creation, stop-on-partial-failure)**, plus §P0 standards, §P1 ground,
+§P2 map, §P3 propose, §P4 idempotence, §P6 MCP-detect, §P7 safety, §P8 report-the-tree.
+Every item in the tree is drafted to the **§P0 industry-standard format** (SAFe epic
+hypothesis, INVEST + Gherkin stories, done-when tasks) — the `pm-decomposer` agent and
+the leaf skills share that field set, so a whole created tree is standard-complete top
+to bottom.
 
 > **Finding the conventions file.** It lives at the toolkit repo root, two levels
 > above this skill — not beside `SKILL.md`. Skills are usually installed as
@@ -60,7 +64,9 @@ one run, so its guardrails are the strictest in the class.
 Gather the initiative from the user's intent + any doc/spec they point at + light repo
 context. Resolve the **target tracker** (connected PM MCP; if several, ask) and the
 **destination team/project/board** — never assume it (§P7). Note the tracker's shape so
-the plan fits it (GitHub Issues has no native Epic/subtask — flatten + reference).
+the plan fits it. On **GitHub** the tree is native: Epic = Issue `[Epic] …`, Stories and
+Tasks are **sub-issues** (`addSubIssue`), each with a `[Type]` title prefix + `type`
+label (§P2); the Project board is the cross-epic roadmap, not a tree level.
 
 ## Step 2 — Decompose (spawn `pm-decomposer`)
 
@@ -107,9 +113,10 @@ yet. Create depth-first, capturing each returned ID:
 2. For each Story: create it with `parent = epic_id`; capture its ID.
 3. For each Task under that Story: create it with `parent = story_id`.
 
-Map each item onto the tracker per §P2 as you go (ADF for Jira; label+reference for
-GitHub Issues). Default each item to the team's default/backlog state; set no
-status/assignee the user didn't ask for (§P7).
+Map each item onto the tracker per §P2 as you go (ADF for Jira; on **GitHub**, create
+the issue then wire `parent` with `addSubIssue`, apply the `[Type]` prefix + `type`
+label, and add it to the epic's Project board). Default each item to the team's
+default/backlog state; set no status/assignee the user didn't ask for (§P7).
 
 **Stop-on-partial-failure (§P5):** if any create fails, **halt immediately** — do not
 continue the tree, do not retry-storm. Report exactly what was created (with keys/URLs)

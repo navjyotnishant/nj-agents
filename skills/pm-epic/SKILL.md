@@ -1,6 +1,6 @@
 ---
 name: pm-epic
-description: Use this skill when the user asks to "create an epic", "draft an epic in Linear/Jira", "write an epic for this initiative", or wants a well-formed Epic issue. Drafts one Epic — goal, problem, success measure, scope/out-of-scope — plus a SUGGESTED decomposition into candidate stories (as a list; it does not create them). On opt-in it creates the epic in whatever PM tracker is connected via MCP (Linear/Jira/Notion/GitHub Issues), else hands you paste-ready markdown. Never bulk-creates. To actually build the Epic→Stories→Tasks tree, use /pm-plan. Works with any connected tracker; nothing here is project-specific.
+description: Use this skill when the user asks to "create an epic", "draft an epic in Linear/Jira", "write an epic for this initiative", or wants a well-formed Epic issue. Drafts one Epic to the industry-standard SAFe epic-hypothesis format — goal/outcome, problem, success measure, scope/out-of-scope — plus a SUGGESTED decomposition into candidate stories (as a list; it does not create them). On opt-in it creates the epic in whatever PM tracker is connected via MCP (Linear/Jira/Notion/GitHub Issues), else hands you paste-ready markdown. Never bulk-creates. To actually build the Epic→Stories→Tasks tree, use /pm-plan. Works with any connected tracker; nothing here is project-specific.
 version: 0.1.0
 class: pm
 author: navjyotnishant
@@ -35,6 +35,11 @@ and **suggests** how it breaks down — but it creates only the epic. To create 
 **Epic → Stories → Tasks** tree in one sequential run, use **`/pm-plan`** (which reuses
 this skill's drafting).
 
+> **Standards-grounded, not house style.** The epic format follows the **SAFe epic
+> hypothesis** (outcome + leading indicator, scope bounded both ways) — see
+> `CONVENTIONS-pm.md §P0` for the full field set and its sources. The item you get is
+> one a PMP/SAFe-trained PM would recognize, on whatever tracker you use.
+
 ## Step 0 — Print the banner FIRST
 
 ```
@@ -56,16 +61,21 @@ unknowns `TBD` or ask.
 
 ## Step 2 — Draft into the neutral issue model (§P2)
 
-Fill the neutral model with `type: epic`:
+Fill the neutral model with `type: epic`, covering the **full §P0 epic field set** so
+the item is standard-complete (mark a genuinely unknown field `TBD`, never drop it):
 
 - **title** — the initiative, outcome-framed ("Self-serve billing").
 - **description** — structured:
-  - **Goal** — the outcome, one or two sentences.
-  - **Problem / why now** — what this solves.
-  - **Success measure** — how you'll know it worked (a metric or observable state).
+  - **Goal / outcome** — the change in the world, one or two sentences.
+  - **Problem / why now** — the business rationale.
+  - **Success measure** — the hypothesis' leading indicator or observable end-state
+    (a metric or state), not "it works".
   - **Scope** and **Out of scope** — bounded explicitly; out-of-scope prevents creep.
+  - **Stakeholders / dependencies / risks** — when known (§P0 optional; include if they
+    shape the epic).
 - **labels / priority** — if supplied or the tracker needs them.
-- (An epic has no acceptance criteria of its own — those live on its stories.)
+- (An epic has no acceptance criteria of its own — those live on its stories; done =
+  its stories Done.)
 
 ## Step 3 — Suggest the decomposition (list only — do NOT create)
 
@@ -79,9 +89,10 @@ grounded (§P7) — don't pad it with plausible-but-unasked stories.
 
 Detect the connected PM MCP; if several, ask. Resolve team/project/board from the
 workspace or ask — never assume (§P7). Search for an existing epic matching this
-initiative; **offer to update** rather than duplicate (§P4). Map per the §P2 table
-(mind: GitHub Issues has no native Epic type — represent as a label + tracking issue,
-and say so; Jira description is ADF).
+initiative — **strip any `[Epic]` title prefix when matching** — and **offer to update**
+rather than duplicate (§P4). Map per the §P2 table. On **GitHub** the epic is an
+**Issue** titled `[Epic] <title>` with an `epic` label (not a Project — the Project
+board is the cross-epic roadmap); on **Jira** the description is ADF.
 
 ## Step 5 — Propose the create, never silently (§P3)
 

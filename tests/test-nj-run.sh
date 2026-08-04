@@ -173,6 +173,80 @@ rm -rf "$NJ_RUN_DIR"
 ( unset NJ_RUN_DIR; "$NJ" report >/dev/null 2>&1 ); rc=$?
 check "no active run is a harness error, not a silent new run" "$rc" "2"
 
+# --- §T14 flake ledger --------------------------------------------------------
+# The ledger is the one thing nj-run writes INTO the repo, and the only state that
+# outlives a run. Until it existed /flake-watch read a file nothing wrote (always
+# "insufficient history"), and /test-triage — barred from calling `flake` without
+# ledger history — could never reach that verdict, so genuine flakes were filed as
+# defects. The read path was complete; the write path did not exist.
+ledger_repo() { d="$(mktemp -d)"; git -C "$d" init -q; echo "$d"; }
+recs() { python3 -c 'import json,sys;print(len(json.load(open(sys.argv[1]))["specs"]))' "$1/.nj-agents/flake-ledger.json"; }
+field() { python3 -c 'import json,sys;d=json.load(open(sys.argv[1]))["specs"];print(list(d.values())[0][sys.argv[2]])' "$1/.nj-agents/flake-ledger.json" "$2"; }
+
+d="$(ledger_repo)"
+( cd "$d" && "$NJ" ledger record --spec e2e/a.spec.ts --status pass >/dev/null
+             "$NJ" ledger record --spec e2e/a.spec.ts --status fail >/dev/null
+             "$NJ" ledger record --spec e2e/a.spec.ts --status pass >/dev/null )
+check "counts accumulate across runs (§T14)" "$(field "$d" runs)" "3"
+check "fails are counted separately"         "$(field "$d" fails)" "1"
+check "the recent window records order"      "$(field "$d" recent)" "PFP"
+case "$(ls "$d/.nj-agents/flake-ledger.json")" in
+  *.nj-agents/flake-ledger.json) ok "ledger is at the committed §T14 path" ;;
+  *) bad "ledger is at the committed §T14 path" "wrong path" ;;
+esac
+rm -rf "$d"
+
+# Rename survival — the requirement §T14 states outright, because keyed on path
+# alone every refactor silently resets the data and a chronically unstable spec
+# gets a clean slate it did not earn.
+d="$(ledger_repo)"
+( cd "$d" && "$NJ" ledger record --spec e2e/a.spec.ts --status fail --id A1 >/dev/null
+             "$NJ" ledger record --spec moved/deep/a.spec.ts --status pass --id A1 >/dev/null )
+check "an --id keeps history across a move (§T14)" "$(recs "$d")" "1"
+check "  and the run count survives"               "$(field "$d" runs)" "2"
+check "  and the new path is recorded"             "$(field "$d" path)" "moved/deep/a.spec.ts"
+rm -rf "$d"
+
+# The other direction, and the one that bit during development: three files named
+# login.spec.ts in different suites are three specs. Every "merge when the basename
+# is unambiguous" rule tried collapsed them into ONE record with fabricated history,
+# because each merge rewrites the path and the next scan then sees a single match
+# again. A missed merge loses history and is recoverable with --id; a wrong merge
+# invents a fail rate someone acts on.
+d="$(ledger_repo)"
+( cd "$d" && for p in admin shop other; do
+    "$NJ" ledger record --spec "$p/login.spec.ts" --status pass >/dev/null 2>&1
+  done )
+check "same-named specs in different dirs stay apart" "$(recs "$d")" "3"
+out="$( cd "$d" && "$NJ" ledger record --spec fourth/login.spec.ts --status pass 2>&1 )"
+case "$out" in
+  *"--id"*) ok "an unlinked move says how to link it" ;;
+  *) bad "an unlinked move says how to link it" "no hint in: $out" ;;
+esac
+rm -rf "$d"
+
+# Bounded growth: the file must scale with the number of SPECS, not runs — that is
+# what makes committing it tolerable (§T14 calls the churn "the honest price").
+d="$(ledger_repo)"
+( cd "$d" && i=0; while [ $i -lt 60 ]; do "$NJ" ledger record --spec e2e/w.spec.ts --status pass >/dev/null; i=$((i+1)); done )
+win="$(field "$d" recent)"
+[ "${#win}" -le 50 ] && ok "the recent window is bounded (${#win} <= 50)" \
+                     || bad "the recent window is bounded" "grew to ${#win}"
+check "  while the true run count keeps rising" "$(field "$d" runs)" "60"
+rm -rf "$d"
+
+# §T14: spec identity, counts and dates ONLY. Nothing from an artifact, so §T4's
+# scrub has nothing to do here and cannot be forgotten.
+d="$(ledger_repo)"
+( cd "$d" && "$NJ" ledger record --spec e2e/a.spec.ts --status fail >/dev/null )
+keys="$(python3 -c 'import json;d=json.load(open("'"$d"'/.nj-agents/flake-ledger.json"))["specs"];print(",".join(sorted(list(d.values())[0])))')"
+case "$keys" in
+  *message*|*error*|*url*|*header*|*trace*) bad "ledger stores no artifact data (§T14)" "found: $keys" ;;
+  *) ok "ledger stores identity, counts and dates only (§T14)" ;;
+esac
+rm -rf "$d"
+
+echo
 echo
 echo "$pass passed, $fail failed."
 [ "$fail" -eq 0 ]

@@ -1,6 +1,6 @@
 ---
 name: pm-task
-description: Use this skill when the user asks to "create a task", "add a task/sub-task in Linear/Jira", "break this into a task", or wants a single well-formed Task issue. Drafts one scoped, actionable Task (optionally under a parent Story/Epic), then — on opt-in — creates it in whatever PM tracker is connected via MCP (Linear/Jira/Notion/GitHub Issues), else hands you paste-ready markdown. Never bulk-creates; grounds the task in your intent, never invents. Works with any connected tracker; nothing here is project-specific.
+description: Use this skill when the user asks to "create a task", "add a task/sub-task in Linear/Jira", "break this into a task", or wants a single well-formed Task issue. Drafts one scoped, actionable Task with an explicit done-when (Scrum Definition of Done) exit condition (optionally under a parent Story/Epic), then — on opt-in — creates it in whatever PM tracker is connected via MCP (Linear/Jira/Notion/GitHub Issues), else hands you paste-ready markdown. Never bulk-creates; grounds the task in your intent, never invents. Works with any connected tracker; nothing here is project-specific.
 version: 0.1.0
 class: pm
 author: navjyotnishant
@@ -34,6 +34,11 @@ A Task is the **unit of work** — smaller and more concrete than a Story. Where
 says *what a user gets*, a Task says *what someone does*. Use `/pm-story` if the thing
 is really a user-facing capability with acceptance criteria.
 
+> **Standards-grounded, not house style.** The task follows the **SAFe** unit-of-work
+> shape and the **Scrum** Definition of Done — an imperative action with an explicit
+> done-when exit condition. See `CONVENTIONS-pm.md §P0` for the full field set and its
+> sources. Well-formed on whatever tracker you use.
+
 ## Step 0 — Print the banner FIRST
 
 ```
@@ -54,11 +59,14 @@ scope (§P7); `TBD`/ask beats a fabricated requirement.
 
 ## Step 2 — Draft into the neutral issue model (§P2)
 
-Fill the neutral model with `type: task`:
+Fill the neutral model with `type: task`, covering the **full §P0 task field set** so
+the item is standard-complete (mark a genuinely unknown field `TBD`, never drop it):
 
 - **title** — an imperative action ("Add DB index on `search.created_at`").
-- **description** — what to do and any how/constraints; a short **done-when** line if it
-  sharpens scope (tasks don't need full acceptance criteria the way stories do).
+- **description** — what to do and any how/constraints; and a **done-when** line — the
+  task's Definition of Done exit condition (required per §P0, not optional the way full
+  story acceptance criteria are for a task).
+- **dependencies / blocked-by** — when the task can't start until something else lands.
 - **parent** — the parent Story/Epic ID if the user names one (optional; a task is often
   a child of a Story).
 - **labels / estimate / priority** — only if supplied or the tracker needs them.
@@ -70,13 +78,14 @@ splitting into multiple tasks rather than one vague one.
 
 Detect the connected PM MCP (Linear / Jira / Notion / GitHub Issues); if several, ask.
 Resolve team/project/board from the workspace or ask — never assume (§P7). Map per the
-§P2 table (Jira description is ADF; GitHub Issues has no native subtask — reference the
-parent in the body).
+§P2 table. On **GitHub** the task is an **Issue** titled `[Task] <title>` with a `task`
+label, linked to its parent story as a **native sub-issue** (`addSubIssue`); on **Jira**
+the description is ADF.
 
 ## Step 4 — Search before create (§P4)
 
-Search the target project for an existing task matching this work; **offer to update**
-rather than duplicate.
+Search the target project for an existing task matching this work — **strip any `[Task]`
+title prefix when matching**; **offer to update** rather than duplicate.
 
 ## Step 5 — Propose the create, never silently (§P3)
 
