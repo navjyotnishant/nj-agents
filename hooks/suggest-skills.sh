@@ -115,9 +115,22 @@ case "$prompt" in
   *linkedin*|*twitter*|*" x "*|*social*|*promote*) add "/social-post" ;;
 esac
 # planning / tracker
+#
+# The second line is the one that matters in practice. Reporting a defect is the
+# most common reason to want a tracked item, and it shares no vocabulary with
+# "epic" or "user story" — a real miss looked like "MCP doesn't support X, it's a
+# bug", which matched nothing here and got a hand-written issue instead of
+# /pm-task. `issue` and `ticket` are the broad catches; the rest are the phrasings
+# people actually reach for when something is wrong.
+# NOTE these are shell GLOBS, not regexes: `*"break.*into"*` matched only the
+# literal text "break.*into" and so never fired on "break this into stories".
+# Use `*break*into*` — in a glob, `*` is the wildcard.
 case "$prompt" in
-  *"break.*into"*|*epic*|*"user story"*|*backlog*|*"plan.*feature"*)
+  *break*into*|*epic*|*"user story"*|*"user stories"*|*backlog*|*plan*feature*)
     add "/pm-plan, /pm-epic, /pm-story, /pm-task" ;;
+  *issue*|*ticket*|*"is a bug"*|*"its a bug"*|*"it's a bug"*|*"a defect"* \
+    |*"file a"*|*"raise a"*|*"log a"*|*"track this"*|*"is broken"*)
+    add "/pm-task, /pm-story (track it before writing code)" ;;
 esac
 # EM intelligence report
 case "$prompt" in
