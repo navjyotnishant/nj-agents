@@ -74,6 +74,7 @@
   .page { display: none; }
   .page.active { display: block; animation: fade .25s ease; }
   @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .page.active { animation: none; } * { transition: none !important; } }
   .wrap { max-width: 940px; margin: 0 auto; padding: 40px 28px 100px; }
   .wrap.narrow { max-width: 820px; }
 
@@ -105,6 +106,9 @@
   .class-card li a:hover { color: var(--accent-ink); text-decoration: none; }
   .swatch { width: 9px; height: 9px; border-radius: 50%; flex: none; }
   .sw-review { background: var(--accent); } .sw-authoring { background: var(--warn); } .sw-social { background: var(--social); }
+  .sw-workflow { background: #14b8a6; } .sw-pm { background: #c264c2; } .sw-testing { background: var(--block); }
+  .sw-scan { background: transparent; border: 1.5px dashed var(--accent); }
+  .sw-em { background: transparent; border: 1.5px solid var(--warn); }
 
   .home-callout { display: flex; gap: 12px; padding: 16px 18px; border-radius: 14px; background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border)); margin: 8px 0 0; font-size: 14px; }
 
@@ -182,11 +186,21 @@
   .flow-legend span { display: inline-flex; align-items: center; gap: 6px; }
   .flow-legend i { width: 20px; height: 10px; border-radius: 3px; display: inline-block; }
 
+  /* ---- Text-step flow (new workflows without a hand-authored SVG) ---- */
+  .steps { display: flex; flex-direction: column; gap: 10px; margin: 4px 0 2px; }
+  .step { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; }
+  .step .num { width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft); color: var(--accent-ink); font-family: var(--mono); font-weight: 700; font-size: 13px; display: grid; place-items: center; }
+  .step .body { padding-top: 2px; }
+  .step .body strong { color: var(--ink); }
+  .step .body p { margin: 2px 0 0; color: var(--ink-soft); font-size: 13.5px; }
+  .step.gate .num { background: var(--block-bg); color: var(--block); }
+
   /* ---- Deep-link anchors ---- */
   .anchor { opacity: 0; margin-left: 8px; font-size: .78em; font-weight: 400; color: var(--ink-faint); text-decoration: none; cursor: pointer; transition: opacity .12s ease, color .12s ease; border: 0; background: none; padding: 0; font-family: var(--mono); vertical-align: middle; }
   .card-title:hover .anchor, h2.section-title:hover .anchor, .anchor:focus-visible { opacity: 1; }
   .anchor:hover { color: var(--accent-ink); }
   @media (hover: none) { .anchor { opacity: .5; } }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
   .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(12px); background: var(--ink); color: var(--bg); font-size: 13px; font-weight: 500; padding: 9px 16px; border-radius: 9px; box-shadow: var(--shadow-lg); opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease; z-index: 50; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
@@ -212,7 +226,7 @@
     <section class="hero">
       <div class="eyebrow">Claude Code · skills &amp; agents</div>
       <h1>Automate the work <span class="grad">around your code</span></h1>
-      <p>A personal, project-agnostic collection of Claude Code skills and agents — installed into any repo via symlink. Review before you push, generate docs &amp; diagrams &amp; changelogs, capture redacted screenshots, write grounded technical blogs, and draft launch copy.</p>
+      <p>A personal, project-agnostic collection of Claude Code skills and agents — installed into any repo via symlink. Review before you push, generate docs &amp; diagrams &amp; changelogs, draft work items in your tracker, write and run tests, capture redacted screenshots, and ship grounded technical blogs.</p>
       <div class="cta">
         <button class="btn primary" data-goto="suites">Explore the suites →</button>
         <button class="btn ghost" data-goto="workflows">See how they work</button>
@@ -220,9 +234,9 @@
     </section>
 
     <div class="stat-row">
-      <div class="stat"><div class="n">12</div><div class="l">Skills</div></div>
-      <div class="stat"><div class="n">20</div><div class="l">Agents</div></div>
-      <div class="stat"><div class="n">3</div><div class="l">Classes</div></div>
+      <div class="stat"><div class="n">37</div><div class="l">Skills</div></div>
+      <div class="stat"><div class="n">27</div><div class="l">Agents</div></div>
+      <div class="stat"><div class="n">6</div><div class="l">Classes</div></div>
       <div class="stat"><div class="n">0</div><div class="l">External APIs</div></div>
     </div>
 
@@ -237,6 +251,16 @@
           <li><a data-goto="reference" data-hash="review-tests-build"><span class="swatch sw-review"></span> <code>/review-tests-build</code></a></li>
           <li><a data-goto="reference" data-hash="review-dependencies"><span class="swatch sw-review"></span> <code>/review-dependencies</code></a></li>
           <li><a data-goto="reference" data-hash="review-style"><span class="swatch sw-review"></span> <code>/review-style</code></a></li>
+          <li><a data-goto="reference" data-hash="claude-design-pull"><span class="swatch sw-review"></span> <code>/claude-design-pull</code></a></li>
+        </ul>
+      </div>
+      <div class="class-card">
+        <h3><span class="swatch sw-scan"></span> Repo-maintenance</h3>
+        <p class="tagline">Debt scans, not pass/fail gates · never modifies</p>
+        <ul>
+          <li><a data-goto="reference" data-hash="dead-code-finder"><span class="swatch sw-scan"></span> <code>/dead-code-finder</code></a></li>
+          <li><a data-goto="reference" data-hash="test-gap-finder"><span class="swatch sw-scan"></span> <code>/test-gap-finder</code></a></li>
+          <li><a data-goto="reference" data-hash="deps-upgrade"><span class="swatch sw-scan"></span> <code>/deps-upgrade</code></a></li>
         </ul>
       </div>
       <div class="class-card">
@@ -246,8 +270,40 @@
           <li><a data-goto="reference" data-hash="changelog"><span class="swatch sw-authoring"></span> <code>/changelog</code></a></li>
           <li><a data-goto="reference" data-hash="arch-diagram"><span class="swatch sw-authoring"></span> <code>/arch-diagram</code></a></li>
           <li><a data-goto="reference" data-hash="capture-screenshots"><span class="swatch sw-authoring"></span> <code>/capture-screenshots</code></a></li>
-          <li><a data-goto="reference" data-hash="tech-blog"><span class="swatch sw-authoring"></span> <code>/tech-blog</code></a></li>
+          <li><a data-goto="reference" data-hash="screenshot-docs-sync"><span class="swatch sw-authoring"></span> <code>/screenshot-docs-sync</code></a></li>
           <li><a data-goto="reference" data-hash="docs-site"><span class="swatch sw-authoring"></span> <code>/docs-site</code></a></li>
+          <li><a data-goto="reference" data-hash="tech-blog"><span class="swatch sw-authoring"></span> <code>/tech-blog</code></a></li>
+          <li><a data-goto="reference" data-hash="scaffold-project"><span class="swatch sw-authoring"></span> <code>/scaffold-project</code></a></li>
+        </ul>
+      </div>
+      <div class="class-card">
+        <h3><span class="swatch sw-workflow"></span> Workflow suite</h3>
+        <p class="tagline">Reads the diff · drafts a change artifact · never auto-acts</p>
+        <ul>
+          <li><a data-goto="reference" data-hash="pr-describe"><span class="swatch sw-workflow"></span> <code>/pr-describe</code></a></li>
+          <li><a data-goto="reference" data-hash="commit-assistant"><span class="swatch sw-workflow"></span> <code>/commit-assistant</code></a></li>
+          <li><a data-goto="reference" data-hash="release-notes"><span class="swatch sw-workflow"></span> <code>/release-notes</code></a></li>
+        </ul>
+      </div>
+      <div class="class-card">
+        <h3><span class="swatch sw-pm"></span> PM-authoring suite</h3>
+        <p class="tagline">Writes a work item into your tracker · proposes the create</p>
+        <ul>
+          <li><a data-goto="reference" data-hash="pm-plan"><span class="swatch sw-pm"></span> <code>/pm-plan</code></a></li>
+          <li><a data-goto="reference" data-hash="pm-epic"><span class="swatch sw-pm"></span> <code>/pm-epic</code></a></li>
+          <li><a data-goto="reference" data-hash="pm-story"><span class="swatch sw-pm"></span> <code>/pm-story</code></a></li>
+          <li><a data-goto="reference" data-hash="pm-task"><span class="swatch sw-pm"></span> <code>/pm-task</code></a></li>
+        </ul>
+      </div>
+      <div class="class-card">
+        <h3><span class="swatch sw-testing"></span> Testing suite</h3>
+        <p class="tagline">Writes test source <em>and</em> executes it — the only class that does both</p>
+        <ul>
+          <li><a data-goto="reference" data-hash="test-suite-author"><span class="swatch sw-testing"></span> <code>/test-suite-author</code></a></li>
+          <li><a data-goto="reference" data-hash="e2e-suite"><span class="swatch sw-testing"></span> <code>/e2e-suite</code></a></li>
+          <li><a data-goto="reference" data-hash="test-plan"><span class="swatch sw-testing"></span> <code>/test-plan</code></a></li>
+          <li><a data-goto="reference" data-hash="test-report"><span class="swatch sw-testing"></span> <code>/test-report</code></a></li>
+          <li><a data-goto="reference" data-hash="ref-testing"><span class="swatch sw-testing"></span> …and 6 more</a></li>
         </ul>
       </div>
       <div class="class-card">
@@ -256,7 +312,15 @@
         <ul>
           <li><a data-goto="reference" data-hash="social-post"><span class="swatch sw-social"></span> <code>/social-post</code></a></li>
         </ul>
-        <p class="tagline" style="margin-top:14px">Plus <strong>21 sub-agents</strong> the skills orchestrate — see the <a data-goto="reference" data-hash="agents">Reference</a> or <a data-goto="workflows">Workflows</a>.</p>
+      </div>
+      <div class="class-card">
+        <h3><span class="swatch sw-em"></span> EM intelligence</h3>
+        <p class="tagline">Self-contained reports · underlying class is authoring</p>
+        <ul>
+          <li><a data-goto="reference" data-hash="em-newsletter"><span class="swatch sw-em"></span> <code>/em-newsletter</code></a></li>
+          <li><a data-goto="reference" data-hash="vertical-pulse"><span class="swatch sw-em"></span> <code>/vertical-pulse</code></a></li>
+        </ul>
+        <p class="tagline" style="margin-top:14px">Plus <strong>27 sub-agents</strong> the skills orchestrate — see the <a data-goto="reference" data-hash="agents">Reference</a> or <a data-goto="workflows">Workflows</a>.</p>
       </div>
     </div>
 
@@ -270,17 +334,25 @@
 <!-- ============================ SUITES ============================ -->
 <div class="page" id="page-suites" role="tabpanel">
   <div class="wrap">
-    <div class="page-head"><h1>The suites</h1><p>Two classes of skill with opposite stances on touching your repo — plus a social class that produces copy you post. Both code-facing classes share one rule: the human decides what gets committed.</p></div>
+    <div class="page-head"><h1>The suites</h1><p>Six classes of skill with different stances on touching your repo — from advise-only review to test source that runs. Both code-facing classes share one rule: the human decides what gets committed.</p></div>
 
     <section id="classes">
-      <h2 class="section-title">Two classes, one rule</h2>
+      <h2 class="section-title">Six classes, one rule</h2>
       <dl class="meta-grid" style="row-gap:14px;">
         <dt><span class="swatch sw-review" style="display:inline-block"></span> Review</dt>
-        <dd><strong>Advise only, leave no files, never commit.</strong> Reads your changes and reports. Shared rules: <code>CONVENTIONS.md</code>.</dd>
+        <dd><strong>Advise only, leave no files, never commit.</strong> Reads your changes and reports. A <code>gate</code> subclass reviews a diff and returns PASS/WARN/BLOCK; a <code>scan</code> subclass (repo-maintenance) sweeps the whole tree for accumulated debt and returns candidates. Shared rules: <code>CONVENTIONS.md</code>.</dd>
         <dt><span class="swatch sw-authoring" style="display:inline-block"></span> Authoring</dt>
-        <dd><strong>Writes an artifact into the repo</strong> (changelog, diagram, blog, screenshots, docs), then <strong>proposes</strong> the commit — never runs <code>git add/commit/push/tag</code>. Shared rules: <code>CONVENTIONS-authoring.md</code>.</dd>
+        <dd><strong>Writes an artifact into the repo</strong> (changelog, diagram, blog, screenshots, docs, a scaffolded project), then <strong>proposes</strong> the commit — never runs <code>git add/commit/push/tag</code>. Shared rules: <code>CONVENTIONS-authoring.md</code> §A1–A8.</dd>
+        <dt><span class="swatch sw-workflow" style="display:inline-block"></span> Workflow</dt>
+        <dd>Reads the diff like review, invents nothing, proposes like authoring — but its artifact is a <strong>PR / commit message / release, not a repo file</strong>, so the placement rules don't apply. <code>gh</code> detected, never required.</dd>
+        <dt><span class="swatch sw-pm" style="display:inline-block"></span> PM-authoring</dt>
+        <dd>Writes a work item into your <strong>tracker</strong> (Linear/Jira/Notion/GitHub Issues), then proposes the create. Every item drafted to a standard — <strong>INVEST</strong> stories, <strong>Scrum</strong> Gherkin criteria &amp; Definition of Done, <strong>SAFe</strong> Epic→Story→Task. Tracker-agnostic, MCP-detect-never-require, markdown fallback. Shared rules: <code>CONVENTIONS-pm.md</code>.</dd>
         <dt><span class="swatch sw-social" style="display:inline-block"></span> Social</dt>
         <dd>Produces <strong>paste-ready copy</strong> for a published thing. Never writes to the repo, never auto-posts.</dd>
+        <dt><span class="swatch sw-testing" style="display:inline-block"></span> Testing</dt>
+        <dd><strong>Writes test source into the repo <em>and</em> executes it</strong> — the only class that does both. Three clauses are machine-enforced by <code>check.sh</code>: <strong>T1</strong> writes only inside detected test dirs, <strong>T2</strong> never weakens or deletes an assertion, <strong>T3</strong> requires an explicit non-prod base URL or it BLOCKs. Run state goes through <code>bin/nj-run</code>. Shared rules: <code>CONVENTIONS-testing.md</code> §T1–T14.</dd>
+        <dt><span class="swatch sw-em" style="display:inline-block"></span> EM intelligence</dt>
+        <dd>Self-contained EM/vertical reports (<code>class:</code> is authoring under the hood — no seventh class swatch is emitted by frontmatter). See the <a data-goto="reference" data-hash="ref-em">EM reference</a>.</dd>
       </dl>
 
       <h4 class="legend-title">Verdicts (review dimensions &amp; gated pipelines)</h4>
@@ -297,38 +369,72 @@
       <p class="section-blurb">Skills are symlinked into a Claude Code config dir; invoke any one with its slash command. The installer globs the repo, so new skills/agents are picked up automatically.</p>
       <pre><code><span class="cmt"># global (all projects) — symlinks into ~/.claude/</span>
 <span class="cmd">./install.sh</span>
+<span class="cmt"># another runner — gemini, codex, cursor, agents</span>
+<span class="cmd">./install.sh --runner gemini</span>
 <span class="cmt"># per-project — into DIR/.claude/</span>
 <span class="cmd">./install.sh --project /path/to/your/repo</span>
+<span class="cmt"># opt-in per-project push gate (runs the repo's own E2E suite)</span>
+<span class="cmd">./install.sh --git-hooks --project /path/to/your/repo</span>
 <span class="cmt"># remove (only symlinks pointing back into this repo)</span>
 <span class="cmd">./install.sh --uninstall</span>
 
 <span class="cmt"># then, in any repo:</span>
-<span class="cmd">/pre-push-review</span>   <span class="cmt"># or /changelog, /arch-diagram, /docs-site, ...</span></code></pre>
+<span class="cmd">/pre-push-review</span>   <span class="cmt"># or /changelog, /arch-diagram, /docs-site, /pm-plan, /e2e-suite, ...</span></code></pre>
       <div class="callout"><span>📎</span><span>Idempotent, symlink-based (edit the repo → every install updates), and it refuses to clobber a real file. Reload Claude Code after installing.</span></div>
     </section>
 
     <section>
       <h2 class="section-title">At a glance</h2>
-      <p class="section-blurb">The whole suite in one table. Jump to any skill's full card in the <a data-goto="reference">Reference</a>.</p>
+      <p class="section-blurb">All 37 skills in one table, grouped by class. Jump to any skill's full card in the <a data-goto="reference">Reference</a>.</p>
       <div class="agent-table-wrap">
         <table class="agents">
           <thead><tr><th>Skill</th><th>Class</th><th>What it does</th></tr></thead>
           <tbody>
-            <tr class="grp-row"><td colspan="3">Review</td></tr>
-            <tr><td class="name"><code>/pre-push-review</code></td><td>review</td><td class="role">Umbrella — secret gate, then 5 dimensions in parallel → one PASS/WARN/BLOCK verdict + report.</td></tr>
+            <tr class="grp-row"><td colspan="3">Review — gate</td></tr>
+            <tr><td class="name"><code>/pre-push-review</code></td><td>review</td><td class="role">Umbrella — secret gate, then 5 dimensions in parallel → one PASS/WARN/BLOCK verdict + self-contained HTML report.</td></tr>
             <tr><td class="name"><code>/review-secrets</code></td><td>review</td><td class="role">Required scanner gate (gitleaks/trufflehog/detect-secrets) + semantic security pass.</td></tr>
-            <tr><td class="name"><code>/review-correctness</code></td><td>review</td><td class="role">Bugs, regressions, edge cases, missing validation in the changed lines.</td></tr>
-            <tr><td class="name"><code>/review-tests-build</code></td><td>review</td><td class="role">Auto-detects &amp; runs the repo's test/lint/build commands as a gate.</td></tr>
-            <tr><td class="name"><code>/review-dependencies</code></td><td>review</td><td class="role">Dependency/version/license changes &amp; supply-chain signals (typosquats).</td></tr>
-            <tr><td class="name"><code>/review-style</code></td><td>review</td><td class="role">Consistency, commit-message hygiene, leftover debug/TODO.</td></tr>
+            <tr><td class="name"><code>/review-correctness</code></td><td>review</td><td class="role">Bugs, regressions, edge cases, missing validation in the changed lines + blast radius.</td></tr>
+            <tr><td class="name"><code>/review-tests-build</code></td><td>review</td><td class="role">Auto-detects &amp; runs the repo's test/lint/build commands as a gate. Never installs.</td></tr>
+            <tr><td class="name"><code>/review-dependencies</code></td><td>review</td><td class="role">Added/upgraded packages, pinning risk, license changes, typosquatting. Diff-only.</td></tr>
+            <tr><td class="name"><code>/review-style</code></td><td>review</td><td class="role">Consistency with surrounding code, commit-message hygiene, leftover debug/TODO.</td></tr>
+            <tr><td class="name"><code>/claude-design-pull</code></td><td>review</td><td class="role">Pulls approved Claude Design mockups; BLOCKs while a page's structure or computed styles differ. Measures only.</td></tr>
+            <tr class="grp-row"><td colspan="3">Repo-maintenance — scan</td></tr>
+            <tr><td class="name"><code>/dead-code-finder</code></td><td>review</td><td class="role">Finds unreferenced exports/functions/files/deps; detects the repo's own tool or falls back. Never deletes.</td></tr>
+            <tr><td class="name"><code>/test-gap-finder</code></td><td>review</td><td class="role">Maps code paths to tests, flags uncovered paths + missing edge cases. Never writes tests.</td></tr>
+            <tr><td class="name"><code>/deps-upgrade</code></td><td>review</td><td class="role">Surveys the whole manifest for available upgrades; risk-classifies, proposes a plan. Never upgrades.</td></tr>
             <tr class="grp-row"><td colspan="3">Authoring</td></tr>
-            <tr><td class="name"><code>/changelog</code></td><td>authoring</td><td class="role">Keep a Changelog + SemVer from commit history; proposes the commit.</td></tr>
-            <tr><td class="name"><code>/arch-diagram</code></td><td>authoring</td><td class="role">Docs-grounded architecture diagram (draw.io+SVG default / Excalidraw / mermaid / Figma).</td></tr>
+            <tr><td class="name"><code>/changelog</code></td><td>authoring</td><td class="role">Keep a Changelog + SemVer from commit history; merges into <code>[Unreleased]</code>. Proposes the commit.</td></tr>
+            <tr><td class="name"><code>/arch-diagram</code></td><td>authoring</td><td class="role">Presentation-quality SVG (infographic default, <code>--sketch</code> on request) via a render→look→critique gate.</td></tr>
             <tr><td class="name"><code>/capture-screenshots</code></td><td>authoring</td><td class="role">Capture → detect PII → redact → verify-gate; only the redacted image is committed.</td></tr>
-            <tr><td class="name"><code>/tech-blog</code></td><td>authoring</td><td class="role">Multi-agent post; fact-checker blocks unverifiable claims.</td></tr>
-            <tr><td class="name"><code>/docs-site</code></td><td>authoring</td><td class="role">Universal doc-site generator (this page); auto-derives structure, flags gaps.</td></tr>
+            <tr><td class="name"><code>/screenshot-docs-sync</code></td><td>authoring</td><td class="role">Keeps docs and their embedded screenshots current as the UI drifts; re-captures only what changed.</td></tr>
+            <tr><td class="name"><code>/docs-site</code></td><td>authoring</td><td class="role">Self-contained theme-aware <code>docs.html</code> (this page); auto-derives the menu, flags gaps. <code>--generated</code> for a site.</td></tr>
+            <tr><td class="name"><code>/tech-blog</code></td><td>authoring</td><td class="role">Multi-agent post; fact-checker BLOCKs unverifiable claims. Generates its own diagrams/screenshots.</td></tr>
+            <tr><td class="name"><code>/scaffold-project</code></td><td>authoring</td><td class="role">Lays out a new repo to the OpenSSF OSPS Baseline; cites each file by control ID.</td></tr>
+            <tr class="grp-row"><td colspan="3">Workflow</td></tr>
+            <tr><td class="name"><code>/pr-describe</code></td><td>workflow</td><td class="role">Drafts a PR title + body from the branch's delta vs its base; fills the repo's PR template. Never pushes.</td></tr>
+            <tr><td class="name"><code>/commit-assistant</code></td><td>workflow</td><td class="role">Drafts Conventional Commit message(s) from the working tree; prints the <code>git add</code>/<code>commit</code> block. Never pushes.</td></tr>
+            <tr><td class="name"><code>/release-notes</code></td><td>workflow</td><td class="role">Turns a version's changes into a draft GitHub Release; reuses the <code>CHANGELOG.md</code> section. Never publishes.</td></tr>
+            <tr class="grp-row"><td colspan="3">PM-authoring</td></tr>
+            <tr><td class="name"><code>/pm-plan</code></td><td>pm</td><td class="role">Orchestrator — decomposes a feature into an Epic→Stories→Tasks tree, previews the whole tree, creates parent-first.</td></tr>
+            <tr><td class="name"><code>/pm-epic</code></td><td>pm</td><td class="role">Drafts one Epic to the SAFe epic-hypothesis standard + a suggested story breakdown.</td></tr>
+            <tr><td class="name"><code>/pm-story</code></td><td>pm</td><td class="role">Drafts one INVEST user story + Gherkin acceptance criteria per the Scrum Guide.</td></tr>
+            <tr><td class="name"><code>/pm-task</code></td><td>pm</td><td class="role">Drafts one scoped Task with an explicit done-when (Scrum Definition of Done) exit condition.</td></tr>
+            <tr class="grp-row"><td colspan="3">Testing</td></tr>
+            <tr><td class="name"><code>/test-suite-author</code></td><td>testing</td><td class="role">Generation umbrella — <code>/test-plan</code> → <code>/test-author</code> → <code>/test-data</code>, pausing at each stage. Never commits.</td></tr>
+            <tr><td class="name"><code>/e2e-suite</code></td><td>testing</td><td class="role">Execution umbrella — runs the suite, classifies every failure, returns one PASS/WARN/BLOCK. Never repairs.</td></tr>
+            <tr><td class="name"><code>/e2e-run</code></td><td>testing</td><td class="role">Detects the repo's own E2E runner, BLOCKs unless the base URL is non-prod, captures trace/HAR/video to a gitignored temp dir.</td></tr>
+            <tr><td class="name"><code>/test-plan</code></td><td>testing</td><td class="role">Turns a requirement into a structured case matrix — equivalence classes, boundaries, negative paths, authz.</td></tr>
+            <tr><td class="name"><code>/test-author</code></td><td>testing</td><td class="role">Generates specs in the repo's own framework; enforces a <code>data-testid</code> locator contract, flags brittle selectors.</td></tr>
+            <tr><td class="name"><code>/test-data</code></td><td>testing</td><td class="role">Fixtures/factories so each spec owns its data — unique per run, cleaned up. Credentials from env, never on disk.</td></tr>
+            <tr><td class="name"><code>/test-repair</code></td><td>testing</td><td class="role">Fixes a test only where the test is at fault; may not weaken an assertion, add a sleep, raise a retry, or add a skip.</td></tr>
+            <tr><td class="name"><code>/test-report</code></td><td>testing</td><td class="role">Traceability requirement → case → spec → status → defect; leads with what is NOT covered. <code>--html</code> renders a page.</td></tr>
+            <tr><td class="name"><code>/test-triage</code></td><td>testing</td><td class="role">Classifies each failure — real defect · test bug · environment · flake · data — with confidence and cited evidence.</td></tr>
+            <tr><td class="name"><code>/flake-watch</code></td><td>testing</td><td class="role">Reads the committed flake ledger — fail rate per spec, what crosses the quarantine threshold. Quarantine proposed, never applied.</td></tr>
             <tr class="grp-row"><td colspan="3">Social</td></tr>
             <tr><td class="name"><code>/social-post</code></td><td>social</td><td class="role">Grounded LinkedIn/X promo copy from a published URL; never auto-posts.</td></tr>
+            <tr class="grp-row"><td colspan="3">EM intelligence (authoring)</td></tr>
+            <tr><td class="name"><code>/em-newsletter</code></td><td>authoring</td><td class="role">Self-contained EM weekly newsletter report.</td></tr>
+            <tr><td class="name"><code>/vertical-pulse</code></td><td>authoring</td><td class="role">Self-contained vertical/industry pulse report.</td></tr>
           </tbody>
         </table>
       </div>
@@ -339,11 +445,11 @@
 <!-- ============================ WORKFLOWS ============================ -->
 <div class="page" id="page-workflows" role="tabpanel">
   <div class="wrap">
-    <div class="page-head"><h1>How they work</h1><p>Four workflows, drawn straight from the skill and agent definitions — the orchestration, the gates, and where a step can BLOCK.</p></div>
+    <div class="page-head"><h1>How they work</h1><p>Workflows drawn straight from the skill and agent definitions — the orchestration, the gates, and where a step can BLOCK.</p></div>
 
     <div class="flow" id="wf-suite-overview">
       <h3>Suite overview</h3>
-      <p class="desc">12 skills across three classes and the 21 agents they orchestrate. You invoke a skill; it spawns the agents it needs.</p>
+      <p class="desc">37 skills across six classes and the 27 agents they orchestrate. You invoke a skill; it spawns the agents it needs.</p>
       <div class="diagram-card">
 <svg style="max-width:100%;height:auto;display:block;margin:0 auto" xmlns="http://www.w3.org/2000/svg" width="867.1400000000001" height="878" viewBox="0 0 867.1400000000001 878" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
 <defs><filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#1b1e24" flood-opacity="0.10"/></filter></defs>
@@ -444,8 +550,8 @@
     </div>
 
     <div class="flow" id="wf-workflow-pre-push">
-      <h3>/pre-push-review — secret gate, then parallel fan-out</h3>
-      <p class="desc">The secret scan runs first and alone; nothing is shared with any sub-agent until it clears. Then the rest run in one parallel batch and aggregate.</p>
+      <h3>/pre-push-review — secret gate, then parallel fan-out, then an HTML report</h3>
+      <p class="desc">The secret scan runs first and alone; nothing is shared with any sub-agent until it clears. Then the five dimensions run in one parallel batch and aggregate; <code>review-report-writer</code> renders the result.</p>
       <div class="diagram-card">
 <svg style="max-width:100%;height:auto;display:block;margin:0 auto" xmlns="http://www.w3.org/2000/svg" width="1101.5" height="942" viewBox="0 0 1101.5 942" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
 <defs><filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#1b1e24" flood-opacity="0.10"/></filter></defs>
@@ -530,11 +636,14 @@
 </g>
 </svg>
       </div>
+      <div class="steps" style="margin-top:16px">
+        <div class="step"><div class="num">6</div><div class="body"><strong>review-report-writer renders the report.</strong><p>After the five dimensions aggregate, it builds a self-contained HTML report from the findings it is given — a verdict banner, per-dimension cards, findings by severity with <code>file:line</code>, and the run's scope / scanner / fleet. It renders the given findings only; it invents nothing.</p></div></div>
+      </div>
     </div>
 
     <div class="flow" id="wf-workflow-tech-blog">
-      <h3>/tech-blog — pipeline with a blocking fact-check</h3>
-      <p class="desc">writer → fact-checker → reviewer → editor is sequential; the fact-checker hard-blocks, looping to the writer until no claim is wrong or unverifiable.</p>
+      <h3>/tech-blog — write → fact-check (BLOCK) → review → edit → polish → lint → post</h3>
+      <p class="desc">A seven-agent pipeline. The fact-checker hard-blocks any claim it can't verify against the repo, looping back to the writer until every fact is grounded.</p>
       <div class="diagram-card">
 <svg style="max-width:100%;height:auto;display:block;margin:0 auto" xmlns="http://www.w3.org/2000/svg" width="1121.75" height="638" viewBox="0 0 1121.75 638" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
 <defs><filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#1b1e24" flood-opacity="0.10"/></filter></defs>
@@ -622,8 +731,8 @@
     </div>
 
     <div class="flow" id="wf-workflow-capture-screenshots">
-      <h3>/capture-screenshots — the redaction verify-gate</h3>
-      <p class="desc">capture → detect PII → redact → verify. The verify step hard-blocks: if coverage can't be confirmed, nothing is written.</p>
+      <h3>/capture-screenshots — capture → detect → redact → verify (BLOCK)</h3>
+      <p class="desc">A redaction pipeline. The un-redacted original never leaves a gitignored dir; unproven coverage BLOCKs the write.</p>
       <div class="diagram-card">
 <svg style="max-width:100%;height:auto;display:block;margin:0 auto" xmlns="http://www.w3.org/2000/svg" width="1182.5" height="486" viewBox="0 0 1182.5 486" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
 <defs><filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#1b1e24" flood-opacity="0.10"/></filter></defs>
@@ -688,6 +797,40 @@
 </svg>
       </div>
     </div>
+
+    <div class="flow" id="wf-pm-plan">
+      <h3>/pm-plan — decompose the tree, preview once, create parent-first</h3>
+      <p class="desc">Turns a feature-sized ask into a tracked Epic→Stories→Tasks tree, tool-agnostic and draft-first. One approval covers the whole tree; a re-run reconciles rather than double-creating.</p>
+      <div class="steps">
+        <div class="step"><div class="num">1</div><div class="body"><strong>pm-decomposer builds a neutral tree.</strong><p>Decomposes the ask into an Epic (SAFe hypothesis) → INVEST stories → done-when tasks — tracker-agnostic, no create yet.</p></div></div>
+        <div class="step"><div class="num">2</div><div class="body"><strong>Preview the whole tree.</strong><p>The entire hierarchy is shown for a single approval — not one prompt per item.</p></div></div>
+        <div class="step"><div class="num">3</div><div class="body"><strong>Opt in, then create sequentially, parent-first.</strong><p>Epic first, then its stories, then each story's tasks — wiring links as it goes (native sub-issues on GitHub).</p></div></div>
+        <div class="step gate"><div class="num">!</div><div class="body"><strong>Stop-on-partial-failure; reconcile on re-run.</strong><p>Any partial failure stops and reports what was created. A re-run searches before creating (§P4), so it links to existing items rather than duplicating. No tracker connected → paste-ready markdown fallback.</p></div></div>
+      </div>
+    </div>
+
+    <div class="flow" id="wf-test-suite-author">
+      <h3>/test-suite-author — plan → author → data, pausing at every stage</h3>
+      <p class="desc">Ticket → cases → specs → fixtures in one run. Each stage is reviewed before the next consumes it. Writes only inside detected test dirs; proposes the commit, never runs git.</p>
+      <div class="steps">
+        <div class="step"><div class="num">1</div><div class="body"><strong>/test-plan — the case matrix.</strong><p>Turns the requirement into equivalence classes, boundaries, negative paths, and authz cases; marks each <code>new</code>/<code>covered</code>/<code>inferred</code>. <em>Pauses for review.</em></p></div></div>
+        <div class="step"><div class="num">2</div><div class="body"><strong>/test-author — specs in the repo's own framework.</strong><p>Generates specs, enforcing a <code>data-testid</code> locator contract and flagging brittle selectors. Missing testids are proposed, not reached into app source. <em>Pauses for review.</em></p></div></div>
+        <div class="step"><div class="num">3</div><div class="body"><strong>/test-data — per-spec fixtures.</strong><p>Each spec owns its data — unique per run, cleaned up after; credentials from env, never on disk. <em>Pauses for review.</em></p></div></div>
+        <div class="step gate"><div class="num">!</div><div class="body"><strong>Files the uncovered cases as tracker sub-tasks.</strong><p>On approval, opens <code>TEST-</code>-prefixed sub-tasks via <code>/pm-task</code> (search-before-create, so a re-run links rather than duplicates). Never commits — not with <code>--yes</code>, not in CI.</p></div></div>
+      </div>
+    </div>
+
+    <div class="flow" id="wf-e2e-suite">
+      <h3>/e2e-suite — run, triage, weigh by history, report one verdict</h3>
+      <p class="desc">The execution umbrella. Cost scales with failures, not specs — a green suite is nearly free. It never repairs anything.</p>
+      <div class="steps">
+        <div class="step gate"><div class="num">!</div><div class="body"><strong>/e2e-run captures the evidence.</strong><p>Detects the repo's own runner and <span class="v block" style="padding:1px 6px">BLOCKS</span> unless the base URL is explicitly non-prod, then captures trace/HAR/video/console into a gitignored temp dir. Raw artifacts never leave it.</p></div></div>
+        <div class="step"><div class="num">2</div><div class="body"><strong>/test-triage classifies each failure.</strong><p>Real defect · test bug · environment · flake · data — with confidence and cited evidence. Never calls <code>flake</code> from a single run.</p></div></div>
+        <div class="step"><div class="num">3</div><div class="body"><strong>/flake-watch weighs by history.</strong><p>Reads the committed flake ledger so a green run resting on known-flaky specs isn't scored the same as a clean one.</p></div></div>
+        <div class="step"><div class="num">4</div><div class="body"><strong>/test-report renders the matrix.</strong><p>Requirement → case → spec → status → defect; leads with what is NOT covered.</p></div></div>
+        <div class="step gate"><div class="num">→</div><div class="body"><strong>One PASS/WARN/BLOCK.</strong><p>A quarantined subagent forces BLOCK rather than being outvoted; a test bug is WARN, never PASS; ambiguity never resolves toward PASS.</p></div></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -696,18 +839,19 @@
   <div class="wrap narrow">
     <div class="page-head"><h1>Reference</h1><p>Every skill and agent, grounded in its definition file. Hover a heading to copy a deep link.</p></div>
 
-    <h2 class="section-title" id="ref-review">Review suite</h2>
+    <h2 class="section-title" id="ref-review">Review suite — gate</h2>
     <p class="section-blurb">AI-assisted review of your current commit or uncommitted changes. Advises only — never pushes, commits, or bypasses hooks.</p>
 
     <article class="card" id="pre-push-review">
       <div class="card-head">
-        <div class="card-title"><code>/pre-push-review</code> <span class="badge multi">umbrella</span> <span class="badge ver">v0.3.0</span></div>
-        <p class="card-purpose">Runs all five review dimensions — secret scan first as a gate, then the rest in parallel — and aggregates one verdict with a report artifact. Supports non-interactive CI mode with an exit-code contract.</p>
+        <div class="card-title"><code>/pre-push-review</code> <span class="badge multi">umbrella</span> <span class="badge ver">v0.4.0</span></div>
+        <p class="card-purpose">Runs all five review dimensions — secret scan first as a gate, then the rest in parallel — and aggregates one verdict with a self-contained HTML report artifact. Supports non-interactive CI mode with an exit-code contract.</p>
         <dl class="meta-grid">
           <dt>Invoke</dt><dd><code>/pre-push-review</code></dd>
           <dt>Reviews</dt><dd>staged + unstaged + committed-but-unpushed changes</dd>
           <dt>Requires</dt><dd>a git repo, a diff, and a secret scanner on PATH</dd>
-          <dt>Expect</dt><dd class="verdicts"><span class="v pass">PASS</span><span class="v warn">WARN</span><span class="v block">BLOCK</span> + per-dimension table &amp; report</dd>
+          <dt>Agents</dt><dd><span class="agent-pills"><code>correctness-reviewer</code><code>tests-build-runner</code><code>dependency-reviewer</code><code>style-reviewer</code><code>secrets-reviewer</code><code>review-report-writer</code></span></dd>
+          <dt>Expect</dt><dd class="verdicts"><span class="v pass">PASS</span><span class="v warn">WARN</span><span class="v block">BLOCK</span> + per-dimension table &amp; HTML report</dd>
         </dl>
       </div>
       <details class="more"><summary><span class="chev">›</span> Full flow</summary><div class="more-body">
@@ -717,7 +861,7 @@
           <li>Builds the diff snapshot + <strong>diff hygiene</strong> (excludes lockfiles/binaries/generated; caps huge diffs to a partial top-N).</li>
           <li><strong>Secret gate first</strong> — nothing shared with a sub-agent until it clears.</li>
           <li>Spawns correctness, tests/build, dependencies, style + the semantic security pass <strong>in parallel</strong>.</li>
-          <li>Aggregates → one verdict; writes a timestamped report (gitignored, no unmasked secrets).</li>
+          <li>Aggregates → one verdict; <code>review-report-writer</code> renders a self-contained HTML report (verdict banner, per-dimension cards, findings by severity + <code>file:line</code>, scope/scanner/fleet) — gitignored, no unmasked secrets.</li>
           <li>Optionally offers to wire a git pre-push hook — proposed, never silently installed.</li>
         </ol>
         <h4>Exit-code contract (hook / CI)</h4>
@@ -726,7 +870,7 @@
     </article>
 
     <article class="card" id="review-secrets">
-      <div class="card-head"><div class="card-title"><code>/review-secrets</code> <span class="badge">dimension</span> <span class="badge ver">v0.3.0</span></div>
+      <div class="card-head"><div class="card-title"><code>/review-secrets</code> <span class="badge">dimension</span> <span class="badge ver">v0.4.0</span></div>
         <p class="card-purpose">The security gate. A <strong>required</strong> dedicated scanner runs over the diff first (hard gate), then a deeper semantic security pass.</p>
         <dl class="meta-grid"><dt>Requires</dt><dd><code>gitleaks</code>, <code>trufflehog</code>, or <code>detect-secrets</code> on PATH</dd><dt>Agent</dt><dd><span class="agent-pills"><code>secrets-reviewer</code></span></dd><dt>Expect</dt><dd class="verdicts"><span class="v block">BLOCK</span> on secret or missing scanner · <span class="v warn">WARN</span> · <span class="v pass">PASS</span></dd></dl>
       </div>
@@ -738,7 +882,7 @@
     </article>
 
     <article class="card" id="review-correctness">
-      <div class="card-head"><div class="card-title"><code>/review-correctness</code> <span class="badge">dimension</span> <span class="badge ver">v0.2.0</span></div>
+      <div class="card-head"><div class="card-title"><code>/review-correctness</code> <span class="badge">dimension</span> <span class="badge ver">v0.3.0</span></div>
         <p class="card-purpose">Reviews changed lines and their blast radius for logic errors, regressions, unhandled edge cases, and missing validation.</p>
         <dl class="meta-grid"><dt>Scope</dt><dd>changed lines + callers/contracts — not the whole repo</dd><dt>Agent</dt><dd><span class="agent-pills"><code>correctness-reviewer</code></span></dd><dt>Expect</dt><dd class="verdicts"><span class="v block">BLOCK</span> real bug · <span class="v warn">WARN</span> · <span class="v pass">PASS</span></dd></dl>
       </div>
@@ -746,11 +890,11 @@
         <li>Off-by-one / boundary, null/undefined/None derefs, inverted conditionals</li>
         <li>Changed signatures/returns that break existing callers; unhandled edge cases</li>
         <li>Missing validation on new inputs; resource leaks; concurrency hazards</li>
-      </ul><p style="color:var(--ink-soft);margin:8px 0 0">High-confidence findings only (≥80), each with a concrete failure scenario + fix.</p></div></details>
+      </ul><p style="color:var(--ink-soft);margin:8px 0 0">High-confidence findings only, each with a concrete failure scenario + fix.</p></div></details>
     </article>
 
     <article class="card" id="review-tests-build">
-      <div class="card-head"><div class="card-title"><code>/review-tests-build</code> <span class="badge">dimension</span> <span class="badge ver">v0.2.0</span></div>
+      <div class="card-head"><div class="card-title"><code>/review-tests-build</code> <span class="badge">dimension</span> <span class="badge ver">v0.3.0</span></div>
         <p class="card-purpose">Auto-detects and runs the repo's own test/lint/build commands. Never hardcodes a stack; never installs tooling.</p>
         <dl class="meta-grid"><dt>Detects</dt><dd>Node, Python, Go, Rust, JVM, Make/just — or commands in <code>CLAUDE.md</code>/<code>AGENTS.md</code></dd><dt>Agent</dt><dd><span class="agent-pills"><code>tests-build-runner</code></span></dd><dt>Expect</dt><dd class="verdicts"><span class="v block">BLOCK</span> a fail · <span class="v pass">PASS</span> · <span class="v skip">SKIP</span> none found</dd></dl>
       </div>
@@ -761,7 +905,7 @@
     </article>
 
     <article class="card" id="review-dependencies">
-      <div class="card-head"><div class="card-title"><code>/review-dependencies</code> <span class="badge">dimension</span> <span class="badge ver">v0.2.0</span></div>
+      <div class="card-head"><div class="card-title"><code>/review-dependencies</code> <span class="badge">dimension</span> <span class="badge ver">v0.3.0</span></div>
         <p class="card-purpose">Governance review of dependency &amp; license changes — added/upgraded packages, pinning risk, license shifts, supply-chain signals.</p>
         <dl class="meta-grid"><dt>Scope</dt><dd>manifest changes only — no network, no install</dd><dt>Agent</dt><dd><span class="agent-pills"><code>dependency-reviewer</code></span></dd><dt>Expect</dt><dd class="verdicts"><span class="v block">BLOCK</span> · <span class="v warn">WARN</span> · <span class="v pass">PASS</span> · <span class="v skip">SKIP</span></dd></dl>
       </div>
@@ -774,7 +918,7 @@
     </article>
 
     <article class="card" id="review-style">
-      <div class="card-head"><div class="card-title"><code>/review-style</code> <span class="badge">dimension</span> <span class="badge ver">v0.2.0</span></div>
+      <div class="card-head"><div class="card-title"><code>/review-style</code> <span class="badge">dimension</span> <span class="badge ver">v0.3.0</span></div>
         <p class="card-purpose">Consistency &amp; hygiene: does new code match the conventions around it, are commit messages clean, is there leftover debug output.</p>
         <dl class="meta-grid"><dt>Standard</dt><dd>inferred from surrounding code — not a hardcoded guide</dd><dt>Agent</dt><dd><span class="agent-pills"><code>style-reviewer</code></span></dd><dt>Expect</dt><dd class="verdicts">usually <span class="v warn">WARN</span> / <span class="v pass">PASS</span></dd></dl>
       </div>
@@ -785,8 +929,44 @@
       </ul></div></details>
     </article>
 
+    <article class="card" id="claude-design-pull">
+      <div class="card-head"><div class="card-title"><code>/claude-design-pull</code> <span class="badge">gate</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Pulls approved mockups from Claude Design and <strong>BLOCKS</strong> while a page's structure or computed styles differ from the approved design. Measures only — never edits app code.</p>
+        <dl class="meta-grid"><dt>Scope</dt><dd>enforces manifest coverage, not hand-picked selectors</dd><dt>Agent</dt><dd><span class="agent-pills"><code>design-parity-checker</code></span></dd><dt>Expect</dt><dd class="verdicts"><span class="v block">BLOCK</span> on a structure/style divergence · <span class="v pass">PASS</span></dd></dl>
+      </div>
+      <details class="more"><summary><span class="chev">›</span> Full flow</summary><div class="more-body"><ol>
+        <li>Pulls the approved mockup(s) from Claude Design.</li>
+        <li><code>design-parity-checker</code> compares live DOM structure + computed styles against the approved design across the manifest's coverage.</li>
+        <li><strong>Any divergence BLOCKS.</strong> It measures only; it never reaches into app code to fix.</li>
+      </ol></div></details>
+    </article>
+
+    <h2 class="section-title" id="ref-maintenance">Repo-maintenance — scan</h2>
+    <p class="section-blurb">Debt scans rather than pass/fail gates. Changed-set by default, <code>--full</code> for the whole tree. Same advise-only discipline: never delete, never write tests, never upgrade — detect the repo's own tooling with a labeled fallback.</p>
+
+    <article class="card" id="dead-code-finder">
+      <div class="card-head"><div class="card-title"><code>/dead-code-finder</code> <span class="badge">scan</span> <span class="badge ver">v0.2.0</span></div>
+        <p class="card-purpose">Finds unreferenced code — unused exports, functions, files, and dependencies. Detects the repo's own tool (knip/ts-prune, vulture, deadcode, cargo-udeps) or falls back to a manual cross-reference. Confidence-rated; <strong>never deletes</strong>.</p>
+        <dl class="meta-grid"><dt>Scope</dt><dd>changed set by default · <code>--full</code> for the whole tree</dd><dt>Agent</dt><dd><span class="agent-pills"><code>dead-code-finder</code></span></dd><dt>Expect</dt><dd>confidence-rated candidates — never a deletion</dd></dl>
+      </div>
+    </article>
+
+    <article class="card" id="test-gap-finder">
+      <div class="card-head"><div class="card-title"><code>/test-gap-finder</code> <span class="badge">scan</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Maps code paths to tests, flags uncovered paths + missing edge-case tests. Uses the repo's own coverage tool, else a labeled heuristic. <strong>Never writes tests.</strong></p>
+        <dl class="meta-grid"><dt>Scope</dt><dd>changed set by default · <code>--full</code> for the whole tree</dd><dt>Agent</dt><dd><span class="agent-pills"><code>test-gap-finder</code></span></dd><dt>Expect</dt><dd>uncovered paths + missing edge cases — advises only</dd></dl>
+      </div>
+    </article>
+
+    <article class="card" id="deps-upgrade">
+      <div class="card-head"><div class="card-title"><code>/deps-upgrade</code> <span class="badge">scan</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Surveys the <strong>whole manifest</strong> for available upgrades (distinct from <code>/review-dependencies</code>, which reviews diff changes); risk-classifies and proposes a plan. Zero-network by default; <strong>never upgrades or edits the manifest</strong>.</p>
+        <dl class="meta-grid"><dt>Subject</dt><dd>the whole manifest by definition</dd><dt>Agent</dt><dd><span class="agent-pills"><code>deps-upgrade</code></span></dd><dt>Expect</dt><dd>a risk-classified upgrade plan — never an edit</dd></dl>
+      </div>
+    </article>
+
     <h2 class="section-title" id="ref-authoring">Authoring suite</h2>
-    <p class="section-blurb">Generates artifacts from your project and places them in the repo, then proposes the commit. Nothing is invented — everything traces to the source.</p>
+    <p class="section-blurb">Generates artifacts from your project and places them in the repo, then proposes the commit. Nothing is invented — everything traces to the source. Shared rules: <code>CONVENTIONS-authoring.md</code> §A1–A8.</p>
 
     <article class="card" id="changelog">
       <div class="card-head"><div class="card-title"><code>/changelog</code> <span class="badge">authoring</span> <span class="badge ver">v0.1.0</span></div>
@@ -802,16 +982,15 @@
     </article>
 
     <article class="card" id="arch-diagram">
-      <div class="card-head"><div class="card-title"><code>/arch-diagram</code> <span class="badge">authoring</span> <span class="badge ver">v0.3.0</span></div>
-        <p class="card-purpose">Reads your README/docs/ADRs, then generates a system/solution/sequence/data-flow/deployment/ER diagram in the icon-tile house style, places it in <code>docs/architecture/</code>, and proposes the commit — with an enforced visual-QA gate.</p>
-        <dl class="meta-grid"><dt>Format</dt><dd>default <strong>icon-tile SVG</strong> (crisp line icons + soft cards + subtle Excalidraw sketch, generated from a JSON model); draw.io, Excalidraw, mermaid, or Figma (MCP) on request</dd><dt>Agents</dt><dd><span class="agent-pills"><code>diagram-architect</code><code>diagram-qa</code></span></dd><dt>Expect</dt><dd>a QA-passed <code>.svg</code> (+ editable JSON model) in docs, embedded, + a proposed commit</dd></dl>
+      <div class="card-head"><div class="card-title"><code>/arch-diagram</code> <span class="badge">authoring</span> <span class="badge ver">v0.4.0</span></div>
+        <p class="card-purpose">Authors a presentation-quality SVG into <code>docs/architecture/</code> — infographic by default, <code>--sketch</code> on request — then renders and reviews it before shipping, and proposes the commit.</p>
+        <dl class="meta-grid"><dt>Format</dt><dd><strong>infographic</strong> SVG (clean gradients, system font, crisp connectors) by default; <code>--sketch</code> swaps in flat paper fills, a handwriting font, and a subtle wobble — only the finish differs</dd><dt>Agent</dt><dd><span class="agent-pills"><code>diagram-architect</code></span></dd><dt>Expect</dt><dd>a reviewed <code>.svg</code> (+ its JSON source model) in <code>docs/architecture/</code>, embedded, + a proposed commit</dd></dl>
       </div>
       <details class="more"><summary><span class="chev">›</span> Full flow</summary><div class="more-body"><ol>
-        <li>Ingests architecture docs to <strong>ground</strong> it; <code>diagram-architect</code> builds a structured model and picks colors by meaning (red=failure, green=success — enforced).</li>
-        <li>Renders to a self-contained icon-tile SVG (nodes = icon + label + class-color stripe, hand-drawn frame/arrows).</li>
-        <li><strong>Enforced QA loop:</strong> <code>diagram-qa</code> checks overflow/overlap/clipping/missing-icon/semantic-color + a visual pass, and <strong>blocks</strong>; the renderer auto-fixes mechanical issues, the architect re-draws layout ones — loop until PASS.</li>
+        <li>Ingests architecture docs to <strong>ground</strong> it; <code>diagram-architect</code> authors the SVG directly and picks colors by meaning (red=failure, green=success, orange=AI agents, grey=neutral — enforced).</li>
+        <li><strong>Enforced visual gate:</strong> render to PNG (<code>rsvg-convert</code>), <strong>look at it</strong>, and critique against the 15-second test — headline states the outcome, no crossing arrows, no clipped text, every number right. Fix and repeat, capped at 2 rounds.</li>
         <li>Embeds the SVG; proposes the commit. Every box/arrow traces to the repo.</li>
-      </ol></div></details>
+      </ol><div class="callout"><span>ℹ️</span><span>The rough.js renderer and the <code>diagram-qa</code> agent were removed in v0.4.0 — diagrams are now authored directly as SVG and edited by hand.</span></div></div></details>
     </article>
 
     <article class="card" id="capture-screenshots">
@@ -824,7 +1003,27 @@
         <li><strong>Detect</strong> — marks PII/secrets with regions + risk class.</li>
         <li><strong>Redact</strong> — full/solid box for high-risk, partial mask (or placeholder) for illustrative.</li>
         <li><strong>Verify gate</strong> — unproven coverage <span class="v block" style="padding:1px 6px">BLOCKS</span> the write.</li>
-      </ol><div class="callout safe"><span>🛡️</span><span><strong>The un-redacted original is never committed</strong> — it stays in a gitignored <code>.screenshots-raw/</code>.</span></div></div></details>
+      </ol><div class="callout safe"><span>🛡️</span><span><strong>The un-redacted original is never committed</strong> — it stays in a gitignored raw dir.</span></div></div></details>
+    </article>
+
+    <article class="card" id="screenshot-docs-sync">
+      <div class="card-head"><div class="card-title"><code>/screenshot-docs-sync</code> <span class="badge">authoring</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Keeps docs and their embedded screenshots current as the UI drifts — diffs since the last doc update, re-captures only what changed, and edits in place. The <strong>maintenance</strong> loop; <code>/capture-screenshots</code> is the one-shot.</p>
+        <dl class="meta-grid"><dt>Writes</dt><dd>updated screenshots + the docs that embed them</dd><dt>Agent</dt><dd>—</dd><dt>Expect</dt><dd>only the changed shots re-captured; a proposed commit</dd></dl>
+      </div>
+    </article>
+
+    <article class="card" id="docs-site">
+      <div class="card-head"><div class="card-title"><code>/docs-site</code> <span class="badge multi">multi-agent</span> <span class="badge ver">v0.2.0</span></div>
+        <p class="card-purpose">Universal documentation generator (it built this page). From existing docs, the codebase, an outline, or structured definition files (SKILL.md/OpenAPI/JSON-Schema): auto-derives the menu, grounds everything in the source (flags gaps), embeds auto-redacted screenshots via <code>/capture-screenshots</code>.</p>
+        <dl class="meta-grid"><dt>Inputs</dt><dd>docs · codebase · outline · definition files (any/all)</dd><dt>Modes</dt><dd>single self-contained <code>docs.html</code> (default) · <code>--generated</code> multi-page MkDocs site</dd><dt>Agents</dt><dd><span class="agent-pills"><code>docs-architect</code><code>docs-designer</code></span></dd><dt>Expect</dt><dd>a browsable page; gaps flagged; a proposed commit</dd></dl>
+      </div>
+      <details class="more"><summary><span class="chev">›</span> Full flow</summary><div class="more-body"><ol>
+        <li>Resolves inputs + scope; ingests into a content model (parses definition files exactly).</li>
+        <li><code>docs-architect</code> auto-derives sections, writes grounded copy, <strong>flags gaps</strong>.</li>
+        <li>If a page needs UI shots, delegates to <code>/capture-screenshots</code> (auto-redacted).</li>
+        <li><code>docs-designer</code> builds the self-contained page; proposes the commit. In <code>--generated</code> mode it emits the MkDocs config + a <code>gen-files</code> hook so pages are built at build time, never written to disk.</li>
+      </ol><div class="callout"><span>🧩</span><span>Run it inside <code>nj-agents</code> and it regenerates this very reference.</span></div></div></details>
     </article>
 
     <article class="card" id="tech-blog">
@@ -833,24 +1032,79 @@
         <dl class="meta-grid"><dt>Writes</dt><dd><code>docs/blog/&lt;slug&gt;.md</code> + publish-ready MD/HTML</dd><dt>Agents</dt><dd><span class="agent-pills"><code>blog-writer</code><code>blog-fact-checker</code><code>blog-reviewer</code><code>blog-editor</code><code>blog-final-polish</code><code>blog-platform-lint</code><code>blog-poster</code></span></dd><dt>Expect</dt><dd>a grounded post; a proposed commit; posting only via a connected MCP (or Dev.to fallback) you opt into</dd></dl>
       </div>
       <details class="more"><summary><span class="chev">›</span> Pipeline</summary><div class="more-body"><ol>
-        <li>Deep repo ingest + discovers <code>/arch-diagram</code> outputs to embed.</li>
+        <li>Deep repo ingest + generates its own <code>/arch-diagram</code> and <code>/capture-screenshots</code> outputs to embed.</li>
         <li><code>blog-writer</code> drafts (cites each claim) → <code>blog-fact-checker</code> <strong>hard-blocks</strong> wrong/unverifiable claims, looping to the writer.</li>
         <li><code>blog-reviewer</code> critiques → <code>blog-editor</code> finalizes (embeds diagrams, front-matter, terminology/emphasis passes).</li>
         <li><code>blog-final-polish</code> (mechanical checklist) + <code>blog-platform-lint</code> (platform rules) run, then optional <code>blog-poster</code> draft.</li>
       </ol><div class="callout"><span>✅</span><span>Nothing is invented: every fact traces to your repo, or it doesn't ship.</span></div></div></details>
     </article>
 
-    <article class="card" id="docs-site">
-      <div class="card-head"><div class="card-title"><code>/docs-site</code> <span class="badge multi">multi-agent</span> <span class="badge ver">v0.1.0</span></div>
-        <p class="card-purpose">Universal documentation generator (it built this page). From existing docs, the codebase, an outline, or structured definition files (SKILL.md/OpenAPI/JSON-Schema): auto-derives the menu, grounds everything in the source (flags gaps), embeds auto-redacted screenshots via <code>/capture-screenshots</code>.</p>
-        <dl class="meta-grid"><dt>Inputs</dt><dd>docs · codebase · outline · definition files (any/all)</dd><dt>Agents</dt><dd><span class="agent-pills"><code>docs-architect</code><code>docs-designer</code></span></dd><dt>Expect</dt><dd>a browsable <code>docs.html</code>; gaps flagged; a proposed commit</dd></dl>
+    <article class="card" id="scaffold-project">
+      <div class="card-head"><div class="card-title"><code>/scaffold-project</code> <span class="badge">authoring</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Lays out a <strong>new</strong> repo to the OpenSSF OSPS Baseline (Level 1 default), delegating stack layout to the ecosystem generator (<code>cargo new</code> / <code>uv init</code> / …). Cites each file by control ID; verifies before reporting done.</p>
+        <dl class="meta-grid"><dt>Grounds in</dt><dd>the OSPS Baseline (by control ID) + the ecosystem's own generator + a supplied project doc — never invention</dd><dt>Agent</dt><dd>—</dd><dt>Expect</dt><dd>a scaffolded repo with each file cited to a control; a proposed commit</dd></dl>
+      </div>
+    </article>
+
+    <h2 class="section-title" id="ref-workflow">Workflow suite</h2>
+    <p class="section-blurb">Reads a diff like the review class but invents nothing; proposes like authoring but its artifact is a <strong>PR / commit message / release, not a repo file</strong>. <code>gh</code> is detected, never required.</p>
+
+    <article class="card" id="pr-describe">
+      <div class="card-head"><div class="card-title"><code>/pr-describe</code> <span class="badge">workflow</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Drafts a PR <strong>title + body</strong> from the branch's delta vs its base (the PR view). Fills the repo's own PR template when present; grounds every line in a real commit/hunk. Opens a <strong>draft</strong> PR only if you opt in and <code>gh</code> is present; else hands you the text. Never pushes, never opens a non-draft PR, never merges.</p>
+        <dl class="meta-grid"><dt>Reads</dt><dd>the <code>base..head</code> delta</dd><dt>Agent</dt><dd><span class="agent-pills"><code>pr-describer</code></span></dd><dt>Expect</dt><dd>a template-filled title + body; a draft PR only on opt-in</dd></dl>
+      </div>
+    </article>
+
+    <article class="card" id="commit-assistant">
+      <div class="card-head"><div class="card-title"><code>/commit-assistant</code> <span class="badge">workflow</span> <span class="badge ver">v0.2.0</span></div>
+        <p class="card-purpose">Drafts Conventional Commit message(s) from the working-tree changes and prints the <code>git add</code> + <code>git commit</code> block. Splits unrelated changes into separate commits; respects existing staging. Then <strong>offers to run each one</strong>, asking per commit and showing exactly what it would stage. Never pushes or tags; CI mode prints only.</p>
+        <dl class="meta-grid"><dt>Reads</dt><dd>the working-tree changes</dd><dt>Agent</dt><dd>—</dd><dt>Expect</dt><dd>a per-commit <code>git add</code>/<code>commit</code> block; runs a commit only when you say so</dd></dl>
+      </div>
+    </article>
+
+    <article class="card" id="release-notes">
+      <div class="card-head"><div class="card-title"><code>/release-notes</code> <span class="badge">workflow</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Turns a version's changes into a <strong>draft GitHub Release</strong> — reuses the <code>CHANGELOG.md</code> section as the body (composes with <code>/changelog</code>), else summarizes the commit delta. Drafts <code>gh release create --draft</code>; never publishes, never pushes a tag.</p>
+        <dl class="meta-grid"><dt>Reuses</dt><dd>the <code>CHANGELOG.md</code> section (else the commit delta)</dd><dt>Agent</dt><dd>—</dd><dt>Expect</dt><dd>a drafted <code>gh release create --draft</code> — never a publish</dd></dl>
+      </div>
+    </article>
+
+    <h2 class="section-title" id="ref-pm">PM-authoring suite</h2>
+    <p class="section-blurb">Tool-agnostic (Linear / Jira / Notion / GitHub Issues via a connected MCP), draft-first, MCP-detect-never-require, with a paste-ready-markdown fallback. Every item is drafted to a recognized standard — <strong>INVEST</strong> (stories), the <strong>Scrum Guide</strong> (Gherkin criteria, Definition of Done), and <strong>SAFe</strong> (Epic→Story→Task, epic hypothesis). Shared rules: <code>CONVENTIONS-pm.md</code>.</p>
+
+    <article class="card" id="pm-plan">
+      <div class="card-head"><div class="card-title"><code>/pm-plan</code> <span class="badge multi">umbrella</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Orchestrator — decomposes a feature-sized ask into an Epic→Stories→Tasks tree (via <code>pm-decomposer</code>), previews the <strong>whole tree</strong> for one approval, then creates it <strong>sequentially, parent-first</strong>, wiring links. Stops-and-reports on any partial failure; reconciles a re-run so it never double-creates.</p>
+        <dl class="meta-grid"><dt>Creates</dt><dd>an Epic→Stories→Tasks tree in the connected tracker (native sub-issues on GitHub) — else markdown</dd><dt>Agent</dt><dd><span class="agent-pills"><code>pm-decomposer</code></span></dd><dt>Expect</dt><dd>a previewed tree, one approval, parent-first creation; stop-on-partial-failure</dd></dl>
       </div>
       <details class="more"><summary><span class="chev">›</span> Full flow</summary><div class="more-body"><ol>
-        <li>Resolves inputs + scope; ingests into a content model (parses definition files exactly).</li>
-        <li><code>docs-architect</code> auto-derives sections, writes grounded copy, <strong>flags gaps</strong>.</li>
-        <li>If a page needs UI shots, delegates to <code>/capture-screenshots</code> (auto-redacted).</li>
-        <li><code>docs-designer</code> builds the self-contained page; proposes the commit.</li>
-      </ol><div class="callout"><span>🧩</span><span>Run it inside <code>nj-agents</code> and it regenerates this very reference.</span></div></div></details>
+        <li><code>pm-decomposer</code> builds a neutral Epic→Stories→Tasks tree, tracker-agnostic — no create yet.</li>
+        <li>The whole tree is previewed for a single approval.</li>
+        <li>On opt-in, creates sequentially parent-first, wiring links; a partial failure <strong>stops and reports</strong> what was created.</li>
+        <li>A re-run searches before creating (§P4), linking to existing items rather than duplicating. No tracker → paste-ready markdown.</li>
+      </ol></div></details>
+    </article>
+
+    <article class="card" id="pm-epic">
+      <div class="card-head"><div class="card-title"><code>/pm-epic</code> <span class="badge">pm</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Drafts one <strong>Epic</strong> to the <strong>SAFe epic-hypothesis</strong> standard (goal/outcome, problem, success measure, scope/out-of-scope) + a <strong>suggested</strong> story breakdown; on opt-in creates the epic only. Use <code>/pm-plan</code> to build the whole tree.</p>
+        <dl class="meta-grid"><dt>Standard</dt><dd>SAFe epic hypothesis</dd><dt>Agent</dt><dd>—</dd><dt>Expect</dt><dd>a drafted Epic + a suggested breakdown; the epic created only on opt-in — else markdown</dd></dl>
+      </div>
+    </article>
+
+    <article class="card" id="pm-story">
+      <div class="card-head"><div class="card-title"><code>/pm-story</code> <span class="badge">pm</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Drafts one <strong>INVEST user story</strong> ("As a … I want … so that …") + <strong>Gherkin (Given/When/Then) acceptance criteria</strong> per the Scrum Guide; on opt-in creates it in the connected tracker, else paste-ready markdown. Optional parent Epic.</p>
+        <dl class="meta-grid"><dt>Standard</dt><dd>INVEST + Scrum Gherkin acceptance criteria</dd><dt>Agent</dt><dd>—</dd><dt>Expect</dt><dd>a drafted story; created only on opt-in — else markdown</dd></dl>
+      </div>
+    </article>
+
+    <article class="card" id="pm-task">
+      <div class="card-head"><div class="card-title"><code>/pm-task</code> <span class="badge">pm</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Drafts one scoped, actionable <strong>Task</strong> with an explicit <strong>done-when (Scrum Definition of Done)</strong> exit condition (optionally under a Story/Epic); on opt-in creates it, else markdown.</p>
+        <dl class="meta-grid"><dt>Standard</dt><dd>Scrum Definition of Done (done-when)</dd><dt>Agent</dt><dd>—</dd><dt>Expect</dt><dd>a drafted task; created only on opt-in — else markdown</dd></dl>
+      </div>
     </article>
 
     <h2 class="section-title" id="ref-social">Social</h2>
@@ -869,9 +1123,99 @@
       </ol><div class="callout"><span>📢</span><span>Never posts; won't call a publishing MCP unless you explicitly opt in.</span></div></div></details>
     </article>
 
+    <h2 class="section-title" id="ref-testing">Testing suite</h2>
+    <p class="section-blurb">The only class that <strong>writes test source into the repo and executes it</strong>. Three clauses are machine-enforced by <code>check.sh</code>: <strong>T1</strong> writes only inside detected test dirs, <strong>T2</strong> never weakens or deletes an assertion, <strong>T3</strong> requires an explicit non-prod base URL or it BLOCKs. Run state goes through <code>bin/nj-run</code> (manifest, cost, subagents, append-only log). <em>Dedicated agents are pending — NAV-161.</em></p>
+
+    <article class="card" id="test-suite-author">
+      <div class="card-head"><div class="card-title"><code>/test-suite-author</code> <span class="badge multi">umbrella</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Generation umbrella — ticket → cases → specs → fixtures in one run: chains <code>/test-plan</code> → <code>/test-author</code> → <code>/test-data</code>. <strong>Pauses after every stage</strong> so each is reviewed before the next consumes it; <code>--yes</code> skips the prompts but removes no constraint. On approval, files the uncovered cases as <code>TEST-</code>-prefixed tracker sub-tasks via <code>/pm-task</code>. <strong>Never commits.</strong></p>
+        <dl class="meta-grid"><dt>Chains</dt><dd><code>/test-plan</code> → <code>/test-author</code> → <code>/test-data</code>, pausing at each stage</dd><dt>Agents</dt><dd>agents pending (NAV-161)</dd><dt>Expect</dt><dd>reviewed specs + fixtures in test dirs; a proposed commit — never an auto-commit</dd></dl>
+      </div>
+    </article>
+
+    <article class="card" id="e2e-suite">
+      <div class="card-head"><div class="card-title"><code>/e2e-suite</code> <span class="badge multi">umbrella</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Execution umbrella — runs the suite, classifies every failure, returns one PASS/WARN/BLOCK. Cost scales with <em>failures</em>, not specs — a green suite is nearly free. <strong>Never repairs anything.</strong> A test bug is WARN, never PASS; ambiguity never resolves toward PASS.</p>
+        <dl class="meta-grid"><dt>Chains</dt><dd><code>/e2e-run</code> → <code>/test-triage</code> → <code>/flake-watch</code> → <code>/test-report</code></dd><dt>Agents</dt><dd>agents pending (NAV-161)</dd><dt>Expect</dt><dd class="verdicts"><span class="v pass">PASS</span><span class="v warn">WARN</span><span class="v block">BLOCK</span> — a quarantined subagent forces BLOCK</dd></dl>
+      </div>
+    </article>
+
+    <article class="card" id="e2e-run">
+      <div class="card-head"><div class="card-title"><code>/e2e-run</code> <span class="badge">testing</span> <span class="badge ver">v0.2.0</span></div>
+        <p class="card-purpose">Detects the repo's <strong>own</strong> E2E runner (Playwright/Cypress/WDIO/…), BLOCKs unless the base URL is explicitly non-prod, runs the suite, and captures trace/HAR/video/console into a <strong>gitignored temp dir</strong>. Raw artifacts never leave it; published text is secret-scrubbed. Runs tests, never writes them.</p>
+        <dl class="meta-grid"><dt>Requires</dt><dd>an explicit non-prod base URL, or it <span class="v block" style="padding:1px 6px">BLOCKS</span> (§T3)</dd><dt>Agents</dt><dd>agents pending (NAV-161)</dd><dt>Expect</dt><dd>a run manifest + captured evidence in a gitignored temp dir</dd></dl>
+      </div>
+    </article>
+
+    <article class="card" id="test-plan">
+      <div class="card-head"><div class="card-title"><code>/test-plan</code> <span class="badge">testing</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Turns a requirement (from a connected tracker, or pasted) into a <strong>structured case matrix</strong> — equivalence classes, boundaries, negative paths, authz, not just the happy path. Consumes <code>/test-gap-finder</code>'s coverage rather than recomputing it, marks each case <code>new</code>/<code>covered</code>/<code>inferred</code>, and emits JSON for <code>/test-author</code>. Advises only.</p>
+        <dl class="meta-grid"><dt>Emits</dt><dd>a case matrix as JSON for <code>/test-author</code></dd><dt>Agents</dt><dd>agents pending (NAV-161)</dd><dt>Expect</dt><dd>cases marked <code>new</code>/<code>covered</code>/<code>inferred</code> — advises only</dd></dl>
+      </div>
+    </article>
+
+    <article class="card" id="test-author">
+      <div class="card-head"><div class="card-title"><code>/test-author</code> <span class="badge">testing</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Generates specs from those cases <strong>in the repo's own framework</strong> — never one it picks. Enforces a <code>data-testid</code> locator contract and flags brittle selectors (<code>nth-child</code>, text matching, XPath). Writes only inside detected test dirs; if testids are missing it <strong>proposes</strong> adding them rather than reaching into app source. Proposes the commit.</p>
+        <dl class="meta-grid"><dt>Writes</dt><dd>specs, only inside detected test dirs (§T1)</dd><dt>Agents</dt><dd>agents pending (NAV-161)</dd><dt>Expect</dt><dd>specs with a <code>data-testid</code> locator contract; a proposed commit</dd></dl>
+      </div>
+    </article>
+
+    <article class="card" id="test-data">
+      <div class="card-head"><div class="card-title"><code>/test-data</code> <span class="badge">testing</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Fixtures and factories so <strong>each spec owns its data</strong> — unique per run, created by the spec, cleaned up after. Shared mutable fixtures are the usual cause of "flaky" suites that pass alone and fail in parallel. Credentials from env, never written to disk (§T8). Proposes the commit.</p>
+        <dl class="meta-grid"><dt>Writes</dt><dd>fixtures/factories in test dirs; credentials from env, never on disk</dd><dt>Agents</dt><dd>agents pending (NAV-161)</dd><dt>Expect</dt><dd>per-spec data, unique per run and cleaned up; a proposed commit</dd></dl>
+      </div>
+    </article>
+
+    <article class="card" id="test-repair">
+      <div class="card-head"><div class="card-title"><code>/test-repair</code> <span class="badge">testing</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Fixes a test <strong>only where the test is at fault</strong> — fires solely on <code>/test-triage</code>'s <code>test-bug</code> verdict; every other class BLOCKs, including <code>flake</code>. May fix selectors, waits, setup, teardown. <strong>May not weaken or delete an assertion, add a sleep, raise a retry, or add a skip</strong> — assertion changes escalate rather than appearing in the diff. If the real fix is in app source it says so and stops. Proposes a diff; never commits.</p>
+        <dl class="meta-grid"><dt>Fires on</dt><dd>only a <code>test-bug</code> verdict from <code>/test-triage</code></dd><dt>Agents</dt><dd>agents pending (NAV-161)</dd><dt>Expect</dt><dd>a proposed diff (selectors/waits/setup only) — never a weakened assertion</dd></dl>
+      </div>
+    </article>
+
+    <article class="card" id="test-report">
+      <div class="card-head"><div class="card-title"><code>/test-report</code> <span class="badge">testing</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Traceability: requirement → case → spec → status → defect, plus the release position. <strong>Leads with what is NOT covered</strong> — a report that lists passes reads as "we tested this", and a pass rate is not coverage. Weights passes by flake history: a green run resting on three known-flaky specs is not the same result. States the position; does not make the call.</p>
+        <dl class="meta-grid"><dt>Output</dt><dd>a traceability matrix; <code>--html</code> renders the same model as a page</dd><dt>Agents</dt><dd>agents pending (NAV-161)</dd><dt>Expect</dt><dd>coverage-first reporting, passes weighted by flake history</dd></dl>
+      </div>
+    </article>
+
+    <article class="card" id="test-triage">
+      <div class="card-head"><div class="card-title"><code>/test-triage</code> <span class="badge">testing</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Explains a red build: classifies each failure as <strong>real defect · test bug · environment · flake · data</strong>, with a confidence and cited evidence, and blames suspect commits. Reads <code>/e2e-run</code>'s manifest, the diff since last green, and the flake ledger. <strong>Never calls <code>flake</code> from a single run</strong> — that needs ledger history. Advises only; hands defects to <code>/pm-task</code> on your say-so.</p>
+        <dl class="meta-grid"><dt>Reads</dt><dd>the run manifest + diff-since-green + the flake ledger</dd><dt>Agents</dt><dd>agents pending (NAV-161)</dd><dt>Expect</dt><dd>each failure classified with confidence + cited evidence — advises only</dd></dl>
+      </div>
+    </article>
+
+    <article class="card" id="flake-watch">
+      <div class="card-head"><div class="card-title"><code>/flake-watch</code> <span class="badge">testing</span> <span class="badge ver">v0.1.0</span></div>
+        <p class="card-purpose">Reads the <strong>committed</strong> flake ledger: fail rate per spec over the last N runs, what is trending worse, what crosses the quarantine threshold. Quarantine is <strong>proposed, never applied</strong> — each with an SLA and a tracking issue, because a spec dropped from the gate with no owner is a spec deleted slowly. Reports "insufficient history" rather than a rate from three runs, and routes a 100%-failing spec to <code>/test-triage</code>.</p>
+        <dl class="meta-grid"><dt>Reads</dt><dd>the committed flake ledger (fail rate per spec over N runs)</dd><dt>Agents</dt><dd>agents pending (NAV-161)</dd><dt>Expect</dt><dd>quarantine candidates proposed with an SLA + tracking issue — never applied</dd></dl>
+      </div>
+    </article>
+
+    <h2 class="section-title" id="ref-em">EM intelligence</h2>
+    <p class="section-blurb">Self-contained EM/vertical reports. The <code>badge</code> reads <em>self-contained</em>; the underlying <code>class:</code> in frontmatter is <strong>authoring</strong>, so no seventh class swatch is rendered.</p>
+
+    <article class="card" id="em-newsletter">
+      <div class="card-head"><div class="card-title"><code>/em-newsletter</code> <span class="badge">self-contained</span> <span class="badge ver">v1.0.0</span></div>
+        <p class="card-purpose">Produces a verified, sourced, illustrated self-contained EM weekly intelligence report — book of accounts, market pulse, leadership moves, competitive landscape — via a research → adversarial verification → synthesis → render pipeline where every claim is corroborated or visibly quarantined. Runs on any agentic platform with code execution + web search.</p>
+        <dl class="meta-grid"><dt>Class</dt><dd>authoring (rendered as self-contained)</dd><dt>Agent</dt><dd>—</dd><dt>Expect</dt><dd>a self-contained weekly EM report; every claim corroborated or quarantined</dd></dl>
+      </div>
+    </article>
+
+    <article class="card" id="vertical-pulse">
+      <div class="card-head"><div class="card-title"><code>/vertical-pulse</code> <span class="badge">self-contained</span> <span class="badge ver">v1.0.0</span></div>
+        <p class="card-purpose">A one-line shortcut into the EM newsletter pipeline for a single vertical (<code>/vertical-pulse FinTech</code>): resolves accounts and technologies from saved config or a short prompt, defaults to the cheaper verification mode, and runs research → verification → synthesis → render. Self-contained; runs on any agentic platform.</p>
+        <dl class="meta-grid"><dt>Class</dt><dd>authoring (rendered as self-contained)</dd><dt>Agent</dt><dd>—</dd><dt>Expect</dt><dd>a self-contained per-vertical pulse report</dd></dl>
+      </div>
+    </article>
+
     <!-- AGENTS -->
     <h2 class="section-title" id="agents">Agents</h2>
-    <p class="section-blurb">The 21 sub-agents that do the actual work. Skills orchestrate them — you don't invoke agents directly. The colored dot mirrors each agent's <code>color:</code> in its definition.</p>
+    <p class="section-blurb">The 27 sub-agents that do the actual work. Skills orchestrate them — you don't invoke agents directly. The colored dot mirrors each agent's <code>color:</code> in its definition. (The testing suite's own agents are pending — NAV-161 — so no testing skill lists one here.)</p>
     <div class="agent-table-wrap">
       <table class="agents">
         <thead><tr><th>Agent</th><th>What it does</th><th>Driven by</th></tr></thead>
@@ -882,10 +1226,17 @@
           <tr><td class="name"><span class="agent-dot" style="background:var(--pass)"></span><code>tests-build-runner</code></td><td class="role">Auto-detects &amp; runs test/lint/build, triages failures. Never installs; SKIP if none.</td><td class="via"><code>/review-tests-build</code></td></tr>
           <tr><td class="name"><span class="agent-dot" style="background:#3aa8c9"></span><code>dependency-reviewer</code></td><td class="role">Dependency/license changes — typosquats, floating ranges, copyleft. Diff-only.</td><td class="via"><code>/review-dependencies</code></td></tr>
           <tr><td class="name"><span class="agent-dot" style="background:var(--accent)"></span><code>style-reviewer</code></td><td class="role">Consistency, commit-message hygiene, leftover debug/TODO. Infers conventions from context.</td><td class="via"><code>/review-style</code></td></tr>
+          <tr class="grp-row"><td colspan="3">Design parity</td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:#8b5cf6"></span><code>design-parity-checker</code></td><td class="role">Compares live DOM structure + computed styles against an approved Claude Design mockup across the manifest; BLOCKS on divergence. Measures only.</td><td class="via"><code>/claude-design-pull</code></td></tr>
+          <tr class="grp-row"><td colspan="3">Pre-push report</td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:#3aa8c9"></span><code>review-report-writer</code></td><td class="role">Renders a self-contained HTML report from the aggregated findings — verdict banner, per-dimension cards, findings by severity + file:line, scope/scanner/fleet. Given findings only.</td><td class="via"><code>/pre-push-review</code></td></tr>
+          <tr class="grp-row"><td colspan="3">Repo-maintenance</td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:var(--warn)"></span><code>dead-code-finder</code></td><td class="role">Finds unreferenced exports/functions/files/deps; detects the repo's own tool or cross-references manually. Confidence-rated; never deletes.</td><td class="via"><code>/dead-code-finder</code></td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:#3aa8c9"></span><code>deps-upgrade</code></td><td class="role">Surveys the whole manifest for available upgrades; risk-classifies and proposes a plan. Zero-network; never edits the manifest.</td><td class="via"><code>/deps-upgrade</code></td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:var(--warn)"></span><code>test-gap-finder</code></td><td class="role">Maps code paths to tests, flags uncovered paths + missing edge cases. Uses the repo's coverage tool or a labeled heuristic. Never writes tests.</td><td class="via"><code>/test-gap-finder</code></td></tr>
           <tr class="grp-row"><td colspan="3">Authoring — changelog &amp; diagram</td></tr>
           <tr><td class="name"><span class="agent-dot" style="background:var(--pass)"></span><code>changelog-writer</code></td><td class="role">Groups commits into Added/Changed/…, de-dupes, drops noise, rewrites into user-facing prose.</td><td class="via"><code>/changelog</code></td></tr>
-          <tr><td class="name"><span class="agent-dot" style="background:#3aa8c9"></span><code>diagram-architect</code></td><td class="role">Repo model → structured diagram (icon-tile SVG by default; draw.io/Excalidraw/mermaid/Figma on request). Picks colors by meaning. Nothing invented.</td><td class="via"><code>/arch-diagram</code></td></tr>
-          <tr><td class="name"><span class="agent-dot" style="background:var(--warn)"></span><code>diagram-qa</code></td><td class="role">Visual-QA gate: deterministic checks (overflow/overlap/clip/missing-icon/semantic-color) + a visual pass; <strong>blocks</strong> in a render→QA→fix loop until the diagram reads cleanly.</td><td class="via"><code>/arch-diagram</code></td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:#3aa8c9"></span><code>diagram-architect</code></td><td class="role">Authors the diagram directly as SVG (infographic default, sketch on request); picks colors by meaning; runs the render→look→critique gate. Nothing invented.</td><td class="via"><code>/arch-diagram</code></td></tr>
           <tr class="grp-row"><td colspan="3">Authoring — capture-screenshots pipeline</td></tr>
           <tr><td class="name"><span class="agent-dot" style="background:#3aa8c9"></span><code>screenshot-capturer</code></td><td class="role">Captures the raw image (web/terminal/static/existing). Never fabricates credentials.</td><td class="via"><code>/capture-screenshots</code></td></tr>
           <tr><td class="name"><span class="agent-dot" style="background:var(--block)"></span><code>sensitive-data-reviewer</code></td><td class="role">Marks PII/secrets with bounding regions + risk class. Marks, doesn't blur.</td><td class="via"><code>/capture-screenshots</code></td></tr>
@@ -900,7 +1251,11 @@
           <tr><td class="name"><span class="agent-dot" style="background:#c264c2"></span><code>blog-poster</code></td><td class="role">Creates a <strong>draft</strong> — via a publishing MCP, or a Dev.to REST fallback (<code>DEVTO_API_KEY</code>). Opt-in; never auto-publishes.</td><td class="via"><code>/tech-blog</code></td></tr>
           <tr class="grp-row"><td colspan="3">Authoring — docs-site</td></tr>
           <tr><td class="name"><span class="agent-dot" style="background:var(--accent)"></span><code>docs-architect</code></td><td class="role">Ingests sources → auto-derived section structure + grounded copy + gap list + screenshot requests.</td><td class="via"><code>/docs-site</code></td></tr>
-          <tr><td class="name"><span class="agent-dot" style="background:#c264c2"></span><code>docs-designer</code></td><td class="role">Doc model → a single self-contained <code>docs.html</code> — nav, tiered content, light/dark, zero deps.</td><td class="via"><code>/docs-site</code></td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:#c264c2"></span><code>docs-designer</code></td><td class="role">Doc model → a single self-contained <code>docs.html</code> (or a generated site) — nav, tiered content, light/dark, zero deps.</td><td class="via"><code>/docs-site</code></td></tr>
+          <tr class="grp-row"><td colspan="3">Workflow</td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:var(--pass)"></span><code>pr-describer</code></td><td class="role">Drafts a PR title + body from the branch's delta vs its base; fills the repo's PR template; grounds every line in a real commit/hunk. Never pushes.</td><td class="via"><code>/pr-describe</code></td></tr>
+          <tr class="grp-row"><td colspan="3">PM-authoring</td></tr>
+          <tr><td class="name"><span class="agent-dot" style="background:var(--accent)"></span><code>pm-decomposer</code></td><td class="role">Decomposes a feature-sized ask into a neutral Epic→Stories→Tasks tree (INVEST/Scrum/SAFe) for <code>/pm-plan</code> to preview and create parent-first.</td><td class="via"><code>/pm-plan</code></td></tr>
           <tr class="grp-row"><td colspan="3">Social</td></tr>
           <tr><td class="name"><span class="agent-dot" style="background:#0a66c2"></span><code>social-post</code></td><td class="role">Grounded LinkedIn/X promo from a published URL — hook-first, link/preview strategy, clean hashtags, variants. Never auto-posts.</td><td class="via"><code>/social-post</code></td></tr>
         </tbody>
@@ -908,7 +1263,7 @@
     </div>
 
     <footer class="foot">
-      <p>nj-agents · project-agnostic Claude Code skills &amp; agents. This reference is generated by <code>/docs-site</code> from the actual definitions — <code>skills/&lt;name&gt;/SKILL.md</code> and <code>agents/*.md</code>. Shared rules: <code>CONVENTIONS.md</code> (review) &amp; <code>CONVENTIONS-authoring.md</code> (authoring).</p>
+      <p>nj-agents · project-agnostic Claude Code skills &amp; agents. This reference is generated by <code>/docs-site</code> from the actual definitions — <code>skills/&lt;name&gt;/SKILL.md</code> and <code>agents/*.md</code>. Shared rules: <code>CONVENTIONS.md</code> (review), <code>CONVENTIONS-authoring.md</code> (authoring), <code>CONVENTIONS-pm.md</code> (PM), <code>CONVENTIONS-testing.md</code> (testing).</p>
     </footer>
   </div>
 </div>
@@ -937,23 +1292,19 @@
       if (!pages[name]) name = 'home';
       tabs.forEach(function (t) { t.classList.toggle('active', t.dataset.page === name); });
       Object.keys(pages).forEach(function (k) { document.getElementById(pages[k]).classList.toggle('active', k === name); });
-      // update the URL: page in the path-hash, optional section after a slash
       var h = '#' + name + (hash ? '/' + hash : '');
       try { if (location.hash !== h) location.hash = h; } catch (e) {}
       if (hash) { var el = document.getElementById(hash); if (el) setTimeout(function () { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); }
       else window.scrollTo({ top: 0, behavior: 'auto' });
     }
     tabs.forEach(function (t) { t.addEventListener('click', function () { show(t.dataset.page); }); });
-    // in-page "go to" links (home cards, hero buttons)
     document.addEventListener('click', function (e) {
       var g = e.target.closest('[data-goto]'); if (!g) return;
       e.preventDefault(); show(g.dataset.goto, g.dataset.hash);
     });
-    // deep-link on load: #page or #page/section
     function fromHash() {
       var raw = (location.hash || '').replace(/^#/, ''); if (!raw) { show('home'); return; }
       var parts = raw.split('/'); var name = parts[0]; var sec = parts[1];
-      // allow bare section hashes (e.g. #tech-blog) by finding which page holds it
       if (!pages[name]) {
         var el = document.getElementById(raw);
         if (el) { var pg = el.closest('.page'); var pname = pg ? pg.id.replace('page-', '') : 'reference'; show(pname, raw); return; }
@@ -990,7 +1341,6 @@
         var pg = headingEl.closest('.page'); var pname = pg ? pg.id.replace('page-', '') : '';
         try { location.hash = pname ? ('#' + pname + '/' + id) : ('#' + id); } catch (err) {}
         var ref = refFor(id);
-        // when embedded/local, prefer the page/section combo fragment
         var text = ref.full ? ref.text : (pname ? '#' + pname + '/' + id : '#' + id);
         copy(text).then(function () { showToast(ref.full ? 'Link copied' : 'Copied ' + text); }, function () { showToast(text); });
       });
