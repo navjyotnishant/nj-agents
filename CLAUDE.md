@@ -35,9 +35,26 @@ bin/nj-agents-review        # headless /pre-push-review → §5 exit codes (0 PA
 bin/nj-run                  # testing-class run harness — manifest §T13, cost §T10, subagents §T11, log §T12
 tests/test-nj-run.sh        # its behavioural checks (no LLM, free, CI-safe)
 README.md                   # public overview
-docs.html                  # multi-page reference SITE (Home/Suites/Workflows/Reference)
-docs/architecture/          # generated diagrams + their JSON source models
+mkdocs.yml                  # the reference SITE config (Material + gen-files + literate-nav)
+docs_src/gen_pages.py       # generates every doc page into mkdocs' VIRTUAL tree at build time
+docs/architecture/          # diagrams (embedded into the site) + their JSON source models
 ```
+
+**The reference site is generated, never hand-written.** `docs_src/gen_pages.py` derives
+one page per skill/agent/orchestrator — plus the tree nav (`SUMMARY.md`) and the
+skill↔agent wiring — from `skills/*/SKILL.md` and `agents/*.md` at build time. Nothing
+generated lands on disk, so a page **cannot** drift from the file it documents; add a
+skill and its page appears with no registration step. Build it locally with:
+
+```bash
+python3 -m venv .venv-docs && ./.venv-docs/bin/pip install -r requirements-docs.txt
+./.venv-docs/bin/mkdocs serve      # http://127.0.0.1:8000
+./.venv-docs/bin/mkdocs build --strict   # what CI gates on
+```
+
+A class present in `skills/` but missing from `gen_pages.py`'s `CLASSES` map silently
+produces **no page** — invisible until something links to it and `--strict` fails on the
+dangling link. Add the class when you add the class.
 
 - **Skill frontmatter:** `name`, `description` (trigger-phrase style, "Use this skill
   when the user asks to…", states it works in any repo), `version`, `class`
@@ -190,9 +207,9 @@ it produced remain as committed SVGs and are now edited by hand.
 
 ## Editing gotchas
 
-- **`docs.html` is one large file — edit surgically.** When swapping an embedded SVG,
-  do a *per-block regex replace* of just the `<svg>…</svg>`, never an index-based splice
-  (an index splice once duplicated whole pages).
+- **Never hand-edit a generated doc page.** The site is rebuilt from `skills/`/`agents/`
+  on every build, so an edit to a rendered page is overwritten and silently lost. Change
+  the SKILL.md/agent file, or `docs_src/gen_pages.py` if the *shape* of the page is wrong.
 - **Gitignored (local only):** `node_modules/`, `docs/architecture/*.layout.json`,
   `HANDOFF*.md`, `_style-mockups.html`, `.nj-agents-reports/`, `.DS_Store`.
 - A local, gitignored **`HANDOFF.md`** holds deeper working notes (build history,
@@ -256,8 +273,9 @@ construction and the validator tells you what is still missing:
 4. **`./check.sh` must be clean.** It globs, so the new file is covered immediately.
 5. Add a `CHANGELOG.md` entry under `[Unreleased]` — a new skill is user-facing.
    Use `/changelog`; see the standing rule in `global/AGENTS.md`.
-6. Update `README.md`, `docs.html`, and the right table in **`global/AGENTS.md`** —
-   that file is hand-maintained and is what makes the skill discoverable in *other*
-   repos. `check.sh` flags it if you forget.
+6. Update `README.md` and the right table in **`global/AGENTS.md`** — those are
+   hand-maintained, and AGENTS.md is what makes the skill discoverable in *other*
+   repos. `check.sh` flags it if you forget. The **reference site needs no edit**: it
+   globs `skills/`/`agents/` and picks the new one up on the next build.
 
 `templates/` holds the sources; they are not skills themselves and are not globbed.

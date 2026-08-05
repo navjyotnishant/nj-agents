@@ -12,6 +12,21 @@ does as of this version, rather than how it was built.
 
 ### Changed
 
+- **One reference, not two: `docs.html` is removed and `/docs-site` now generates a site
+  by default.** The repo carried two references — a hand-updated single-page `docs.html`
+  and the generated MkDocs site — and they disagreed. That is worse than one dated doc,
+  because a reader cannot tell which is current: `docs.html` had silently drifted to
+  documenting 21 of 37 skills and 13 of 27 agents while the generated site was correct.
+  The single-page file is deleted; the **generated site** (tree nav via `literate-nav`,
+  one page per skill/agent/orchestrator, the architecture diagrams embedded, rebuilt from
+  `skills/`/`agents/` on every build) is the reference.
+  `/docs-site` flips to match: **Mode A, the generated multi-page site, is now the
+  default**, and the self-contained single page moves to `--single` for hand-maintained
+  prose or a no-toolchain deliverable — documented as a snapshot that will drift. The
+  skill now also refuses to run both modes into one repo, commits the site's *inputs*
+  rather than its build output, and must pass `mkdocs build --strict` before proposing a
+  commit. `docs-designer` and the README/AGENTS.md rows follow.
+
 - **PM-authoring items are now drafted to a cited industry standard, not house style.**
   `CONVENTIONS-pm.md` gains a **§P0** block pinning each type's complete required field
   set to its source — **INVEST** (stories), the **Scrum Guide** (Gherkin acceptance
@@ -34,6 +49,15 @@ does as of this version, rather than how it was built.
   skills updated.
 
 ### Fixed
+
+- **The testing class generated no documentation pages at all.** `docs_src/gen_pages.py`
+  keys page generation off a `CLASSES` map that never listed `testing`, so all ten
+  testing skills were invisible in the reference site. It stayed hidden until
+  `/test-report` referenced `docs-designer`: the derived wiring then linked to a
+  `skills/test-report.md` that was never generated, and `mkdocs build --strict` failed on
+  the dangling link — breaking CI. Adding the class fixes the build and surfaces the ten
+  missing pages. The general lesson is now recorded in `CLAUDE.md` and in `/docs-site`:
+  a generator that silently skips an unknown entity type hides work rather than failing.
 
 - **A permission-denied secret scanner was misread as a failed scan.** In a sandboxed
   or non-interactive runner, a compound gitleaks command (`echo … && gitleaks … | tail`)

@@ -61,7 +61,7 @@ whole manifest by definition.
 | `/arch-diagram` | Authors a presentation-quality SVG into `docs/architecture/` — infographic by default, `--sketch` on request. Renders and reviews it before shipping. | `diagram-architect` |
 | `/capture-screenshots` | Capture → detect PII/secrets → blur/mask → **verify coverage before writing**. | `screenshot-capturer`, `sensitive-data-reviewer`, `screenshot-redactor` |
 | `/screenshot-docs-sync` | Keeps docs and their embedded screenshots current as the UI drifts — diffs since the last doc update, re-captures only what changed, edits in place. The *maintenance* loop; `/capture-screenshots` is the one-shot. | (no dedicated agent) |
-| `/docs-site` | Self-contained theme-aware `docs.html` from docs, code, an outline, or SKILL.md/OpenAPI/JSON-Schema. Auto-derives the menu; flags gaps rather than inventing. | `docs-architect`, `docs-designer` |
+| `/docs-site` | **Generated multi-page site by default** (tree nav, one page per entity, diagrams embedded, rebuilt from source so it cannot drift); `--single` for one self-contained page. Reads docs, code, an outline, or SKILL.md/OpenAPI/JSON-Schema. Auto-derives the menu; flags gaps rather than inventing. | `docs-architect`, `docs-designer` |
 | `/tech-blog` | writer → fact-checker → reviewer → editor → final-polish → platform-lint → optional poster. Generates its own diagrams/screenshots, then embeds them. | `blog-writer`, `blog-fact-checker`, `blog-reviewer`, `blog-editor`, `blog-final-polish`, `blog-platform-lint`, `blog-poster` |
 | `/scaffold-project` | Lay out a **new** repo to the OpenSSF OSPS Baseline (Level 1 default), delegating stack layout to the ecosystem generator (`cargo new`/`uv init`/…). Cites each file by control ID; verifies before reporting done. | (no dedicated agent) |
 | `/social-post` | LinkedIn / X copy for a **published** URL — short / medium / builder-story, hook-first, clean hashtags. Never writes to the repo, never auto-posts. | `social-post` |
@@ -202,12 +202,25 @@ Apply these to related work even when no skill is invoked:
   or feature (not a throwaway experiment), there should be a tracked item — in
   **whatever project-management tool the project uses**: Linear, Jira, GitHub Issues,
   Notion, etc. First check for one that matches; if none exists, **offer to create it**
-  in the connected PM tool (once the PM-authoring skills land, via `/pm-story` /
-  `/pm-plan`) and reference its key in the branch name and commits. This is
-  tool-agnostic and **detect-never-require**: if no PM tool is connected, or the user
-  declines, or it's a throwaway repo, note that and proceed — never hard-block coding
-  on a ticket. A project whose own `CLAUDE.md` mandates a stricter gate (e.g. "no code
-  without an issue") overrides this softer default.
+  and reference its key in the branch name and commits.
+  **Create it through the PM skill, not by hand** — a hand-written issue skips the
+  search-before-create step (§P4), so a re-run duplicates what already exists.
+  Match the skill to the SIZE of the work, which is the part most often got wrong:
+
+  | The work is | Use | Creates |
+  |---|---|---|
+  | One bug, one fix, one chore | `/pm-task` | **one** issue |
+  | One user-facing capability | `/pm-story` | **one** issue + acceptance criteria |
+  | A feature needing several stories | `/pm-plan` | an Epic→Stories→Tasks **tree** |
+
+  **A bug is one task.** Reaching for `/pm-plan` to file a defect builds an epic
+  around a single fix; reaching for none of them and writing the issue by hand is
+  the more common miss. Both produce a tracker that misrepresents the work.
+
+  This is tool-agnostic and **detect-never-require**: if no PM tool is connected, or
+  the user declines, or it's a throwaway repo, note that and proceed — never
+  hard-block coding on a ticket. A project whose own `CLAUDE.md` mandates a stricter
+  gate (e.g. "no code without an issue") overrides this softer default.
 - **On finishing a tracked item, report the whole tree — not just that item.** End
   the update with every sibling under the same parent: done ones first with `✅`, the
   rest in dependency/priority order, aligned columns (`key · short title · priority ·

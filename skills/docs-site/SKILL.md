@@ -1,6 +1,6 @@
 ---
 name: docs-site
-description: Use this skill when the user asks to "generate a documentation site", "build docs for this project", "make a browsable reference/guide", "document these skills/API/modules", or wants a polished HTML documentation page from existing docs, the codebase, an outline, or structured definition files. Auto-derives the menu/sections from the content, grounds everything in the source (flags gaps rather than inventing), embeds auto-redacted screenshots via the capture-screenshots pipeline when needed, produces a self-contained theme-aware docs.html by default, or --generated for a multi-page site rebuilt from the source files on every commit so it cannot drift, and PROPOSES the commit. Works in any git repo; nothing here is project-specific.
+description: Use this skill when the user asks to "generate a documentation site", "build docs for this project", "make a browsable reference/guide", "document these skills/API/modules", or wants browsable documentation from existing docs, the codebase, an outline, or structured definition files. By DEFAULT it builds a generated multi-page site (MkDocs Material + gen-files + literate-nav) with a tree/sidebar nav, one page per entity, and embedded diagrams — rebuilt from the source files on every commit so it cannot drift. Pass --single for one self-contained theme-aware HTML page instead (a snapshot, for hand-maintained prose). Auto-derives the menu/sections, grounds everything in the source (flags gaps rather than inventing), embeds auto-redacted screenshots via the capture-screenshots pipeline when needed, and PROPOSES the commit. Works in any git repo; nothing here is project-specific.
 version: 0.2.0
 class: authoring
 author: navjyotnishant
@@ -8,12 +8,17 @@ author: navjyotnishant
 
 # Docs Site (authoring, multi-agent)
 
-Generates a **self-contained, browsable documentation site** (`docs.html`) from
-whatever you point it at — existing docs/markdown, the codebase itself, a topic or
-outline you give it, or structured definition files (SKILL.md, OpenAPI, JSON schema,
-frontmatter). It derives the navigation from the content, keeps every statement
-grounded in the source, embeds **auto-redacted** screenshots when a page needs them,
-and **proposes** the commit — it never commits.
+Generates **browsable documentation** from whatever you point it at — existing
+docs/markdown, the codebase itself, a topic or outline you give it, or structured
+definition files (SKILL.md, OpenAPI, JSON schema, frontmatter). It derives the
+navigation from the content, keeps every statement grounded in the source, embeds
+**auto-redacted** screenshots when a page needs them, and **proposes** the commit — it
+never commits.
+
+**By default it builds a generated multi-page site** — tree/sidebar nav, one page per
+entity, diagrams embedded, rebuilt from the source on every commit so it cannot drift.
+Pass **`--single`** for one self-contained HTML page instead, which is a snapshot and
+will drift (see Step 5).
 
 This is an **authoring-class** skill — follow `CONVENTIONS-authoring.md` (repo ingest
 §A1, scoped output §A2, propose-commit §A3, placement §A4, MCP/tool-detect §A5,
@@ -49,7 +54,7 @@ Detected at runtime, never installed by this skill (`§A5`).
 
 | Tool | Used for | Without it |
 |---|---|---|
-| `mkdocs` + `mkdocs-material` + `mkdocs-gen-files` + `mkdocs-literate-nav` | `--generated` mode only | Mode A (single `docs.html`) needs none of it |
+| `mkdocs` + `mkdocs-material` + `mkdocs-gen-files` + `mkdocs-literate-nav` | the default generated site (Mode A) | say so and offer `--single` (Mode B), which needs no toolchain |
 | `mkdocs-glightbox` | click-to-expand for wide diagrams | diagrams render inline, shrunk to the column |
 
 ## Step 0 — Print the banner FIRST
@@ -58,12 +63,13 @@ Detected at runtime, never installed by this skill (`§A5`).
 ╔══════════════════════════════════════════════════════════════════╗
 ║  DOCS SITE — AUTHORING (multi-agent)                             ║
 ╠══════════════════════════════════════════════════════════════════╣
-║  Builds a self-contained, browsable docs.html from your docs,    ║
-║  code, outline, or definition files. Everything is grounded in    ║
-║  the source — gaps are flagged, not invented. UI screenshots      ║
-║  (if any) go through the capture-screenshots pipeline and are     ║
-║  PII/secret-redacted before embedding. Writes docs.html and       ║
-║  PROPOSES the commit — it never runs git.                        ║
+║  Builds a GENERATED multi-page site (tree nav, one page per      ║
+║  entity, diagrams embedded) that rebuilds from the source and     ║
+║  cannot drift. --single gives one self-contained page instead.    ║
+║  Everything is grounded in the source — gaps are flagged, not     ║
+║  invented. UI screenshots (if any) go through the                 ║
+║  capture-screenshots pipeline and are PII/secret-redacted         ║
+║  before embedding. PROPOSES the commit — it never runs git.       ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
@@ -120,24 +126,40 @@ app, no auth — never fabricate credentials), skip the image and note it as a g
 
 ## Step 5 — Design and build
 
-Two modes. **Mode A is the default**; reach for B when the docs describe files that
-change often.
+Two modes. **Mode A — the generated site — is the default.** Reach for B only when the
+subject is *prose that a human maintains* (a guide, a handbook), or when the deliverable
+must be one file you can email or open with no toolchain.
 
-### Mode A — one self-contained page (default)
+**Why generated is the default:** documentation that is written once starts drifting the
+moment the code moves, and nobody notices until a reader follows a wrong instruction. A
+single-file page has to be *regenerated and re-committed* by someone who remembers to;
+a generated site rebuilds from the source on every commit and **cannot** be wrong about
+what exists. If the subject is code, definition files, or an API — anything with a
+structure to derive — the answer is Mode A. This repo's own reference is Mode A, and it
+replaced a hand-updated page that had silently drifted to documenting 21 of 37 skills.
 
-Spawn `docs-designer` with the doc model (+ image paths). It produces a **single
-self-contained `docs.html`**: a sidebar menu derived from the sections, tiered content
-(scannable summary that expands to detail where it helps), theme-aware light/dark, no
-external dependencies (all CSS/JS inline; images embedded or referenced by relative
-path). It reuses the source's design system if one exists; otherwise it makes clean,
-restrained, accessible choices.
+### Mode A — a generated multi-page site (default)
 
-### Mode B — a generated multi-page site (`--generated`)
+Build a site that is regenerated from the source files on every commit rather than
+written once. MkDocs Material with `mkdocs-gen-files` and `mkdocs-literate-nav` is the
+path with the least ceremony.
 
-When the docs must **never drift from the source** — a toolkit, an API, a set of
-definition files — build a site that is regenerated from those files on every commit
-rather than written once. MkDocs Material with `mkdocs-gen-files` and
-`mkdocs-literate-nav` is the path with the least ceremony.
+**The rule that makes it worth doing:** pages are written into the *virtual* docs tree
+at build time. Nothing generated lands on disk, so a page **cannot** disagree with the
+file it documents. If a page can go stale, the build is wrong.
+
+What this produces, and what to hold it to:
+
+- **A tree/sidebar nav derived from the content** — emit a `SUMMARY.md` and let
+  `literate-nav` build the tree. A flat menu is the thing you are moving away from.
+- **One page per entity** (skill/agent/module/endpoint), plus group overviews and, where
+  a pipeline exists, an orchestrator page showing dispatch order.
+- **Diagrams embedded from their source dir** — copy them into the virtual tree at build
+  time rather than duplicating them on disk.
+- **Fail loudly on an entity type the generator has no page for.** A type present in the
+  source but missing from the generator's class map produces *no page*, silently — and
+  stays invisible until something links to it and `--strict` fails on the dangling link.
+  That exact bug shipped in this repo (the `testing` class was absent from `CLASSES`).
 
 **The rule that makes it worth doing:** pages are written into the *virtual* docs tree
 at build time. Nothing generated lands on disk, so a page **cannot** disagree with the
@@ -169,23 +191,59 @@ Hard-won specifics, each of which cost a broken build or a broken page:
 Pin the toolchain in `requirements-docs.txt` and deploy from CI. **GitHub Pages needs
 a public repo on a free plan** — check before promising a URL.
 
+### Mode B — one self-contained page (`--single`)
+
+For hand-maintained prose, or when the deliverable must be a single file that opens with
+no toolchain. Spawn `docs-designer` with the doc model (+ image paths). It produces a
+**single self-contained page**: a sidebar menu derived from the sections, tiered content
+(scannable summary that expands to detail where it helps), theme-aware light/dark, no
+external dependencies (all CSS/JS inline; images embedded or referenced by relative
+path). It reuses the source's design system if one exists; otherwise it makes clean,
+restrained, accessible choices.
+
+**Say the tradeoff out loud when you pick this mode:** the page is a snapshot. It is
+correct the day it is written and drifts from then on, and nothing will announce that it
+has. If the subject has a derivable structure, offer Mode A instead — and if the user
+still wants one file, note in the page itself when it was generated and from what.
+
+**Never run both modes into the same repo.** Two references that disagree is worse than
+one that is merely dated: a reader has no way to tell which is current. If a generated
+site already exists, updating *it* is the answer.
+
 ## Step 6 — Placement + write
 
-Per `CONVENTIONS-authoring.md §A4`: an existing docs location, else `docs.html` at the
-repo root (or `docs/index.html` if a `docs/` tree exists). Report the chosen path.
+Per `CONVENTIONS-authoring.md §A4`, and it differs by mode:
+
+- **Mode A (generated site)** — commit the *inputs*, never the output: the config
+  (`mkdocs.yml`), the generator (in its own source dir, not a dir already holding
+  artifacts), the pinned `requirements-docs.txt`, and the CI workflow. **Gitignore the
+  built site** (`site/`); a committed build is the drift you are trying to prevent.
+- **Mode B (`--single`)** — an existing docs location, else a single HTML file at the
+  repo root (or `docs/index.html` if a `docs/` tree exists). Report the chosen path.
+
 Merge/refresh in place on re-run — keep the same path so links don't break (§A7).
+
+**Before proposing anything in Mode A, build it:** `mkdocs build --strict` must pass.
+A dangling cross-reference is exactly what `--strict` exists to catch, and shipping a
+config whose build fails is worse than shipping no config.
 
 ## Step 7 — Summary + propose the commit
 
-Summarize: what was documented, the sections generated, any **gaps flagged** (source
-didn't cover them), which screenshots were captured/redacted or skipped, and where the
-file landed. Then propose the commit per `CONVENTIONS-authoring.md §A3`:
+Summarize: what was documented, the sections/pages generated, any **gaps flagged**
+(source didn't cover them), which screenshots were captured/redacted or skipped, and
+where things landed. Then propose the commit per `CONVENTIONS-authoring.md §A3` — the
+file list depends on the mode:
 
 ```bash
-git add docs.html <docs/images/...>
-git commit -m "docs: generate documentation site"
-git push
+# Mode A — the generated site: commit the inputs, not the build
+git add mkdocs.yml <gen-script> requirements-docs.txt .github/workflows/<docs>.yml
+git commit -m "docs: generate the reference site from source"
+
+# Mode B — the single page
+git add <the-page>.html <docs/images/...>
+git commit -m "docs: generate documentation page"
 ```
 
-Never run git. Add a note on how to view it (open the file, or publish it as an
-Artifact) and that gaps flagged in the page mean the *source* lacked that info.
+Never run git. Say how to view it — Mode A: the local build/serve commands (and the
+published URL if CI deploys it); Mode B: open the file. Note that gaps flagged in the
+output mean the *source* lacked that info.
