@@ -48,9 +48,16 @@ skill and its page appears with no registration step. Build it locally with:
 
 ```bash
 python3 -m venv .venv-docs && ./.venv-docs/bin/pip install -r requirements-docs.txt
-./.venv-docs/bin/mkdocs serve      # http://127.0.0.1:8000
+./.venv-docs/bin/mkdocs serve            # then open http://127.0.0.1:8000/nj-agents/
 ./.venv-docs/bin/mkdocs build --strict   # what CI gates on
 ```
+
+**Open the served URL, never `site/index.html`.** Material generates *directory* URLs
+(`href="skills/pm-plan/"`), which a browser cannot resolve over `file://` — every link
+lands on a directory instead of its `index.html`, so the page renders as unstyled HTML
+and looks broken. The build is fine; the viewing method is not. Mind the **`/nj-agents/`
+prefix** too: `site_url` carries that subpath for GitHub Pages, so the dev server 302s
+`/` → `/nj-agents/`. Published site: <https://navjyotnishant.github.io/nj-agents/>.
 
 A class present in `skills/` but missing from `gen_pages.py`'s `CLASSES` map silently
 produces **no page** — invisible until something links to it and `--strict` fails on the

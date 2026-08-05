@@ -50,6 +50,16 @@ does as of this version, rather than how it was built.
 
 ### Fixed
 
+- **A correct generated site reported as broken, because it was opened from disk.**
+  Material builds *directory* URLs (`href="skills/foo/"`), which a browser cannot resolve
+  over `file://` — so opening the built `index.html` lands every link on a directory
+  instead of its `index.html`, and the page renders as unstyled HTML that reads exactly
+  like a broken build. `/docs-site` now **never hands over a file path for a generated
+  site**: it starts the server, confirms the page returns `200`, and gives a served URL
+  *including any base path* from `site_url` (a GitHub Pages project site serves under
+  `/<repo>/`, so a bare `127.0.0.1:8000` link 404s on the first click). The same note is
+  in `CLAUDE.md` beside this repo's build recipe.
+
 - **The testing class generated no documentation pages at all.** `docs_src/gen_pages.py`
   keys page generation off a `CLASSES` map that never listed `testing`, so all ten
   testing skills were invisible in the reference site. It stayed hidden until

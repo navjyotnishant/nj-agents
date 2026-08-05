@@ -187,6 +187,16 @@ Hard-won specifics, each of which cost a broken build or a broken page:
   they are drawn on white.
 - **Verify in a browser, not by grepping the built HTML.** Material loads the nav via
   JS, so `curl` sees a shell — a nav can be visibly broken while every grep passes.
+- **Never tell anyone to open the built `index.html` from disk.** With directory URLs
+  on (the default), every internal link points at a *directory* (`href="skills/foo/"`).
+  A browser cannot resolve that over `file://`, so it lands on the directory instead of
+  its `index.html` and the page renders as **unstyled HTML that looks like a broken
+  build**. It isn't — it is the wrong way to open a correct site. Always hand over a
+  **served URL** (`mkdocs serve`, or the deployed one).
+- **Hand over the URL including its base path.** When `site_url` carries a subpath (a
+  GitHub Pages project site is `https://user.github.io/<repo>/`), the dev server serves
+  under that prefix and `302`s `/` → `/<repo>/`. Give the full path — a bare
+  `127.0.0.1:8000` link plus a `404` on the first page they click reads as a broken site.
 
 Pin the toolchain in `requirements-docs.txt` and deploy from CI. **GitHub Pages needs
 a public repo on a free plan** — check before promising a URL.
@@ -244,6 +254,20 @@ git add <the-page>.html <docs/images/...>
 git commit -m "docs: generate documentation page"
 ```
 
-Never run git. Say how to view it — Mode A: the local build/serve commands (and the
-published URL if CI deploys it); Mode B: open the file. Note that gaps flagged in the
-output mean the *source* lacked that info.
+Never run git. Note that gaps flagged in the output mean the *source* lacked that info.
+
+**Then say how to view it — and get this right, because a correct site opened the wrong
+way looks broken.**
+
+- **Mode A** — give a **served URL**, never a path to the built `index.html`. Start the
+  server, confirm the page actually returns `200`, and hand over the full URL *including
+  any base path* from `site_url`:
+
+  ```bash
+  <venv>/bin/mkdocs serve      # then open http://127.0.0.1:8000/<base-path>/
+  ```
+
+  Plus the published URL if CI deploys it. Opening the file from disk gives unstyled
+  HTML and dead links (directory URLs don't resolve over `file://`) — every time, and it
+  will be reported to you as a broken build.
+- **Mode B** — open the file; a single self-contained page has no such problem.
