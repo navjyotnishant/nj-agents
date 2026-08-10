@@ -74,6 +74,8 @@ the item is standard-complete (mark a genuinely unknown field `TBD`, never drop 
 - **parent** — the Epic ID if the user names one (optional).
 - **labels / estimate / priority / dependencies** — only if the user supplies, the
   tracker needs them, or they sharpen scope.
+- **recommended_model** — apply the §P2a complexity heuristic (haiku/sonnet/opus);
+  state the reason in one line.
 
 Run the **INVEST self-check**: Independent, Negotiable, Valuable, Estimable, Small,
 Testable. If the story fails Small/Independent (too big, many criteria) it's really an
@@ -93,7 +95,15 @@ Search the target project for an existing story matching this work — **strip a
 `[Story]` title prefix when matching**. If found, **offer to update it** (append
 criteria, set status) rather than creating a duplicate.
 
-## Step 5 — Propose the create, never silently (§P3)
+## Step 5 — Flag a model mismatch (advisory, never blocking)
+
+If the drafted `recommended_model` differs from the **current session's model**,
+say so in one line before proposing the create — e.g. "This story looks
+Opus-complexity (cross-cutting redesign); you're on Sonnet. Switch before
+implementing, or proceed as drafted?" Skip silently if they match or the hint is
+`TBD`. Never block on the answer — proceed either way once said.
+
+## Step 6 — Propose the create, never silently (§P3)
 
 Show the full drafted story — title, story sentence, acceptance criteria, proposed
 parent/labels — then:
@@ -114,6 +124,7 @@ Tracker:  Linear/Jira/… (project <name>)  |  markdown only (no MCP)
 Parent:   <epic key, or none>
 Story:    As a <persona>, I want <capability>, so that <value>.
 Criteria: <n> acceptance criteria
+Model:    <haiku|sonnet|opus> — <one-line reason>   |   TBD
 Action:   created <KEY> → <url>   |   printed markdown — nothing created
 ```
 

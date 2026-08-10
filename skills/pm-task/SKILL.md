@@ -70,6 +70,8 @@ the item is standard-complete (mark a genuinely unknown field `TBD`, never drop 
 - **parent** — the parent Story/Epic ID if the user names one (optional; a task is often
   a child of a Story).
 - **labels / estimate / priority** — only if supplied or the tracker needs them.
+- **recommended_model** — apply the §P2a complexity heuristic (haiku/sonnet/opus);
+  state the reason in one line.
 
 Keep it **small and single-purpose**. If it sprawls into several actions, propose
 splitting into multiple tasks rather than one vague one.
@@ -87,7 +89,15 @@ the description is ADF.
 Search the target project for an existing task matching this work — **strip any `[Task]`
 title prefix when matching**; **offer to update** rather than duplicate.
 
-## Step 5 — Propose the create, never silently (§P3)
+## Step 5 — Flag a model mismatch (advisory, never blocking)
+
+If the drafted `recommended_model` differs from the **current session's model**,
+say so in one line before proposing the create — e.g. "This task looks
+Opus-complexity (novel auth design); you're on Sonnet. Switch before implementing,
+or proceed as drafted?" Skip silently if they match or the hint is `TBD`. Never
+block on the answer — proceed either way once said.
+
+## Step 6 — Propose the create, never silently (§P3)
 
 Show the drafted task — title, description, proposed parent/labels — then:
 
@@ -104,6 +114,7 @@ Non-interactive/CI → markdown output by default.
 
 Tracker:  Linear/Jira/… (project <name>)  |  markdown only (no MCP)
 Parent:   <story/epic key, or none>
+Model:    <haiku|sonnet|opus> — <one-line reason>   |   TBD
 Action:   created <KEY> → <url>   |   printed markdown — nothing created
 ```
 

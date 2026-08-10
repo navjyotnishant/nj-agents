@@ -72,7 +72,8 @@ label (§P2); the Project board is the cross-epic roadmap, not a tree level.
 
 Spawn the **`pm-decomposer`** agent with the initiative + tracker capabilities. It
 returns a structured **Epic → Stories → Tasks** tree in the §P2 neutral model, plus
-`open_questions` and any items marked `assumption`. It **creates nothing**.
+`open_questions` and any items marked `assumption`. Each Story/Task also carries a
+`recommended_model` hint (§P2a). It **creates nothing**.
 
 If it returns **open questions** that block responsible planning, surface them and
 resolve with the user **before** creating anything — don't create a tree built on
@@ -91,18 +92,26 @@ Show the complete proposed tree before creating anything:
 
 ```
 Epic:  <title>
-  ├─ Story: <title>            [new]        (3 acceptance criteria)
-  │   ├─ Task: <title>         [new]
-  │   └─ Task: <title>         [new]
+  ├─ Story: <title>            [new]        (3 acceptance criteria)  (sonnet)
+  │   ├─ Task: <title>         [new]  (haiku)
+  │   └─ Task: <title>         [new]  (opus — novel auth design)
   ├─ Story: <title>            [exists → link]  ENG-42
-  └─ Story: <title>  [assumption]  [new]
+  └─ Story: <title>  [assumption]  [new]  (sonnet)
 Open questions resolved: <…>
 Will create: <N> items in <project> on <tracker>.  Nothing yet created.
 ```
 
-Mark `[assumption]` items clearly so the user can cut them. Then create **only on one
-explicit confirmation** — never fire N creates off an ambiguous "ok" (§P3). If **no MCP
-/ the user declines**, print the whole tree as **paste-ready markdown** and stop.
+Mark `[assumption]` items clearly so the user can cut them. Show each item's
+`recommended_model` tier inline; if the item is Opus/Haiku-tier, add its one-line
+reason in parens as shown above (Sonnet needs no reason — it's the default).
+
+**Model roll-up (once, not per item):** after the tree, if any items suggest a tier
+other than the current session's model, add one summary line — e.g. "2 tasks suggest
+Opus, 3 suggest Sonnet — you're on Sonnet now." Advisory only; never blocks creation.
+
+Then create **only on one explicit confirmation** — never fire N creates off an
+ambiguous "ok" (§P3). If **no MCP / the user declines**, print the whole tree as
+**paste-ready markdown** and stop.
 
 ## Step 5 — Create sequentially, parent-first (§P5 — the core rule)
 

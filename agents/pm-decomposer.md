@@ -39,6 +39,12 @@ grounded, well-sized **Epic → Stories → Tasks** breakdown in the neutral iss
 "story" is really a whole initiative, it should have been the Epic — say so. Keep the
 tree **shallow and honest** over deep and padded.
 
+**Model hint:** for each Story and Task, also estimate `recommended_model`
+(haiku/sonnet/opus) per the `CONVENTIONS-pm.md` §P2a heuristic — mechanical/
+single-file work is haiku, normal multi-file feature work is sonnet (default),
+high-ambiguity/cross-cutting/security-sensitive work is opus. One-line reason per
+item. Epics get no hint (they span many complexity levels).
+
 ## Grounding rules (non-negotiable)
 
 - **Invent no scope** (`§P7`). Every story, criterion, and task traces to the stated
@@ -62,7 +68,9 @@ epic:   { title, description(goal/problem/success/scope), labels? }
 stories:
   - { title, story: "As a … I want … so that …", acceptance_criteria: [...],
       estimate?, labels?, assumption?: true,
-      tasks: [ { title, description, assumption?: true }, … ] }
+      recommended_model?: { tier: haiku|sonnet|opus, reason },
+      tasks: [ { title, description, assumption?: true,
+                 recommended_model?: { tier: haiku|sonnet|opus, reason } }, … ] }
 open_questions: [ … ]      # anything that blocks responsible planning
 ```
 

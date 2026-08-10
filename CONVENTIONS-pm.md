@@ -54,13 +54,14 @@ unknown one `TBD` (§P1) rather than omitting it silently.
 - ✔ **INVEST self-check** — if it fails Small/Independent it's an epic; say so and route
   to `/pm-epic` + `/pm-plan`.
 - ○ **Non-functional constraints** (perf, security, a11y), **Dependencies**,
-  **Estimate**, **DoR note** (what must be true before it's pulled in) — when they
-  sharpen scope.
+  **Estimate**, **DoR note** (what must be true before it's pulled in),
+  **Recommended model** (§P2a heuristic + one-line reason) — when they sharpen scope.
 
 **Task** (unit of work):
 - ✔ **Imperative title** — the concrete action.
 - ✔ **Done-when** — a one-line exit condition (the task's DoD).
-- ○ **How / constraints**, **Dependencies / blocked-by** — when they matter.
+- ○ **How / constraints**, **Dependencies / blocked-by**,
+  **Recommended model** (§P2a heuristic + one-line reason) — when they matter.
 - Small and single-purpose; if it holds several actions, split it (§P2 sanity).
 
 Skills reference this block by name (`per §P0`) rather than re-listing the fields, so
@@ -104,6 +105,7 @@ concrete data.
   labels:              string[]
   estimate:            number | null
   priority:            none|low|medium|high|urgent
+  recommended_model:   haiku|sonnet|opus | null   (§P2a; task/story only)
 }
 ```
 
@@ -118,6 +120,27 @@ concrete data.
 | `parent` | `parentId` | epic-link / parent | **native sub-issue** (`addSubIssue` GraphQL) | `Parent` relation |
 | `labels` | `labels` | `labels` | `labels` | multi-select |
 | `estimate` | `estimate` | story points field | (none — note in body) | number prop |
+| `recommended_model` | (none — note in body) | (none — note in body) | (none — note in body) | (none — note in body) |
+
+**No tracker has a native field for `recommended_model`.** Append it as a line in the
+description, same degradation as `estimate` on GitHub — e.g.:
+`**Suggested model:** Sonnet — moderate, touches 3 files, no new architecture.`
+
+### §P2a — Recommended-model heuristic (shared)
+
+A one-line complexity read, not a hard rule — the drafter's best estimate of which
+Claude tier fits *implementing* this item. Applies to Task and Story only (an Epic
+spans many items of varying complexity, so it gets no single hint).
+
+- **haiku** — mechanical, single-file, well-scoped: rename, doc tweak, config change,
+  boilerplate CRUD.
+- **sonnet** — default. Moderate multi-file work, a clear pattern to follow, a normal
+  feature or bugfix.
+- **opus** — high ambiguity, cross-cutting architecture, security-sensitive, novel
+  design work, or the user explicitly flagged it as hard.
+
+State the tier plus a one-line reason (what makes it that tier), not the tier alone.
+Mark `TBD` only when genuinely unclear — default to an estimate rather than omitting.
 
 **The GitHub Issues hierarchy model** (native sub-issues — up to 100 children/parent,
 8 levels deep, same on the free tier):
