@@ -103,7 +103,34 @@ case "$prompt" in
 esac
 case "$prompt" in
   *bug*|*regression*|*correctness*|*"edge case"*) add "/review-correctness" ;;
-  *mockup*|*"the design"*|*"design system"*|*"match the design"*|*figma*) add "/claude-design-pull" ;;
+esac
+
+# Design parity — its own block, because "design" is both a noun ("match this
+# design") and a verb ("design me a schema"), and one glob list cannot separate
+# them. Order matters: unambiguous nouns, then the verb guard, then bare "design"
+# only when a look-at-the-screen word is present.
+#
+# Widened after a run where 4 of the user's 7 complaints missed. The old pattern
+# needed the literal "the design", so "old design", "new design" and the typo
+# "desing" all slipped past — including "i dont see the design changes", the
+# clearest possible call for this gate. Two phases shipped against the wrong
+# mockup with the gate never suggested. check_hook_fires in check.sh pins these
+# cases so the patterns cannot quietly narrow again.
+case "$prompt" in
+  # Nouns that never mean "invent something new".
+  *mockup*|*figma*|*"claude design"*|*"claude-design"*|*"design system"*|*redesign*| \
+  *"looks wrong"*|*"still see the old"*|*"does not match"*|*"doesn't match"*)
+    add "/claude-design-pull (measure the page against the approved mockup)" ;;
+  # design-as-a-VERB: an instruction to invent. Never this gate.
+  *"design a "*|*"design an "*|*"design the "*|*"designing "*) ;;
+  # Otherwise "design"/"desing" counts only beside a visual-state word.
+  *design*|*desing*)
+    case "$prompt" in
+      *see*|*look*|*match*|*chang*|*old*|*new*|*same*|*slide*|*page*|*screen*|*ui*| \
+      *layout*|*styl*|*theme*|*colou*|*color*|*font*|*pdf*|*screenshot*|*wrong*| \
+      *apply*|*appli*|*land*|*pull*|*compar*|*parity*|*complet*|*done*)
+        add "/claude-design-pull (measure the page against the approved mockup)" ;;
+    esac ;;
 esac
 case "$prompt" in
   *lint*|*"run the tests"*|*build*) add "/review-tests-build" ;;

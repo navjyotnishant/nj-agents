@@ -144,5 +144,34 @@ check("a rule identical across mockups is not a conflict",
   conflictingRules({ a: ".chip{border-radius:999px}", b: ".chip{border-radius:999px}" }, [".chip"]).length,
   0);
 
+// 14. THE CLASSLESS MOCKUP. Generated decks and canvas exports are often fully
+//     inline-styled — one run met a 1497-line deck with `class=` appearing zero
+//     times. With no classes there is nothing to be missing, so `missing.length
+//     === 0` is vacuously true and the audit reported complete:true — a claim of
+//     full coverage over a document the class path cannot address at all. That is
+//     failure 5 in its purest form: a confident verdict about nothing.
+const CLASSLESS = `<body>
+  <section data-label="Cover" style="background:#223E78">
+    <div style="font-size:60px">Title</div>
+  </section>
+  <section data-label="1.1 Details" style="background:#FFFFFF"></section>
+</body>`;
+
+check("a classless mockup must NOT report complete coverage",
+  auditCoverage(CLASSLESS, {}).complete,
+  false);
+
+check("and must say WHY, so the caller can switch to structural anchors",
+  auditCoverage(CLASSLESS, {}).classless,
+  true);
+
+check("a mockup that does have classes is not flagged classless",
+  auditCoverage('<div class="btn">x</div>', { btn: ".sp-btn" }).classless,
+  false);
+
+check("and a fully-mapped classful mockup still reports complete",
+  auditCoverage('<div class="btn">x</div>', { btn: ".sp-btn" }).complete,
+  true);
+
 console.log(`\n  ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -50,6 +50,46 @@ does as of this version, rather than how it was built.
 
 ### Fixed
 
+- **The skill-suggestion hook never fired on most ways of saying "the design is
+  wrong".** The design case required the literal string `"the design"`, so **four of one
+  session's seven complaints missed** — including *"i dont see the design changes"*,
+  which is the clearest possible call for `/claude-design-pull`. "old design", "new
+  design" and the recurring typo "desing" all slipped through, and two phases of a
+  redesign shipped against the wrong mockup without the gate ever being suggested.
+  Design parity moved to its own block, because "design" is both a noun ("match this
+  design") and a verb ("design me a schema") and one glob list cannot separate them.
+  Unambiguous nouns fire (`mockup`, `figma`, `design system`, `redesign`); an
+  instruction to invent never does (`design a…`, `design the…`, `designing…`); and bare
+  `design`/`desing` fires only beside a look-at-the-screen word (*see, match, old, new,
+  slide, page, layout, colour, pdf…*). 18 real phrasings check out in both directions.
+
+  `check.sh` gains **`check_hook_fires`**, which asserts the hook actually suggests the
+  right skill for prompts users really sent. The existing `check_hook_sync` only proved
+  a skill was *named* somewhere in the file — a pattern too narrow to ever match passed
+  it, which is exactly how this drifted. Verified by reverting to the old pattern and
+  confirming the new check fails.
+
+- **`/claude-design-pull` reported full coverage of a mockup it could not address at
+  all.** `auditCoverage()` derived `complete` from `missing.length === 0`, which is
+  vacuously true when the mockup has no classes to miss — so a fully inline-styled
+  document (one run met a 1497-line deck with `class=` appearing **zero** times) audited
+  as completely covered. That is the gate's own worst failure mode, a confident verdict
+  over nothing, and the same shape as the hand-picked-manifest hole it was built to
+  close. `complete` now requires `total > 0`, and a new `classless` flag says *why* so
+  the caller can switch to structural anchors (a repeating element plus a stable
+  attribute) instead of silently measuring nothing. Four regression cases added.
+
+- **The same skill had no answer for a classless mockup, and no instruction to render
+  the design at all.** Both gaps showed up on the same run: two phases of a redesign
+  shipped against a subagent's *summary* of a mockup plus a stripped text export —
+  accurate on palette, silent on layout, because neither preserved structure — and were
+  reported complete twice before the user said the design had not changed. `SKILL.md`
+  now (a) requires rendering the mockup via `render_preview` + Playwright rather than
+  only reading its source, with the `serve_url` token-handling rule and the PDF recipe,
+  and (b) tells the reader what to do when there are no classes to map. Recorded as
+  failure 8 in the skill's header, because the most expensive way to skip a gate is to
+  never invoke it.
+
 - **A correct generated site reported as broken, because it was opened from disk.**
   Material builds *directory* URLs (`href="skills/foo/"`), which a browser cannot resolve
   over `file://` — so opening the built `index.html` lands every link on a directory

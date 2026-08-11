@@ -80,11 +80,20 @@ export function auditCoverage(html, classMap = {}) {
   for (const c of compounds) if (!(c in classMap)) missing.push({ cls: c, count: 1, compound: true });
 
   missing.sort((a, b) => b.count - a.count);
+  const total = counts.size + compounds.length;
   return {
-    total: counts.size + compounds.length,
-    mapped: counts.size + compounds.length - missing.length,
+    total,
+    mapped: total - missing.length,
     missing,
-    complete: missing.length === 0,
+    // A classless mockup — generated decks and canvas exports are often fully
+    // inline-styled — yields total === 0, and `missing.length === 0` is then
+    // vacuously true. Reporting complete:true there would claim full coverage of
+    // a document the class path cannot address at all: the exact "confident
+    // verdict over nothing" this module exists to prevent. Callers must branch on
+    // `classless` and anchor on structure instead (repeating element + a stable
+    // attribute) — see SKILL.md Step 2.4.
+    classless: total === 0,
+    complete: total > 0 && missing.length === 0,
   };
 }
 

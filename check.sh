@@ -732,6 +732,63 @@ check_hook_sync() {
   return 0
 }
 
+# Naming a skill in the hook is not the same as MATCHING it. check_hook_sync only
+# proves a skill appears somewhere in the file, so a pattern can be too narrow to
+# ever fire and still pass — which is what happened: the design case required the
+# literal "the design", so four of one session's seven complaints about the design
+# ("i dont see the design changes", "still see the old desing") never surfaced the
+# gate, and two phases shipped against the wrong mockup.
+#
+# These cases are prompts a user actually sent. Add one whenever a real prompt
+# should have fired a skill and did not.
+check_hook_fires() {
+  local hook="$REPO_DIR/hooks/suggest-skills.sh" bad=0 out
+  [ -f "$hook" ] || return 0
+  command -v jq >/dev/null 2>&1 || { ok "skill-suggestion firing (skipped: no jq)"; return 0; }
+
+  _fires() {   # prompt, expected-skill -> 0 when the hook names it
+    out=$(printf '{"prompt":%s}' "$(printf '%s' "$1" | jq -Rs .)" | bash "$hook" 2>/dev/null || true)
+    case "$out" in *"$2"*) return 0 ;; *) return 1 ;; esac
+  }
+
+  while IFS='|' read -r prompt want; do
+    [ -z "$prompt" ] && continue
+    _fires "$prompt" "$want" || {
+      finding check_hook_fires doc-sync "hook never suggests $want for: \"$prompt\""; bad=1; }
+  done <<'CASES'
+i dont see the design changes|/claude-design-pull
+I still see the old desing, here is the new design|/claude-design-pull
+none of the slide has design changes|/claude-design-pull
+make it look like the mockup|/claude-design-pull
+the page doesn't match the figma|/claude-design-pull
+redesign the dashboard|/claude-design-pull
+can you commit this|/commit-assistant
+ready to push to main|/pre-push-review
+CASES
+
+  # The other half of the bargain. "design" is also a VERB, and a gate that fires
+  # on "design me a schema" is one people learn to scroll past — which costs more
+  # than the miss it was widened to fix. These must NOT suggest the design gate.
+  while IFS='|' read -r prompt unwanted; do
+    [ -z "$prompt" ] && continue
+    _fires "$prompt" "$unwanted" && {
+      finding check_hook_fires doc-sync "hook wrongly suggests $unwanted for: \"$prompt\""; bad=1; }
+  done <<'ANTICASES'
+design a database schema for invoices|/claude-design-pull
+design an api for the webhook|/claude-design-pull
+can you design the login screen|/claude-design-pull
+designing a new caching layer|/claude-design-pull
+ANTICASES
+
+  # And it must stay silent entirely on a prompt that matches nothing — a hook
+  # that fires on everything is one people learn to ignore.
+  out=$(printf '{"prompt":"fix the failing test"}' | bash "$hook" 2>/dev/null || true)
+  [ -n "$out" ] && { finding check_hook_fires doc-sync "hook fires on an unrelated prompt: $out"; bad=1; }
+
+  [ "$bad" = "0" ] && ok "skill-suggestion hook fires on real prompts"
+  return 0
+}
+
 # An agent named in the docs but deleted from the repo — the half install.sh's
 # sync check never looked for.
 check_stale_agents() {
@@ -1204,6 +1261,7 @@ check_progress_reporting
 check_conventions_sections
 check_guidance_sync
 check_hook_sync
+check_hook_fires
 check_stale_agents
 check_codex_agent_generation
 check_review_exit_codes

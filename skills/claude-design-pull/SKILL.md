@@ -1,6 +1,6 @@
 ---
 name: claude-design-pull
-description: "Use this skill when the user asks to \"match the mockup\", \"make it look like the design\", \"pull the design from Claude Design\", \"check the page against the mockup\", or wants a page held to an approved design rather than an eyeball judgement. Pulls the approved mockups from a Claude Design project into the repo, renders them alongside the running app, and compares structure and computed styles element by element — then BLOCKS while the page does not match. Advise-only: it measures and reports, never edits app code. Works in any repo with a web frontend; nothing here is project-specific."
+description: "Use this skill when the user asks to \"match the mockup\", \"make it look like the design\", \"pull the design from Claude Design\", \"check the page against the mockup\", or wants a page held to an approved design rather than an eyeball judgement. ALSO use it — before writing any more UI code — whenever the user says the design has NOT landed: \"I still see the old design\", \"I don't see the design changes\", \"none of the slides changed\", \"this doesn't match the mockup\", or they attach a PDF/screenshot of the intended design. Those are the highest-value moment for this gate and the easiest to answer by eye instead, which is how two phases once shipped against a summary of a mockup rather than the mockup. Pulls the approved mockups from a Claude Design project into the repo, renders them alongside the running app, and compares structure and computed styles element by element — then BLOCKS while the page does not match. Advise-only: it measures and reports, never edits app code. Works in any repo with a web frontend; nothing here is project-specific."
 version: 0.1.0
 class: review
 subclass: gate
@@ -51,6 +51,26 @@ approved design **into** a repo and holds the running code to it.
 >    different pages — which makes "match exactly" unsatisfiable and made a
 >    legitimate CSS port *raise* the finding count. Detect it before porting
 >    (`conflictingRules()`), and choose deliberately.
+> 8. **The gate was never run, and two phases shipped against a description of
+>    the design instead of the design.** A subagent summarised the mockup and a
+>    stripped text export supplied the content; both were accurate about palette
+>    and silent about layout, because neither preserved structure. The result
+>    looked done — right hexes, right offering codes — and had the wrong slide
+>    architecture: a navy header band where the design is white with a rail.
+>    Reported as complete twice before the user said "I still see the old
+>    design" and attached a PDF.
+>
+>    Two tells were visible at the time and both read as good news. The header
+>    "cost nothing" because the existing markup already matched — a genuinely new
+>    design rarely maps onto old markup for free; it mapped cheaply because it
+>    was being matched against a *description*. And the palette port was declared
+>    done while 206 hardcoded hex values sat untouched in the slide bodies
+>    against 20 variables, so the deck kept rendering in the old palette.
+>
+>    **If the deliverable is "make it look like this," open the design.** Not a
+>    summary of it, not a text extract of it — render it (Step 2.2) and measure
+>    it. That is the whole job of this skill, and the most expensive way to skip
+>    it is to never invoke it.
 >
 > One more thing this skill got wrong, recorded because it was the most serious:
 > an early version told its subagent to "sign in first", and that agent went
@@ -147,6 +167,34 @@ Look for `design/manifest.json` in the repo.
    > A mockup that is absent from the manifest is indistinguishable from one
    > that was forgotten. Written down, it is reviewable.
 
+   **Render the mockup, do not only read it.** Reading the source tells you what
+   a rule *says*; rendering tells you what the page *is*. `render_preview`
+   returns a `serve_url` built for this — its own description says "open it to
+   screenshot, read console logs, or probe the DOM; relative subresources
+   resolve" — so drive it with Playwright and take computed styles off the live
+   DOM.
+   >
+   > On the run that added this note, the source read gave the right palette and
+   > the wrong architecture, because a stripped text export of the same deck had
+   > been used for the layout. Rendering settled it in one call: **21 of 30
+   > slides carried the section rail, not all 30** — the rail belongs to numbered
+   > section content, not to the cover, the agenda or the annex. Building from
+   > the source read would have put a rail on all of them.
+   >
+   > There is no PDF-export tool in the `claude-design` MCP, and none is needed:
+   >
+   > ```js
+   > await p.goto(process.env.SERVE_URL, { waitUntil: 'networkidle' });
+   > await p.waitForSelector('section');
+   > await p.pdf({ path: 'ref.pdf', width: '1920px', height: '1080px',
+   >               printBackground: true });
+   > ```
+   >
+   > **`serve_url` carries a project-scoped token.** Pass it via an env var;
+   > never into a committed file, a log, or user-facing text. It expires in ~1
+   > hour — re-run `render_preview` for a fresh one. `open_url` is the durable
+   > link, and the only one to give the user.
+
 3. **Author `design/classmap.json` — every class, no exceptions.** The one thing
    that cannot be inferred is which live element corresponds to which mockup
    element. But *which elements to compare* is not a judgement call, and must
@@ -210,6 +258,24 @@ Look for `design/manifest.json` in the repo.
    pair. They are distinct designs, not variants: `.st.ok` is a green pair and
    `.st.bad` a red one, and sampling `.st` alone reads whichever comes first in
    the document and silently reports the other three as matching.
+
+   > **A mockup with no classes at all.** Generated decks and canvas exports are
+   > often fully inline-styled — one run met a 1497-line deck with `class=`
+   > appearing **zero** times. `classmap.json` maps mockup classes to live
+   > selectors, so with no classes there is nothing to map and this whole path
+   > is unavailable. That is not a reason to skip measuring and not a reason to
+   > fall back to eyeballing, which is the failure this skill exists to prevent.
+   >
+   > Anchor on the structure the document does have — a repeating unit
+   > (`section`, `article`, a slide wrapper) plus a stable attribute
+   > (`data-label`, `data-testid`, `id`, `aria-label`) — and pair those against
+   > the live page. Then read computed styles off both sides with the same
+   > extractor, exactly as the class path does. What changes is how an element is
+   > *addressed*; nothing about the evidence changes.
+   >
+   > Record it in `design/NOTES.md` as an explicit deviation, with the reason and
+   > the anchor chosen. An unexplained skipped step is indistinguishable from a
+   > forgotten one — the same rule as `notMeasured` in Step 2.
 
 5. **Add `sequences` and `require`.** `sequences` is the highest-value entry and
    the easiest to skip — ordered text runs (column headers, tab labels) catch a
