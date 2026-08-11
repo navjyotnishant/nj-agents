@@ -102,6 +102,9 @@ case "$prompt" in
   *secret*|*credential*|*token*|*"api key"*) add "/review-secrets (scanner gate, then a semantic pass)" ;;
 esac
 case "$prompt" in
+  *"deep security"*|*"enterprise security"*|*"security audit"*|*"multi-agent security"*|*"multi agent security"*) add "/security-deep-review (multi-lens finders, adversarial verify)" ;;
+esac
+case "$prompt" in
   *bug*|*regression*|*correctness*|*"edge case"*) add "/review-correctness" ;;
 esac
 

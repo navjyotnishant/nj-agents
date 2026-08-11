@@ -10,6 +10,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Initial public release of the toolkit. Everything below describes what nj-agents
 does as of this version, rather than how it was built.
 
+### Added
+
+- **`/security-deep-review`** — an enterprise-depth, multi-agent security review,
+  the first skill in the repo built on the Workflow tool rather than the informal
+  "spawn N agents" prose pattern every other multi-agent skill here uses. Reuses
+  `/review-secrets`' mandatory scanner gate unchanged, then runs a parallel
+  multi-lens finder sweep (injection/authz, SSRF/deserialization/path-traversal,
+  supply-chain, crypto/authn, cloud/infra), pipelines each candidate finding into
+  independent adversarial verifiers (majority-refute kills it), and synthesizes one
+  severity-ranked BLOCK/WARN/PASS report. Diff-scoped by default, `--full` opts into
+  a whole-repo sweep. Deliberately invoked, not part of the default `/pre-push-review`
+  fleet — the same relationship `/deps-upgrade` has to `/review-dependencies`. Adds
+  two reusable agent personas, `security-finder` and `security-verifier`.
+
 ### Changed
 
 - **One reference, not two: `docs.html` is removed and `/docs-site` now generates a site

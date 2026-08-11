@@ -9,7 +9,7 @@
 -->
 
 A personal toolkit of Claude Code **skills and agents** covering the software
-development lifecycle is installed globally on this machine — **37 skills, 27
+development lifecycle is installed globally on this machine — **38 skills, 29
 agents**. It is **project-agnostic**: every skill works in any git repo, any stack,
 any language, and discovers per-repo details at runtime rather than assuming a
 stack, path, port, or tool.
@@ -28,6 +28,7 @@ umbrella that runs them all.
 |---|---|---|
 | `/pre-push-review` | **Umbrella.** Secret scan as a gate, then the rest in parallel; aggregates one PASS / WARN / BLOCK verdict, then renders an HTML report and prints its `file://` URL. | orchestrates the below + `review-report-writer` |
 | `/review-secrets` | Scanner over the diff **first** as a hard gate, then a semantic security pass. | `secrets-reviewer` |
+| `/security-deep-review` | **Escalation over `/review-secrets`.** Same mandatory scanner gate first, then a Workflow-tool pipeline: parallel multi-lens finders (injection/authz, SSRF/deserialization/path-traversal, supply-chain, crypto/authn, cloud/infra) → adversarial verify (majority-refute kills a finding) → synthesis. Diff-scoped by default, `--full` for the whole repo. Deliberately invoked, not in the default umbrella fleet. | `security-finder`, `security-verifier` |
 | `/review-correctness` | Bugs, regressions, edge cases, missing validation in changed lines + blast radius. | `correctness-reviewer` |
 | `/review-tests-build` | Auto-detects and runs the repo's own test/lint/build commands. Never installs tooling. | `tests-build-runner` |
 | `/review-dependencies` | Added/upgraded packages, pinning risk, license changes, typosquatting. Diff-only. | `dependency-reviewer` |
