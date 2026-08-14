@@ -1,7 +1,7 @@
 ---
 name: docs-site
-description: Use this skill when the user asks to "generate a documentation site", "build docs for this project", "make a browsable reference/guide", "document these skills/API/modules", or wants browsable documentation from existing docs, the codebase, an outline, or structured definition files. By DEFAULT it builds a generated multi-page site (MkDocs Material + gen-files + literate-nav) with a tree/sidebar nav, one page per entity, and embedded diagrams — rebuilt from the source files on every commit so it cannot drift. Pass --single for one self-contained theme-aware HTML page instead (a snapshot, for hand-maintained prose). Auto-derives the menu/sections, grounds everything in the source (flags gaps rather than inventing), embeds auto-redacted screenshots via the capture-screenshots pipeline when needed, and PROPOSES the commit. Works in any git repo; nothing here is project-specific.
-version: 0.2.0
+description: Use this skill when the user asks to "generate a documentation site", "build docs for this project", "make a browsable reference/guide", "document these skills/API/modules", or wants browsable documentation from existing docs, the codebase, an outline, or structured definition files. By DEFAULT it builds a generated multi-page site (MkDocs Material + gen-files + literate-nav) with a tree/sidebar nav, one page per entity, and embedded diagrams — rebuilt from the source files on every commit so it cannot drift. Pass --single for one self-contained theme-aware HTML page instead (a snapshot, for hand-maintained prose). Pass --docusaurus for a Docusaurus 3 site (custom React navbar/homepage, MDX pages, npm toolchain) when the deliverable needs that branded look — regenerated from source before every build rather than virtually built, so its anti-drift guarantee is weaker than the MkDocs default. Auto-derives the menu/sections, grounds everything in the source (flags gaps rather than inventing), embeds auto-redacted screenshots via the capture-screenshots pipeline when needed, and PROPOSES the commit. Works in any git repo; nothing here is project-specific.
+version: 0.3.0
 class: authoring
 author: navjyotnishant
 ---
@@ -18,7 +18,9 @@ never commits.
 **By default it builds a generated multi-page site** — tree/sidebar nav, one page per
 entity, diagrams embedded, rebuilt from the source on every commit so it cannot drift.
 Pass **`--single`** for one self-contained HTML page instead, which is a snapshot and
-will drift (see Step 5).
+will drift. Pass **`--docusaurus`** for a Docusaurus 3 site with a custom navbar/homepage
+and npm toolchain — regenerated-not-virtual, so its anti-drift guarantee is weaker than
+the default (see Step 5).
 
 This is an **authoring-class** skill — follow `CONVENTIONS-authoring.md` (repo ingest
 §A1, scoped output §A2, propose-commit §A3, placement §A4, MCP/tool-detect §A5,
@@ -56,6 +58,7 @@ Detected at runtime, never installed by this skill (`§A5`).
 |---|---|---|
 | `mkdocs` + `mkdocs-material` + `mkdocs-gen-files` + `mkdocs-literate-nav` | the default generated site (Mode A) | say so and offer `--single` (Mode B), which needs no toolchain |
 | `mkdocs-glightbox` | click-to-expand for wide diagrams | diagrams render inline, shrunk to the column |
+| `node` + `npm`/`pnpm` (to run `@docusaurus/core`) | `--docusaurus` (Mode C) | say so and offer `--single` (Mode B) instead |
 
 ## Step 0 — Print the banner FIRST
 
@@ -66,6 +69,8 @@ Detected at runtime, never installed by this skill (`§A5`).
 ║  Builds a GENERATED multi-page site (tree nav, one page per      ║
 ║  entity, diagrams embedded) that rebuilds from the source and     ║
 ║  cannot drift. --single gives one self-contained page instead.    ║
+║  --docusaurus gives a branded Docusaurus 3 site (regenerated,     ║
+║  not virtual — weaker anti-drift guarantee than the default).     ║
 ║  Everything is grounded in the source — gaps are flagged, not     ║
 ║  invented. UI screenshots (if any) go through the                 ║
 ║  capture-screenshots pipeline and are PII/secret-redacted         ║
@@ -126,9 +131,11 @@ app, no auth — never fabricate credentials), skip the image and note it as a g
 
 ## Step 5 — Design and build
 
-Two modes. **Mode A — the generated site — is the default.** Reach for B only when the
-subject is *prose that a human maintains* (a guide, a handbook), or when the deliverable
-must be one file you can email or open with no toolchain.
+Three modes. **Mode A — the generated MkDocs site — is the default.** Reach for B only
+when the subject is *prose that a human maintains* (a guide, a handbook), or when the
+deliverable must be one file you can email or open with no toolchain. Reach for C only
+when the user specifically wants a branded, npm-toolchain site (custom navbar, homepage,
+theme) and accepts a weaker anti-drift guarantee than A.
 
 **Why generated is the default:** documentation that is written once starts drifting the
 moment the code moves, and nobody notices until a reader follows a wrong instruction. A
@@ -220,6 +227,35 @@ still wants one file, note in the page itself when it was generated and from wha
 one that is merely dated: a reader has no way to tell which is current. If a generated
 site already exists, updating *it* is the answer.
 
+### Mode C — a Docusaurus 3 site (`--docusaurus`)
+
+For when the deliverable needs a **branded** look — custom navbar, a React homepage,
+project theming — that MkDocs Material's page shell doesn't offer. Spawn `docs-designer`
+with the doc model asking for the Docusaurus shape. It returns:
+
+- `docusaurus.config.ts` (title, tagline, navbar, footer, `colorMode` respecting
+  `prefers-color-scheme`) and `sidebars.ts` — both **generated from the doc model**,
+  never hand-written, so the nav still reflects the real structure;
+- a generator script that writes one `.md`/`.mdx` file per entity into `docs/docs/`
+  (Docusaurus's own routing convention) — this is the one place Mode C differs from
+  Mode A's discipline: **there is no Docusaurus equivalent of `mkdocs-gen-files`'s
+  virtual build-time tree**, so pages are real files the generator overwrites, not
+  content that is impossible to let drift;
+- an optional homepage component (`src/pages/index.tsx`) only if the doc model calls
+  for a landing page beyond the docs themselves; otherwise route `/` straight to the
+  first doc page (`routeBasePath: '/'`) rather than emitting a homepage nobody asked for.
+
+**State the anti-drift tradeoff out loud when you pick this mode:** unlike Mode A,
+Mode C's guarantee is "the generator script re-derives and overwrites `docs/docs/*` on
+every run," not "cannot exist out of sync." If the generator isn't re-run before a
+build, the committed `.mdx` files can go stale exactly like Mode B's single page — the
+difference is only that re-running the generator is cheap and mechanical, so wire it
+into CI (`docusaurus build` after the generator script, same as Mode A's workflow) so
+staleness is caught rather than assumed away.
+
+**Never run this alongside Mode A or B in the same repo** — same reasoning as above:
+one browsable reference per repo, not two that can disagree.
+
 ## Step 6 — Placement + write
 
 Per `CONVENTIONS-authoring.md §A4`, and it differs by mode:
@@ -230,12 +266,23 @@ Per `CONVENTIONS-authoring.md §A4`, and it differs by mode:
   built site** (`site/`); a committed build is the drift you are trying to prevent.
 - **Mode B (`--single`)** — an existing docs location, else a single HTML file at the
   repo root (or `docs/index.html` if a `docs/` tree exists). Report the chosen path.
+- **Mode C (`--docusaurus`)** — commit the *config and generator*, same discipline as
+  Mode A: `docusaurus.config.ts`, `sidebars.ts`, the generator script, `package.json`
+  (+ lockfile), any homepage component. **Gitignore the build output** (`build/`). The
+  generated `docs/docs/*.mdx` files themselves are committed (Docusaurus reads them from
+  disk, unlike Mode A's virtual tree) — but flag in the summary that they must be
+  regenerated, not hand-edited, on the next run.
 
 Merge/refresh in place on re-run — keep the same path so links don't break (§A7).
 
 **Before proposing anything in Mode A, build it:** `mkdocs build --strict` must pass.
 A dangling cross-reference is exactly what `--strict` exists to catch, and shipping a
 config whose build fails is worse than shipping no config.
+
+**Before proposing anything in Mode C, build it:** run the generator, then
+`docusaurus build` (or `npm run build`), and confirm it succeeds. `onBrokenLinks: 'throw'`
+in the config should be set so a dangling cross-reference fails the build the same way
+`--strict` does in Mode A.
 
 ## Step 7 — Summary + propose the commit
 
@@ -252,6 +299,10 @@ git commit -m "docs: generate the reference site from source"
 # Mode B — the single page
 git add <the-page>.html <docs/images/...>
 git commit -m "docs: generate documentation page"
+
+# Mode C — Docusaurus: commit config, generator, AND the generated pages
+git add docusaurus.config.ts sidebars.ts <gen-script> package.json <lockfile> docs/docs/
+git commit -m "docs: generate Docusaurus site from source"
 ```
 
 Never run git. Note that gaps flagged in the output mean the *source* lacked that info.
@@ -271,3 +322,12 @@ way looks broken.**
   HTML and dead links (directory URLs don't resolve over `file://`) — every time, and it
   will be reported to you as a broken build.
 - **Mode B** — open the file; a single self-contained page has no such problem.
+- **Mode C** — same rule as Mode A: give a **served URL**, never a path to `build/index.html`.
+
+  ```bash
+  npm run start      # then open http://localhost:3000/<base-url>/
+  ```
+
+  Plus the published URL if CI deploys it (GitHub Pages needs a public repo on a free
+  plan — check before promising one). State again that `docs/docs/*.mdx` must be
+  regenerated, not hand-edited, before the next build.

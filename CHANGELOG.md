@@ -24,6 +24,15 @@ does as of this version, rather than how it was built.
   fleet — the same relationship `/deps-upgrade` has to `/review-dependencies`. Adds
   two reusable agent personas, `security-finder` and `security-verifier`.
 
+- **`/docs-site --docusaurus`** — a third output mode alongside the default generated
+  MkDocs site and `--single`, for when the deliverable needs a branded look (custom
+  navbar, optional React homepage, npm toolchain) that MkDocs Material's page shell
+  doesn't offer. `docusaurus.config.ts` and `sidebars.ts` are still derived from the
+  doc model rather than hand-written, but Docusaurus has no equivalent of
+  `mkdocs-gen-files`'s virtual build-time tree — the generated `.mdx` pages are real
+  files the generator overwrites, so this mode's anti-drift guarantee is weaker than
+  the default and the skill says so explicitly.
+
 ### Changed
 
 - **One reference, not two: `docs.html` is removed and `/docs-site` now generates a site
