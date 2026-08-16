@@ -179,6 +179,36 @@ have findings.
   final polish pass should be delivered with the gap stated plainly, not
   perfected at 10× the cost.
 
+## Grafana: four traps that fail silently
+
+Applies to any project with Grafana dashboards. Each of these renders a **wrong
+chart rather than an error**, and none is visible in the dashboard JSON.
+
+1. **A custom variable is `label : value`.** `Daily : day` — not `day : Daily`.
+   Reversed, the dropdown shows the *value* and the SQL receives the *label*, so
+   a `CASE`/`IF` on it matches nothing and falls through to its default branch.
+   Tell: the dropdown displays a raw value instead of a friendly name.
+2. **A value containing `%` never renders its label.** Keep `DATE_FORMAT` masks
+   in the SQL; let the variable hold a keyword the SQL switches on.
+3. **A value containing a comma becomes several options.** Custom variables
+   split on commas first, so a value can never contain one.
+4. **Match the x-column's type to the panel type.** A `barchart` treats a column
+   named `time` as a time axis and draws nothing from a string bucket
+   (`2026-08`) — name it `period` and set `xField`. A `timeseries` is the exact
+   inverse: it needs a real DATETIME and draws nothing from a string, so
+   truncate to the period start (`DATE(d - INTERVAL DAYOFMONTH(d)-1 DAY)`)
+   rather than formatting to text. Both failures render an empty panel while
+   the query returns rows.
+
+Also: `showValue: "auto"` silently drops labels it thinks will not fit; use
+`"always"` with `text.valueSize`.
+
+**Diagnose with the right tool.** `?var-<name>=<value>` in the URL bypasses
+saved browser state, and the panel's **query inspector** prints the
+post-interpolation SQL. Grafana's `/api/ds/query` does *not* interpolate
+variables, so testing there proves nothing about what the browser sends —
+reaching for it instead of the inspector cost several wrong diagnoses.
+
 ## Standing rules
 
 Apply these to related work even when no skill is invoked:
