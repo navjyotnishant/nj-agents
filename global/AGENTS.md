@@ -209,6 +209,13 @@ post-interpolation SQL. Grafana's `/api/ds/query` does *not* interpolate
 variables, so testing there proves nothing about what the browser sends —
 reaching for it instead of the inspector cost several wrong diagnoses.
 
+**`'$var'` and `'${var}'` are not interchangeable.** Which one interpolates
+varies by Grafana version and context. Once a form is confirmed working in a
+dashboard, do not "normalise" it elsewhere without re-testing — a bare `'$grain'`
+that worked was changed to `'${grain}'` on a hunch about dependency detection
+and silently stopped interpolating, breaking a control that had been fixed
+three rounds earlier.
+
 ## Standing rules
 
 Apply these to related work even when no skill is invoked:
