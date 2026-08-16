@@ -69,6 +69,9 @@ the item is standard-complete (mark a genuinely unknown field `TBD`, never drop 
 - **dependencies / blocked-by** — when the task can't start until something else lands.
 - **parent** — the parent Story/Epic ID if the user names one (optional; a task is often
   a child of a Story).
+- **project** — the project this work belongs to, when the tracker has one.
+  Resolve it like the team (§P7); never invent one. On Linear also add a label
+  naming the project, because DevLake syncs labels but not projects (§P2b).
 - **labels / estimate / priority** — only if supplied or the tracker needs them.
 - **recommended_model** — apply the §P2a complexity heuristic (haiku/sonnet/opus);
   state the reason in one line.

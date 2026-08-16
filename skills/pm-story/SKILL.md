@@ -72,6 +72,9 @@ the item is standard-complete (mark a genuinely unknown field `TBD`, never drop 
   without it.
 - **non-functional constraints** — perf/security/a11y where they apply (§P0 optional).
 - **parent** — the Epic ID if the user names one (optional).
+- **project** — the project this work belongs to, when the tracker has one.
+  Resolve it like the team (§P7); never invent one. On Linear also add a label
+  naming the project, because DevLake syncs labels but not projects (§P2b).
 - **labels / estimate / priority / dependencies** — only if the user supplies, the
   tracker needs them, or they sharpen scope.
 - **recommended_model** — apply the §P2a complexity heuristic (haiku/sonnet/opus);

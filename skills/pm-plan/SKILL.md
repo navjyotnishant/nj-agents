@@ -63,7 +63,11 @@ one run, so its guardrails are the strictest in the class.
 
 Gather the initiative from the user's intent + any doc/spec they point at + light repo
 context. Resolve the **target tracker** (connected PM MCP; if several, ask) and the
-**destination team/project/board** — never assume it (§P7). Note the tracker's shape so
+**destination team/project/board** — never assume it (§P7). Resolve the **project**
+once, here, and set it on **every item in the tree** (§P2b): an epic in the project
+whose stories sit outside it looks complete in the tracker and is broken in every
+project-scoped report. On Linear, apply a label naming the project too — DevLake
+syncs labels but not projects. Note the tracker's shape so
 the plan fits it. On **GitHub** the tree is native: Epic = Issue `[Epic] …`, Stories and
 Tasks are **sub-issues** (`addSubIssue`), each with a `[Type]` title prefix + `type`
 label (§P2); the Project board is the cross-epic roadmap, not a tree level.

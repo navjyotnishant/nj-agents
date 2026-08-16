@@ -102,6 +102,7 @@ concrete data.
   description:         markdown
   acceptance_criteria: string[]      (stories/bugs; a "done when" list)
   parent:              <id of parent item, or null>
+  project:             <project the work belongs to, or null>   (§P2b)
   labels:              string[]
   estimate:            number | null
   priority:            none|low|medium|high|urgent
@@ -118,6 +119,7 @@ concrete data.
 | `description` | markdown | **ADF** (convert) | markdown | blocks |
 | `acceptance_criteria` | append as a `## Acceptance criteria` checklist in the description | same, in description | task-list in body | checklist blocks |
 | `parent` | `parentId` | epic-link / parent | **native sub-issue** (`addSubIssue` GraphQL) | `Parent` relation |
+| `project` | **`project`** (see §P2b) | project/component | Project board (v2) | `Project` relation |
 | `labels` | `labels` | `labels` | `labels` | multi-select |
 | `estimate` | `estimate` | story points field | (none — note in body) | number prop |
 | `recommended_model` | (none — note in body) | (none — note in body) | (none — note in body) | (none — note in body) |
@@ -125,6 +127,34 @@ concrete data.
 **No tracker has a native field for `recommended_model`.** Append it as a line in the
 description, same degradation as `estimate` on GitHub — e.g.:
 `**Suggested model:** Sonnet — moderate, touches 3 files, no new architecture.`
+
+### §P2b — Set the project, and prefer a label alongside it
+
+**Always set `project` when the tracker has one and the work belongs to a
+project.** Resolve it the same way as the team (§P7): read it from the user's
+intent, or ask. Never invent one, and never create a project.
+
+An item filed with no project is invisible to every project-scoped view — it
+still exists, it just stops being counted. That is the quiet failure this rule
+exists to prevent.
+
+**On Linear, also apply a label naming the project.** Not redundant: DevLake's
+Linear connector syncs teams, cycles and labels but **not projects** —
+`_tool_linear_issues` has `team_id` and `cycle_id` and no project column at all,
+so `original_project` arrives empty on every issue. Any dashboard built on that
+data can filter by team or label, never by project.
+
+So a Linear item that belongs to project *whodunit* gets:
+
+- `project` — set on the issue, for humans working in Linear
+- `labels` — including `whodunit`, for anything reading the warehouse
+
+Use the project's own name, lowercased, as the label. Where a repo's own
+`CLAUDE.md` names a label convention, that wins.
+
+This applies to every skill in the class, including each item `pm-plan` creates
+in a tree — an epic in the project with its stories outside it is worse than
+neither, because the tree looks complete in Linear and is broken in analytics.
 
 ### §P2a — Recommended-model heuristic (shared)
 
@@ -246,7 +276,9 @@ assume which tracker the project uses. If several are connected, ask which to us
   private URL into a title/description (`§A6`).
 - **No invented scope or acceptance criteria** — `TBD`/ask beats fabrication.
 - **Never create outside the confirmed team/project.** A stray item in the wrong
-  workspace is noise that's tedious to clean up — confirm the destination.
+  workspace is noise that's tedious to clean up — confirm the destination. An item
+  filed with **no** project is the quieter version of the same mistake: it looks
+  fine in the tracker and vanishes from every project-scoped report (§P2b).
 - **Don't set status/assignee the user didn't ask for.** Default new items to the
   team's default state (or backlog); let the user drive workflow state.
 
