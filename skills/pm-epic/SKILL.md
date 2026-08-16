@@ -74,8 +74,9 @@ the item is standard-complete (mark a genuinely unknown field `TBD`, never drop 
   - **Stakeholders / dependencies / risks** — when known (§P0 optional; include if they
     shape the epic).
 - **project** — the project this work belongs to, when the tracker has one.
-  Resolve it like the team (§P7); never invent one. On Linear also add a label
-  naming the project, because DevLake syncs labels but not projects (§P2b).
+  Resolve it like the team (§P7); never invent one. If the work is also reported
+  on through a warehouse, check the grouping survives the sync — some connectors
+  drop projects (§P2b).
 - **labels / priority** — if supplied or the tracker needs them.
 - (An epic has no acceptance criteria of its own — those live on its stories; done =
   its stories Done.)

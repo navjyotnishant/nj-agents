@@ -128,7 +128,7 @@ concrete data.
 description, same degradation as `estimate` on GitHub — e.g.:
 `**Suggested model:** Sonnet — moderate, touches 3 files, no new architecture.`
 
-### §P2b — Set the project, and prefer a label alongside it
+### §P2b — Set the project, and know what your warehouse can see
 
 **Always set `project` when the tracker has one and the work belongs to a
 project.** Resolve it the same way as the team (§P7): read it from the user's
@@ -138,23 +138,28 @@ An item filed with no project is invisible to every project-scoped view — it
 still exists, it just stops being counted. That is the quiet failure this rule
 exists to prevent.
 
-**On Linear, also apply a label naming the project.** Not redundant: DevLake's
-Linear connector syncs teams, cycles and labels but **not projects** —
-`_tool_linear_issues` has `team_id` and `cycle_id` and no project column at all,
-so `original_project` arrives empty on every issue. Any dashboard built on that
-data can filter by team or label, never by project.
+**If the work is also reported on through a warehouse, check that the grouping
+survives the sync.** The tracker's own views and the warehouse's do not always
+see the same fields. Worked example, measured on a live DevLake instance:
+its Linear connector syncs **teams, cycles and labels but not projects** —
+`_tool_linear_issues` carries `team_id` and `cycle_id` and has no project column,
+so `original_project` arrives empty on every issue. A dashboard reading those
+tables can group by team; it cannot group by project.
 
-So a Linear item that belongs to project *whodunit* gets:
+Where that gap exists, the durable fix is on the tracker side, not in the query:
 
-- `project` — set on the issue, for humans working in Linear
-- `labels` — including `whodunit`, for anything reading the warehouse
+- **A dedicated team** is the cleanest — teams are first-class in every
+  connector, so the grouping needs no workaround. Costs a paid Linear seat.
+- **A label** works on any tier and is what to reach for otherwise, though it
+  has to be applied to every new item or the grouping silently drifts.
 
-Use the project's own name, lowercased, as the label. Where a repo's own
-`CLAUDE.md` names a label convention, that wins.
+Say which one is in play when it affects how an item should be filed; do not
+assume the user is on a tier that has teams.
 
 This applies to every skill in the class, including each item `pm-plan` creates
 in a tree — an epic in the project with its stories outside it is worse than
-neither, because the tree looks complete in Linear and is broken in analytics.
+neither, because the tree looks complete in the tracker and is broken in
+analytics.
 
 ### §P2a — Recommended-model heuristic (shared)
 
