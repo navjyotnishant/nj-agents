@@ -982,6 +982,32 @@ check_description_routing() {
   return 0
 }
 
+# A skill's scripts/ dir ships executable code — the SKILL.md/agent prose contract
+# checks elsewhere in this file never exercise it, only describe it. A test_*.py
+# alongside it (tempdir-fixture, exit 0/1, no network — same discipline as
+# tech-blog's test_make_cover.py / test_rasterize_svg.py / test_publish_devto.py)
+# is what actually proves the script does what its skill claims. This only checks
+# a test FILE exists per scripts/ dir, not that its assertions are any good — that
+# part is still a human/reviewer judgment call, same as every other check.sh check
+# that verifies structure rather than content quality.
+check_script_self_tests() {
+  local bad=0 dir name py_count test_count
+  for dir in "$SKILLS_SRC"/*/scripts/; do
+    [ -d "$dir" ] || continue
+    name="$(basename "$(dirname "$dir")")"
+    py_count="$(find "$dir" -maxdepth 1 -name '*.py' ! -name 'test_*.py' 2>/dev/null | wc -l | tr -d ' ')"
+    [ "$py_count" -gt 0 ] || continue  # a scripts/ dir with no .py has nothing this check can test
+    test_count="$(find "$dir" -maxdepth 1 -name 'test_*.py' 2>/dev/null | wc -l | tr -d ' ')"
+    if [ "$test_count" -lt 1 ]; then
+      finding check_script_self_tests script-coverage \
+        "skills/$name/scripts/ has $py_count script(s) but no test_*.py self-test"
+      bad=1
+    fi
+  done
+  [ "$bad" = "0" ] && ok "every skill scripts/ dir with .py files has a test_*.py"
+  return 0
+}
+
 # An agent named in the docs but deleted from the repo — the half install.sh's
 # sync check never looked for.
 check_stale_agents() {
@@ -1456,6 +1482,7 @@ check_guidance_sync
 check_hook_sync
 check_hook_fires
 check_description_routing
+check_script_self_tests
 check_stale_agents
 check_codex_agent_generation
 check_review_exit_codes

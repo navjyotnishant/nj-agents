@@ -187,7 +187,10 @@ def upload_image(path, api_key):
 # transforms
 # --------------------------------------------------------------------------- #
 def is_local(ref):
-    return not re.match(r"^[a-z][a-z0-9+.-]*://", ref, re.I) and not ref.startswith("//")
+    # A URI scheme is "scheme:" (RFC 3986), not necessarily "scheme://" — a
+    # data: URI has no slashes at all and was previously misclassified as a
+    # local file path, sending it into resolve_local_image's filesystem lookup.
+    return not re.match(r"^[a-z][a-z0-9+.-]*:", ref, re.I) and not ref.startswith("//")
 
 
 def resolve_local_image(base_dir, ref, api_key, state, cache):

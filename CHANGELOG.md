@@ -12,6 +12,22 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- **`check.sh` — deterministic self-tests for skills shipping `scripts/`.** A new
+  `check_script_self_tests` check flags a skill's `scripts/` dir if it has `.py`
+  files but no matching `test_*.py`. Added the first three: `test_make_cover.py`,
+  `test_rasterize_svg.py`, and `test_publish_devto.py` for `/tech-blog`'s three
+  scripts — stdlib `unittest`, tempdir fixtures, testing only the pure/deterministic
+  logic (arg parsing, SVG dimension parsing, front-matter rewriting, path/scheme
+  classification) since all three scripts shell out to Chrome or call Dev.to's API
+  for their actual work, which a free, no-network self-test can't exercise. Writing
+  `test_publish_devto.py` surfaced a real bug: `is_local()` misclassified a `data:`
+  URI as a local file path (its regex required `scheme://`, but a URI scheme is just
+  `scheme:` per RFC 3986) — fixed alongside the test that caught it.
+  `skills/arch-diagram/scripts/` turned out to hold only a stale, gitignored
+  `node_modules/` left over from the v0.4.0 rough.js-renderer removal (no script
+  file, not referenced by `SKILL.md`) — removed rather than tested, since there was
+  nothing there to test.
+
 - **`check.sh` — trigger-routing regression tests for skill descriptions.** A new
   `check_description_routing` check (`scripts/gen-trigger-cases.sh`) extracts every
   quoted trigger phrase from all 38 skills' own `description` frontmatter — the same

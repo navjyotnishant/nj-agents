@@ -31,7 +31,7 @@ CONVENTIONS-orchestration.md # §U binds EVERY skill; §C cost + §R progress fo
 global/AGENTS.md            # advisory guidance → symlinked per runner (see install.sh)
 install.sh                  # symlink installer (idempotent; safe uninstall; never clobbers)
 check.sh                    # validator — frontmatter, refs, class contracts, cost/progress,
-                             #   trigger-routing (scripts/gen-trigger-cases.sh)
+                             #   trigger-routing (scripts/gen-trigger-cases.sh), script self-tests
 bin/nj-agents-review        # headless /pre-push-review → §5 exit codes (0 PASS/WARN, 1 BLOCK, 2 error)
 bin/nj-run                  # testing-class run harness — manifest §T13, cost §T10, subagents §T11, log §T12
 tests/test-nj-run.sh        # its behavioural checks (no LLM, free, CI-safe)
@@ -285,5 +285,11 @@ construction and the validator tells you what is still missing:
    hand-maintained, and AGENTS.md is what makes the skill discoverable in *other*
    repos. `check.sh` flags it if you forget. The **reference site needs no edit**: it
    globs `skills/`/`agents/` and picks the new one up on the next build.
+7. **If the skill bundles a `scripts/` dir with executable code, add a
+   `test_*.py` alongside it** (stdlib `unittest`, tempdir fixtures, no network —
+   see `skills/tech-blog/scripts/test_*.py` for the pattern: import the target
+   script via `importlib.util`, test its pure/deterministic functions, skip
+   anything that shells out or hits a real API). `check_script_self_tests`
+   flags a `scripts/` dir with `.py` files but no matching `test_*.py`.
 
 `templates/` holds the sources; they are not skills themselves and are not globbed.
