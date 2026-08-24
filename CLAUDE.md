@@ -32,7 +32,8 @@ global/AGENTS.md            # advisory guidance → symlinked per runner (see in
 install.sh                  # symlink installer (idempotent; safe uninstall; never clobbers)
 check.sh                    # validator — frontmatter, refs, class contracts, cost/progress,
                              #   trigger-routing (scripts/gen-trigger-cases.sh), script self-tests,
-                             #   artifact security scan (install lures, undeclared network calls)
+                             #   artifact security scan (install lures, undeclared network calls),
+                             #   evals.json schema (structure only — running evals is on-demand)
 bin/nj-agents-review        # headless /pre-push-review → §5 exit codes (0 PASS/WARN, 1 BLOCK, 2 error)
 bin/nj-run                  # testing-class run harness — manifest §T13, cost §T10, subagents §T11, log §T12
 tests/test-nj-run.sh        # its behavioural checks (no LLM, free, CI-safe)
@@ -299,5 +300,20 @@ construction and the validator tells you what is still missing:
    `SKILL.md`/`agents/*.md` install instruction is fine as long as it's framed
    for a human to run themselves (e.g. "do not install anything yourself" —
    see `review-secrets/SKILL.md`'s scanner-install block for the pattern).
+9. **Optionally, add `evals/evals.json`** (Anthropic's skill-creator schema —
+   `skill_name`, `evals[].{id,prompt,expected_output,files,expectations}`; see
+   `skills/pm-task/evals/evals.json` for a worked example) if the skill's
+   behavior is worth verifying end-to-end, not just structurally.
+   `check_evals_schema` validates the shape (JSON-valid, required fields
+   present) — that's the only automated gate; actually **running** the evals is
+   deliberately on-demand, never CI-gating, since it spends real tokens
+   spawning an executor subagent per case plus a grader subagent to check the
+   `expectations[]`. Two ways to run one: install the `skill-creator` plugin
+   and follow its own SKILL.md's "Running and evaluating test cases" steps
+   (spawn a with-skill + baseline subagent per eval, grade against
+   `agents/grader.md`, optionally launch `eval-viewer/generate_review.py`); or
+   by hand — fresh session, paste each `prompt`, grade the result against its
+   `expectations[]` yourself. Re-run whenever the skill's `SKILL.md` behavior
+   changes materially, not on every edit.
 
 `templates/` holds the sources; they are not skills themselves and are not globbed.

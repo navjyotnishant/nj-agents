@@ -12,6 +12,23 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- **`evals/evals.json` — behavioral eval schema for `/pm-task`, adopting Anthropic's
+  skill-creator schema verbatim** (`skill_name`, `evals[].{id,prompt,expected_output,
+  files,expectations}`) rather than inventing a parallel format, so existing
+  tooling built for that shape (the `eval-viewer`, the `grader` agent persona) works
+  unmodified. 3 eval cases, 12 expectations total, grounded in `pm-task/SKILL.md`'s
+  actual behavior (done-when requirement, propose-not-create default, scope
+  discipline on an under-specified request). Investigating skill-creator's real
+  tooling surfaced a correction worth recording: `run_eval.py`/`run_loop.py` test
+  **trigger routing** via subprocess `claude -p` calls — a different concern from
+  behavioral eval — while the `evals.json` → executor-subagent → grader-subagent →
+  `grading.json` → eval-viewer flow is agent-orchestrated in skill-creator's own
+  `SKILL.md`, not run by a script. `check_evals_schema` validates only the JSON
+  *shape* where an `evals.json` exists (structural, same spirit as
+  `check_skill_frontmatter`'s YAML check) — actually running the evals stays
+  deliberately on-demand and never CI-gating, since each run spends real tokens on
+  a with-skill + baseline subagent per case plus a grader subagent per run.
+
 - **`check.sh` — artifact-level security scan of skills and agents.** A new
   `check_artifact_security` check scans skill files for what they would actually
   DO if executed, not just what they claim to do — the gap every other `check.sh`

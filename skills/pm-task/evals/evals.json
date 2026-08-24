@@ -1,0 +1,41 @@
+{
+  "skill_name": "pm-task",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Add a task to fix the null pointer exception in the payment parser.",
+      "expected_output": "A single, well-scoped Task drafted with an imperative title, a description covering what to do, and an explicit done-when exit condition — then either proposed for creation in a connected tracker (on opt-in) or printed as paste-ready markdown if no tracker is connected.",
+      "files": [],
+      "expectations": [
+        "The task title is an imperative action, not a vague restatement of the request",
+        "The task description includes a done-when line (Definition of Done exit condition), not just a description of the work",
+        "No PM tracker item was created without the user explicitly opting in first",
+        "If a project is available, the skill resolved or asked for it rather than assuming one",
+        "Exactly one task was drafted — the skill did not fan out into multiple tasks or invent an epic/story around it"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Create a task in Linear for updating the README with the new install instructions, under the DOCS-12 story.",
+      "expected_output": "A Task drafted with a parent link to DOCS-12, scoped to the README update only, then proposed for creation in Linear on opt-in.",
+      "files": [],
+      "expectations": [
+        "The drafted task references DOCS-12 as its parent",
+        "The skill searched for an existing matching task before proposing a create (no duplicate creation)",
+        "The task stayed scoped to the README update and did not expand into unrelated documentation work",
+        "The skill printed what it would create and asked before creating anything in Linear"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "This is a bug: the /pm-task skill doesn't accept a parent epic ID, only a story ID.",
+      "expected_output": "The skill recognizes this describes a genuinely large or sprawling piece of work reported as informal prose, and either drafts one well-scoped task for the specific fix or explicitly flags that the request is broader than a single task and suggests /pm-story or /pm-plan instead — it does not silently invent scope beyond what was described.",
+      "files": [],
+      "expectations": [
+        "The skill did not fabricate acceptance criteria or implementation details not present in the one-line report",
+        "If the skill judged the fix too large or ambiguous for a single task, it said so rather than guessing at a solution",
+        "The drafted item (if any) stayed limited to the described defect, not a broader feature"
+      ]
+    }
+  ]
+}

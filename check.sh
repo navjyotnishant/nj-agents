@@ -1080,6 +1080,37 @@ check_artifact_security() {
   return 0
 }
 
+# Structural validation ONLY — an evals.json's SHAPE, not whether its evals pass.
+# Tier-3 behavioral eval (skill-creator's schema, NAV-26) is deliberately on-demand
+# and never CI-gating: it spends real tokens spawning executor + grader subagents
+# per case. This just catches an evals.json that would fail skill-creator's own
+# run_eval.py-adjacent tooling with a confusing error before anyone gets that far —
+# same spirit as check_skill_frontmatter validating YAML, not skill behavior.
+check_evals_schema() {
+  local bad=0 f dir
+  command -v jq >/dev/null 2>&1 || { ok "evals.json schema (skipped: no jq)"; return 0; }
+  while IFS= read -r f; do
+    [ -f "$f" ] || continue
+    dir="$(basename "$(dirname "$(dirname "$f")")")"
+    jq -e . "$f" >/dev/null 2>&1 || {
+      finding check_evals_schema evals-schema "skills/$dir/evals/evals.json is not valid JSON"
+      bad=1; continue
+    }
+    jq -e '.skill_name and (.evals | type == "array") and (.evals | length > 0)' "$f" >/dev/null 2>&1 || {
+      finding check_evals_schema evals-schema \
+        "skills/$dir/evals/evals.json missing skill_name or a non-empty evals[] array"
+      bad=1; continue
+    }
+    jq -e '.evals[] | (.id and .prompt and .expected_output and (.expectations | type == "array"))' "$f" >/dev/null 2>&1 || {
+      finding check_evals_schema evals-schema \
+        "skills/$dir/evals/evals.json has an eval missing id/prompt/expected_output/expectations[]"
+      bad=1
+    }
+  done < <(find "$SKILLS_SRC" -path '*/evals/evals.json' 2>/dev/null)
+  [ "$bad" = "0" ] && ok "evals.json schema valid where present"
+  return 0
+}
+
 # An agent named in the docs but deleted from the repo — the half install.sh's
 # sync check never looked for.
 check_stale_agents() {
@@ -1556,6 +1587,7 @@ check_hook_fires
 check_description_routing
 check_script_self_tests
 check_artifact_security
+check_evals_schema
 check_stale_agents
 check_codex_agent_generation
 check_review_exit_codes
