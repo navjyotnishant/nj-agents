@@ -12,6 +12,22 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- **`check.sh` — trigger-routing regression tests for skill descriptions.** A new
+  `check_description_routing` check (`scripts/gen-trigger-cases.sh`) extracts every
+  quoted trigger phrase from all 38 skills' own `description` frontmatter — the same
+  vocabulary a model reads to decide which skill matches a prompt — and verifies each
+  phrase's own skill scores at least as high as every other skill against it, using a
+  free, deterministic keyword-overlap heuristic (no network, no LLM). Catches two
+  regression classes: a description edited down to something too generic to match its
+  own trigger phrases (including one that loses its quoted phrases entirely, which
+  would otherwise silently drop out of coverage), and two skills' descriptions
+  drifting close enough to tie for the same prompt. 18 known-intentional collisions
+  (umbrella/leaf pairs like `/pre-push-review` vs `/review-style`, close PM-authoring
+  siblings) are allowlisted by exact prompt so they don't false-positive the gate; a
+  genuinely new collision still fails it. A true model-judged routing test (not just
+  keyword overlap) is deliberately out of scope for this free check — noted as a
+  follow-up, not built here.
+
 - **`/security-deep-review`** — an enterprise-depth, multi-agent security review,
   the first skill in the repo built on the Workflow tool rather than the informal
   "spawn N agents" prose pattern every other multi-agent skill here uses. Reuses

@@ -789,6 +789,199 @@ ANTICASES
   return 0
 }
 
+# check_hook_fires proves hooks/suggest-skills.sh routes real prompts. It does not
+# prove the skill *frontmatter itself* is what a model would route on — that's a
+# different surface (a model reads `description`, not the hook), and with 38 skills
+# two descriptions can drift close enough to collide without either ever showing up
+# in the hook's own glob patterns. This closes that gap with the same free,
+# deterministic, no-network style as every other check.sh check.
+#
+# The cases are generated, not hand-authored: scripts/gen-trigger-cases.sh pulls
+# every quoted trigger phrase straight out of each skill's own `description` — the
+# same words a model reads to decide it matches — so there is nothing here to keep
+# in sync by hand. Regenerated into a tempdir each run, same as gen-cursor-rule.sh
+# and gen-codex-agents.sh; never a committed, driftable copy.
+#
+# Scoring is a keyword-overlap heuristic (shared vocabulary between the prompt and
+# each skill's full description), not a real model call — check.sh has no network
+# and no LLM. That is a weaker signal than an actual routing decision, so it can
+# only catch the regressions that show up as vocabulary drift: a description edited
+# down to something too generic to match its own trigger phrases, or two skills
+# whose descriptions have grown close enough to tie. A genuinely subtle routing
+# ambiguity (right vocabulary, wrong intent) needs a real model in the loop —
+# deliberately out of scope for this free check; see NAV-23's deferred LLM tier.
+#
+# Some collisions are BY DESIGN, not regressions: an umbrella and its own leaf
+# dimension share vocabulary on purpose (/pre-push-review vs /review-style), as do
+# tightly related PM-authoring siblings (pm-epic/pm-story/pm-task). Flagging those
+# every run would make this check permanently red — the exact "fires on everything,
+# people learn to ignore it" failure check_hook_fires' own comment warns about.
+# Allowlist known-accepted collisions by their exact generated prompt so a NEW
+# collision (an unrelated pair drifting close) still fails the build. Add an entry
+# here only when a real review confirms the tie is intentional, never to silence a
+# genuine regression.
+DESCRIPTION_ROUTING_ALLOWED_COLLISIONS=(
+  # /changelog vs /release-notes — release-notes explicitly reuses changelog's
+  # section (composes with it, CLAUDE.md's workflow-class description), so
+  # sharing "release notes" vocabulary is the documented relationship, not drift.
+  "cut release notes"
+
+  # /e2e-run vs /e2e-suite — leaf runner vs its own umbrella; the umbrella's whole
+  # job is "run the suite" in the same words the leaf uses.
+  "run the e2e tests"
+  "run the browser tests"
+  "run the full e2e suite"
+
+  # /em-newsletter vs /vertical-pulse — vertical-pulse is documented as "a one-line
+  # shortcut into the same pipeline" as em-newsletter, so it shares its vocabulary
+  # by design.
+  "do a vertical pulse"
+
+  # /flake-watch vs /test-report — adjacent testing-class reporting skills;
+  # "flake report" legitimately reads as either's territory.
+  "show the flake report"
+
+  # pm-epic vs pm-story vs pm-task — deliberately close PM-authoring siblings in
+  # the same class, sharing "create a <type>" phrasing by the nature of the class.
+  "create an epic"
+  "draft an epic in Linear/Jira"
+  "create a story in Linear/Jira"
+
+  # /pre-push-review (umbrella) vs its own review-* leaf dimensions — the umbrella
+  # runs literally these leaves, so "review my changes"/"run the tests"/"check the
+  # build" is shared vocabulary between a whole and its parts by design.
+  "review my changes before I push"
+  "run the pre-push review"
+  "check this diff for correctness"
+  "scan my changes for secrets"
+  "review my changes for style"
+  "run the tests before I push"
+  "check the build"
+
+  # /test-data vs /test-suite-author — test-suite-author is the umbrella that
+  # chains test-data as one of its stages, same umbrella/leaf relationship.
+  "write fixtures for these tests"
+
+  # /test-plan vs /flake-watch — both testing-class skills touching "what to
+  # test"; genuinely adjacent territory, reviewed and accepted.
+  "what should we test here"
+)
+
+check_description_routing() {
+  local gen="$REPO_DIR/scripts/gen-trigger-cases.sh" bad=0
+  [ -x "$gen" ] || return 0
+  command -v jq >/dev/null 2>&1 || { ok "description routing (skipped: no jq)"; return 0; }
+
+  local cases_file; cases_file="$(mktemp)"
+  trap 'rm -f "$cases_file"' RETURN
+  if ! "$gen" >"$cases_file" 2>/dev/null; then
+    finding check_description_routing doc-sync "scripts/gen-trigger-cases.sh failed to generate cases"
+    return 0
+  fi
+
+  local n_cases; n_cases="$(jq '.cases | length' "$cases_file" 2>/dev/null || echo 0)"
+  if [ "$n_cases" -lt 1 ]; then
+    finding check_description_routing doc-sync "gen-trigger-cases.sh produced zero cases"
+    return 0
+  fi
+
+  # A description that regresses to having NO quoted trigger phrase at all removes
+  # itself from the positive-case set entirely — gen-trigger-cases.sh warns and
+  # skips it (it can't build a case from nothing), so the misroute check above
+  # never sees it and has nothing to fail on. That is a worse silent gap than a
+  # single failing case: the skill lost all its routing coverage. Catch it here by
+  # requiring every skill directory to appear at least once in the generated cases.
+  local uncovered
+  uncovered="$(for d in "$SKILLS_SRC"/*/; do basename "${d%/}"; done | sort -u \
+    | comm -23 - <(jq -r '.cases[].skill' "$cases_file" | sort -u) | tr '\n' ' ')"
+  if [ -n "${uncovered// }" ]; then
+    finding check_description_routing doc-sync \
+      "no quoted trigger phrase found for: $uncovered — description has lost its routing vocabulary"
+    bad=1
+  fi
+
+  # One "skill -> description" map, built in a single pass (no per-case re-read of
+  # 38 files). All tokenizing and scoring below happens inside ONE jq invocation —
+  # a bash loop calling out per (case, skill) pair is 131*38 subshells and does not
+  # finish in reasonable time; jq's own string functions do the same work in one
+  # process.
+  local descs_file; descs_file="$(mktemp)"
+  trap 'rm -f "$cases_file" "$descs_file"' RETURN
+  echo "{}" >"$descs_file"
+  for dir in "$SKILLS_SRC"/*/; do
+    local name; name="$(basename "${dir%/}")"
+    local skill_md="$dir/SKILL.md"
+    [ -f "$skill_md" ] || continue
+    local desc; desc="$(awk '/^---$/{n++; next} n==1 && /^description:/{sub(/^description: */,""); print; exit}' "$skill_md")"
+    jq --arg k "$name" --arg v "$desc" '. + {($k): $v}' "$descs_file" >"$descs_file.tmp" && mv "$descs_file.tmp" "$descs_file"
+  done
+
+  # Stopwords kept tight and generic — this is a coverage heuristic, not an NLP
+  # pipeline, and an over-tuned stopword list is how a check quietly stops meaning
+  # anything.
+  local result
+  result="$(jq -n \
+    --slurpfile cases_wrap "$cases_file" \
+    --slurpfile descs_wrap "$descs_file" \
+    '
+    ($cases_wrap[0].cases) as $cases |
+    ($descs_wrap[0]) as $descs |
+    ["a","an","the","this","that","these","those","is","are","was","were","be","been",
+     "being","use","uses","used","using","when","user","asks","wants","or","and","to",
+     "for","with","in","of","on","at","from","into","your","you","it","its","as","not",
+     "never","no","do","does","don","if"] as $stop |
+    def toks: ascii_downcase
+      | [scan("[a-z][a-z0-9-]{2,}")]
+      | map(select(. as $t | ($stop | index($t)) | not))
+      | unique;
+    ($descs | with_entries(.value |= toks)) as $dtoks |
+    ($cases | map(. + {ptoks: (.prompt | toks)})) as $cases2 |
+    ($dtoks | keys) as $skills |
+    [ $cases2[] | . as $c |
+      ([ $skills[] as $s | {skill: $s, score: ([$c.ptoks[] as $t | select($dtoks[$s] | index($t))] | length)} ]) as $scored |
+      (reduce $scored[] as $x (0; if $x.score > . then $x.score else . end)) as $best |
+      ([ $scored[] | select(.score == $best) | .skill ]) as $top |
+      {prompt: $c.prompt, skill: $c.skill, top: $top, misrouted: ($top | index($c.skill) | not),
+       collided: (($top | index($c.skill)) and ($top | length) > 1)}
+    ] as $results |
+    {
+      misrouted: [ $results[] | select(.misrouted) ],
+      collided:  [ $results[] | select(.collided) ],
+    }
+    ')"
+
+  local allowed_json="[]"
+  local p
+  for p in "${DESCRIPTION_ROUTING_ALLOWED_COLLISIONS[@]}"; do
+    allowed_json="$(jq --arg p "$p" '. + [$p]' <<<"$allowed_json")"
+  done
+  result="$(jq --argjson allowed "$allowed_json" \
+    '.collided |= [ .[] | select(.prompt as $p | ($allowed | index($p)) | not) ]' <<<"$result")"
+
+  local n_mis n_col
+  n_mis="$(jq '.misrouted | length' <<<"$result")"
+  n_col="$(jq '.collided | length' <<<"$result")"
+
+  if [ "$n_mis" -gt 0 ]; then
+    while IFS=$'\t' read -r prompt expect top; do
+      finding check_description_routing doc-sync \
+        "\"$prompt\" expected to route to $expect, top-scoring skill(s) instead: $top"
+    done < <(jq -r '.misrouted[] | [.prompt, .skill, (.top | join(" "))] | @tsv' <<<"$result")
+    bad=1
+  fi
+
+  if [ "$n_col" -gt 0 ]; then
+    while IFS=$'\t' read -r prompt expect top; do
+      finding check_description_routing doc-sync \
+        "\"$prompt\" (expected $expect) ties with another skill's description and isn't in the allowlist: $top"
+    done < <(jq -r '.collided[] | [.prompt, .skill, (.top | join(" "))] | @tsv' <<<"$result")
+    bad=1
+  fi
+
+  [ "$bad" = "0" ] && ok "skill description routing: $n_cases generated cases, no misroutes or unallowed collisions"
+  return 0
+}
+
 # An agent named in the docs but deleted from the repo — the half install.sh's
 # sync check never looked for.
 check_stale_agents() {
@@ -1262,6 +1455,7 @@ check_conventions_sections
 check_guidance_sync
 check_hook_sync
 check_hook_fires
+check_description_routing
 check_stale_agents
 check_codex_agent_generation
 check_review_exit_codes

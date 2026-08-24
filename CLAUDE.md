@@ -30,7 +30,8 @@ CONVENTIONS-testing.md      # testing-class shared rules (§T1–T14); skills in
 CONVENTIONS-orchestration.md # §U binds EVERY skill; §C cost + §R progress for spawning ones
 global/AGENTS.md            # advisory guidance → symlinked per runner (see install.sh)
 install.sh                  # symlink installer (idempotent; safe uninstall; never clobbers)
-check.sh                    # validator — frontmatter, refs, class contracts, cost/progress
+check.sh                    # validator — frontmatter, refs, class contracts, cost/progress,
+                             #   trigger-routing (scripts/gen-trigger-cases.sh)
 bin/nj-agents-review        # headless /pre-push-review → §5 exit codes (0 PASS/WARN, 1 BLOCK, 2 error)
 bin/nj-run                  # testing-class run harness — manifest §T13, cost §T10, subagents §T11, log §T12
 tests/test-nj-run.sh        # its behavioural checks (no LLM, free, CI-safe)
