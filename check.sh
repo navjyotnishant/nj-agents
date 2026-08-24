@@ -1008,6 +1008,78 @@ check_script_self_tests() {
   return 0
 }
 
+# Every other check.sh check validates a skill's STATED contract (tools:
+# frontmatter, "never runs git" prose, cost/progress citations). None of them scan
+# what a skill's files would actually DO if the agent-code inside ran — an install
+# lure, a hidden network call, or credential-reading code would pass every existing
+# check as long as the prose around it reads correctly. This closes that gap.
+#
+# Two lenses, because "network call" and "install lure" need different signal
+# shapes and different false-positive tolerance:
+#
+#   A. Code files (scripts/*.py/*.js/*.sh) — cross-reference against the skill's
+#      own `## Dependencies` table (the same table check_dependencies already
+#      requires). A declared network call (e.g. publish-devto.py's Dev.to REST API,
+#      documented in tech-blog/SKILL.md's Dependencies table) is fine; an
+#      UNDECLARED one is the finding. A fetch-pipe-execute shape in CODE has no
+#      legitimate reading regardless of declaration — always BLOCK.
+#
+#   B. Prose (SKILL.md/agents/*.md) — a fetch-pipe-execute shape here is almost
+#      always a human-facing install instruction (review-secrets prints one for
+#      trufflehog, inside a block explicitly followed by "do not install anything
+#      yourself"). Only BLOCK when that "for the human, not the agent" framing is
+#      ABSENT nearby — otherwise every install-instructions block in the repo would
+#      false-positive, which is worse than missing a genuine lure (§C: a check that
+#      fires on everything is one people learn to ignore).
+check_artifact_security() {
+  local bad=0 f base
+  local fetch_exec_re='(curl|wget)[^|]*(\|\s*(sh|bash|zsh)\b|-O-[^|]*\|)'
+  local human_framing_re='do not install|only the user install|for the user to|have the user|print the install'
+
+  # --- Lens A: code files ---
+  while IFS= read -r f; do
+    [ -f "$f" ] || continue
+    base="$(basename "$f")"
+    # Fetch-pipe-execute in code: no legitimate reading, always BLOCK.
+    if grep -qEi "$fetch_exec_re" "$f" 2>/dev/null; then
+      finding check_artifact_security install-lure \
+        "$f contains a fetch-then-execute pattern (curl/wget piped to a shell) — remove it, this is never legitimate inside a skill's own script"
+      bad=1
+    fi
+    # Undeclared network call: the script imports/calls a network primitive, but
+    # its skill's SKILL.md has no Dependencies table mentioning network/API use.
+    if grep -qE '(import (urllib|requests|http\.client)|fetch\(|XMLHttpRequest|axios\.)' "$f" 2>/dev/null; then
+      local skill_dir skill_md skill_name
+      skill_dir="$(dirname "$(dirname "$f")")"
+      skill_name="$(basename "$skill_dir")"
+      skill_md="$skill_dir/SKILL.md"
+      if [ -f "$skill_md" ]; then
+        grep -q '^## Dependencies' "$skill_md" || {
+          finding check_artifact_security undeclared-network \
+            "$f makes a network call but skills/$skill_name/SKILL.md has no '## Dependencies' table declaring it"
+          bad=1
+        }
+      fi
+    fi
+  done < <(find "$SKILLS_SRC" -path '*/scripts/*' \( -name '*.py' -o -name '*.js' -o -name '*.sh' \) ! -name 'test_*' 2>/dev/null)
+
+  # --- Lens B: prose (SKILL.md + agents/*.md) ---
+  while IFS= read -r f; do
+    [ -f "$f" ] || continue
+    grep -qEi "$fetch_exec_re" "$f" 2>/dev/null || continue
+    # Human framing nearby (anywhere in the file — these blocks are short and the
+    # framing is usually a line or two away, not always adjacent) means this is a
+    # documented install step, not an instruction for the agent to execute.
+    grep -qEi "$human_framing_re" "$f" 2>/dev/null && continue
+    finding check_artifact_security install-lure \
+      "$f contains a fetch-then-execute pattern with no nearby human-facing framing (e.g. \"do not install anything yourself\") — confirm this is documentation, not an instruction to execute"
+    bad=1
+  done < <(find "$SKILLS_SRC" -maxdepth 2 -name 'SKILL.md'; find "$AGENTS_SRC" -maxdepth 1 -name '*.md' 2>/dev/null)
+
+  [ "$bad" = "0" ] && ok "artifact security scan: no install lures, undeclared network calls found"
+  return 0
+}
+
 # An agent named in the docs but deleted from the repo — the half install.sh's
 # sync check never looked for.
 check_stale_agents() {
@@ -1483,6 +1555,7 @@ check_hook_sync
 check_hook_fires
 check_description_routing
 check_script_self_tests
+check_artifact_security
 check_stale_agents
 check_codex_agent_generation
 check_review_exit_codes

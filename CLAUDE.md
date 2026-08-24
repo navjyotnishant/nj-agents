@@ -31,7 +31,8 @@ CONVENTIONS-orchestration.md # §U binds EVERY skill; §C cost + §R progress fo
 global/AGENTS.md            # advisory guidance → symlinked per runner (see install.sh)
 install.sh                  # symlink installer (idempotent; safe uninstall; never clobbers)
 check.sh                    # validator — frontmatter, refs, class contracts, cost/progress,
-                             #   trigger-routing (scripts/gen-trigger-cases.sh), script self-tests
+                             #   trigger-routing (scripts/gen-trigger-cases.sh), script self-tests,
+                             #   artifact security scan (install lures, undeclared network calls)
 bin/nj-agents-review        # headless /pre-push-review → §5 exit codes (0 PASS/WARN, 1 BLOCK, 2 error)
 bin/nj-run                  # testing-class run harness — manifest §T13, cost §T10, subagents §T11, log §T12
 tests/test-nj-run.sh        # its behavioural checks (no LLM, free, CI-safe)
@@ -291,5 +292,12 @@ construction and the validator tells you what is still missing:
    script via `importlib.util`, test its pure/deterministic functions, skip
    anything that shells out or hits a real API). `check_script_self_tests`
    flags a `scripts/` dir with `.py` files but no matching `test_*.py`.
+8. **If a `scripts/*.py` file makes a network call, name it in the skill's own
+   `## Dependencies` table** — `check_artifact_security` flags an undeclared one.
+   A `curl`/`wget` piped straight into a shell is never legitimate inside a
+   script and always fails the check, declared or not; the same pattern in a
+   `SKILL.md`/`agents/*.md` install instruction is fine as long as it's framed
+   for a human to run themselves (e.g. "do not install anything yourself" —
+   see `review-secrets/SKILL.md`'s scanner-install block for the pattern).
 
 `templates/` holds the sources; they are not skills themselves and are not globbed.

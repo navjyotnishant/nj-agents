@@ -12,6 +12,25 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- **`check.sh` — artifact-level security scan of skills and agents.** A new
+  `check_artifact_security` check scans skill files for what they would actually
+  DO if executed, not just what they claim to do — the gap every other `check.sh`
+  check leaves open, since they all validate a skill's stated contract (`tools:`
+  frontmatter, "never runs git" prose) rather than its files' real behavior. Two
+  lenses: code files (`scripts/*.py`/`*.js`/`*.sh`) are cross-referenced against
+  the skill's own `## Dependencies` table — an undeclared network call is flagged,
+  and a `curl`/`wget` piped straight into a shell always fails regardless of
+  declaration, since that pattern has no legitimate reading inside a skill's own
+  script. Prose (`SKILL.md`/`agents/*.md`) gets the same fetch-pipe-execute check,
+  but only fails when there's no nearby human-facing framing ("do not install
+  anything yourself") — otherwise every documented install instruction in the
+  repo (e.g. `review-secrets`' trufflehog install block) would false-positive,
+  which the check deliberately avoids per `CONVENTIONS-orchestration.md §C`
+  ("a check that fires on everything is one people learn to ignore"). Verified
+  live against all four cases: a clean pass on the current repo, an undeclared
+  network call, a code-level install lure, and a prose-level install lure without
+  human framing — all four caught correctly with `file:line`-level detail.
+
 - **`check.sh` — deterministic self-tests for skills shipping `scripts/`.** A new
   `check_script_self_tests` check flags a skill's `scripts/` dir if it has `.py`
   files but no matching `test_*.py`. Added the first three: `test_make_cover.py`,
