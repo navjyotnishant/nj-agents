@@ -45,6 +45,11 @@ single-file work is haiku, normal multi-file feature work is sonnet (default),
 high-ambiguity/cross-cutting/security-sensitive work is opus. One-line reason per
 item. Epics get no hint (they span many complexity levels).
 
+**Change-nature label:** for every item (epic, story, task), include a change-nature
+label (`enhancement`/`bug`/`documentation`/`chore`) in `labels` per the
+`CONVENTIONS-pm.md` §P2c heuristic, when the tracker's own label set already has one
+of those. Never invent one that isn't already present.
+
 ## Grounding rules (non-negotiable)
 
 - **Invent no scope** (`§P7`). Every story, criterion, and task traces to the stated

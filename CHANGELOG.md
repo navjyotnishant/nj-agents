@@ -33,6 +33,15 @@ does as of this version, rather than how it was built.
   files the generator overwrites, so this mode's anti-drift guarantee is weaker than
   the default and the skill says so explicitly.
 
+- **`CONVENTIONS-pm.md` §P2c — change-nature labels on PM-authoring items.**
+  `/pm-task`, `/pm-story`, `/pm-epic`, and `/pm-plan` (via `pm-decomposer`) now also
+  include a change-nature label (`enhancement`/`bug`/`documentation`/`chore`) inferred
+  from the item's type and content, when the connected tracker's own label set already
+  has one of those — never inventing a new one. Previously these skills only applied a
+  type label (epic/story/task) and any topic label, so a new-capability story landed
+  with no `enhancement`-style label even on trackers (like GitHub) that ship one by
+  default.
+
 ### Changed
 
 - **One reference, not two: `docs.html` is removed and `/docs-site` now generates a site

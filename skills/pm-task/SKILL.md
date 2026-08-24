@@ -73,7 +73,9 @@ the item is standard-complete (mark a genuinely unknown field `TBD`, never drop 
   Resolve it like the team (§P7); never invent one. If the work is also reported
   on through a warehouse, check the grouping survives the sync — some connectors
   drop projects (§P2b).
-- **labels / estimate / priority** — only if supplied or the tracker needs them.
+- **labels / estimate / priority** — only if supplied or the tracker needs them. Also
+  include a change-nature label (`enhancement`/`bug`/`documentation`/`chore`) per the
+  §P2c heuristic, when the tracker's own label set already has one of those.
 - **recommended_model** — apply the §P2a complexity heuristic (haiku/sonnet/opus);
   state the reason in one line.
 

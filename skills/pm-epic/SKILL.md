@@ -77,7 +77,9 @@ the item is standard-complete (mark a genuinely unknown field `TBD`, never drop 
   Resolve it like the team (§P7); never invent one. If the work is also reported
   on through a warehouse, check the grouping survives the sync — some connectors
   drop projects (§P2b).
-- **labels / priority** — if supplied or the tracker needs them.
+- **labels / priority** — if supplied or the tracker needs them. Also include a
+  change-nature label (`enhancement`/`bug`/`documentation`/`chore`) per the §P2c
+  heuristic, when the tracker's own label set already has one of those.
 - (An epic has no acceptance criteria of its own — those live on its stories; done =
   its stories Done.)
 

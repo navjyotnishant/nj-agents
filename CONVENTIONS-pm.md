@@ -120,7 +120,7 @@ concrete data.
 | `acceptance_criteria` | append as a `## Acceptance criteria` checklist in the description | same, in description | task-list in body | checklist blocks |
 | `parent` | `parentId` | epic-link / parent | **native sub-issue** (`addSubIssue` GraphQL) | `Parent` relation |
 | `project` | **`project`** (see §P2b) | project/component | Project board (v2) | `Project` relation |
-| `labels` | `labels` | `labels` | `labels` | multi-select |
+| `labels` | `labels` | `labels` | `labels` (incl. change-nature — §P2c) | multi-select |
 | `estimate` | `estimate` | story points field | (none — note in body) | number prop |
 | `recommended_model` | (none — note in body) | (none — note in body) | (none — note in body) | (none — note in body) |
 
@@ -176,6 +176,24 @@ spans many items of varying complexity, so it gets no single hint).
 
 State the tier plus a one-line reason (what makes it that tier), not the tier alone.
 Mark `TBD` only when genuinely unclear — default to an estimate rather than omitting.
+
+### §P2c — Change-nature label (shared)
+
+Beyond the `[Type]`-derived label (epic/story/task) and any topic label, also include
+a **change-nature** label when the tracker already has one of the standard set —
+`enhancement`, `bug`, `documentation`, `chore` — sitting in its label list. Infer it
+from the item, don't ask:
+
+- `type: bug` → `bug`
+- new capability, feature work → `enhancement`
+- doc-only change → `documentation`
+- pure maintenance/tooling with no user-facing behavior change → `chore`
+
+**Never invent a change-nature label that isn't already present in the tracker** —
+same grounding rule as topic labels (§P1). If none of the standard set exists (a
+Linear/Jira workspace with a bespoke label taxonomy, say), skip this silently rather
+than creating one. GitHub repos carry `enhancement`/`bug`/`documentation` by default,
+so this applies there most often in practice.
 
 **The GitHub Issues hierarchy model** (native sub-issues — up to 100 children/parent,
 8 levels deep, same on the free tier):
