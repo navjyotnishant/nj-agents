@@ -12,6 +12,20 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- **`/capture-screenshots` migrated to the Workflow tool.** Steps 4-5
+  (detect-sensitive-data → redact-with-verify-gate) are now a scripted `Workflow`
+  `pipeline()` running independently per image, so a slow image's detect/redact
+  never blocks a fast one on a multi-image run. `screenshot-capturer` stays a
+  plain spawn in prose *before* the script runs, since its documented real-world
+  fallback behavior (blocked spawn, write-root refusal, auth-gating) is runtime
+  degradation logic a Workflow script shouldn't own — the script picks up once
+  raw captures already exist on disk. Both `sensitive-data-reviewer` and
+  `screenshot-redactor` use `opts.agentType` directly (established since
+  July, live-tested and confirmed resolving correctly). The live test also
+  confirmed the redactor's safe-by-default gate holds under an adversarial
+  prompt: asked to redact a nonexistent file, it correctly returned `BLOCK`
+  rather than fabricating a `PASS`.
+
 - **`/e2e-suite` migrated to the Workflow tool; `agents/failure-triager.md` built
   for real.** `/e2e-suite`'s Step 3 (per-failure triage) is now a scripted
   `Workflow` `parallel()` pipeline instead of manual "spawn N agents" prose.
