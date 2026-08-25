@@ -126,7 +126,7 @@ requires an explicit non-prod base URL or it BLOCKs.
 
 | Skill | What it does | Agent |
 |---|---|---|
-| `/e2e-suite` | **Umbrella.** Runs the suite, classifies every failure, returns one PASS/WARN/BLOCK. Cost scales with *failures*, not specs — a green suite is nearly free. **Never repairs anything**: a gate that fixes its own failures is not a gate. A test bug is WARN, never PASS (the app is fine, the suite is lying), and ambiguity never resolves toward PASS. | orchestrates the below |
+| `/e2e-suite` | **Umbrella.** Runs the suite, classifies every failure, returns one PASS/WARN/BLOCK. Cost scales with *failures*, not specs — a green suite is nearly free. **Never repairs anything**: a gate that fixes its own failures is not a gate. A test bug is WARN, never PASS (the app is fine, the suite is lying), and ambiguity never resolves toward PASS. Per-failure triage runs as a `Workflow`-tool pipeline. | `failure-triager` |
 | `/e2e-run` | Detects the repo's **own** E2E runner (Playwright/Cypress/WDIO/…), BLOCKs unless the base URL is explicitly non-prod, runs the suite, and captures trace/HAR/video/console into a **gitignored temp dir**. Raw artifacts never leave it; published text is secret-scrubbed. Runs tests, never writes them. | (none yet) |
 | `/test-suite-author` | **Generation umbrella.** Ticket → cases → specs → fixtures in one run: chains `/test-plan` → `/test-author` → `/test-data`. **Pauses after every stage** so each is reviewed before the next consumes it; `--yes` skips the prompts for a workflow but removes no constraint. On approval, files the uncovered cases as `TEST-`-prefixed tracker sub-tasks via `/pm-task` (§P4 search-before-create, so a re-run links rather than duplicates). **Never commits** — not with `--yes`, not in CI. | orchestrates the three below |
 | `/test-plan` | Turns a requirement (from a connected tracker, or pasted) into a **structured case matrix** — equivalence classes, boundaries, negative paths, authz, not just the happy path. Consumes `/test-gap-finder`'s coverage rather than recomputing it, marks each case `new`/`covered`/`inferred`, and emits JSON for `/test-author`. Advises only. | (none yet) |
@@ -143,8 +143,7 @@ viewer command instead. But text *derived* from an artifact and published into a
 report or ticket is scrubbed first, because a bearer token in a query string leaves
 through a report with no artifact ever moving.
 
-All ten skills in the class now exist — two umbrellas: `/test-suite-author` generates, `/e2e-suite` executes. Agents (`e2e-runner`, `failure-triager`,
-`test-planner`, `test-repairer`) are tracked under NAV-161.
+All ten skills in the class now exist — two umbrellas: `/test-suite-author` generates, `/e2e-suite` executes. `failure-triager` is now built and real (`/e2e-suite`'s per-failure triage spawns it via a Workflow pipeline); `e2e-runner`, `test-planner`, and `test-repairer` are still tracked under NAV-161.
 
 ## Cost and loop control (applies to every skill and agent)
 

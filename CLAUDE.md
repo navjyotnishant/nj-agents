@@ -9,7 +9,7 @@ agents** for software-development workflows. Install it once (symlinks into `~/.
 and invoke the skills with `/name` in **any** git repo — nothing here is specific to one
 project, stack, or language.
 
-- **38 skills · 29 agents**, in six classes + a diagram-generation subsystem.
+- **38 skills · 30 agents**, in six classes + a diagram-generation subsystem.
 - Install: `./install.sh` (global, Claude Code), `./install.sh --runner gemini|codex|cursor|agents`
   for another agent, or `--project DIR` for one repo. Everything is a **symlink back into
   this clone**, so installing for several runners leaves them all reading the same files —

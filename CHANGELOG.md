@@ -12,6 +12,25 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- **`/e2e-suite` migrated to the Workflow tool; `agents/failure-triager.md` built
+  for real.** `/e2e-suite`'s Step 3 (per-failure triage) is now a scripted
+  `Workflow` `parallel()` pipeline instead of manual "spawn N agents" prose.
+  While designing the migration, found `failure-triager` — referenced in
+  `nj-run spawn failure-triager` — was never actually built as an agent; only a
+  label string was ever logged, and `/test-triage` (the skill it delegates
+  classification to) runs its 5-class logic inline rather than as a subagent.
+  Filed and built `agents/failure-triager.md`, encapsulating `/test-triage`'s
+  Steps 2–3 (real defect / test bug / environment / flake / data, each with
+  confidence + evidence + commit correlation) as a real, spawnable persona.
+  Live-tested `opts.agentType: 'failure-triager'` first (as a brand-new agent)
+  and confirmed it hits the same registry-timing bug `security-deep-review`
+  documented for `security-finder`/`security-verifier` — switched to an inline
+  persona, matching that skill's proven pattern, and re-verified live. `nj-run`'s
+  bookkeeping (`spawn`/`join`/`cost`/`verdict`/`finish`) is untouched by this
+  migration — it was already pure manifest bookkeeping around the dispatch, not
+  the dispatch mechanism itself, so its deterministic-aggregation guarantees
+  (quarantine forces BLOCK, order-independent reduce) carry over unchanged.
+
 - **The generated reference site now embeds the 3 Nano Banana Workflow-tool
   pipeline diagrams.** `docs_src/gen_pages.py`'s `PIPELINE_DIAGRAMS` map (which
   already embedded hand-authored SVGs on 4 skills' pages) now points

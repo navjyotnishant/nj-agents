@@ -40,12 +40,16 @@ it inherits every clause its children carry, and owns `§T11` parallel execution
 > keep `CHANGELOG.md` current when the change is user-facing, degrade rather than
 > fail, and say what you did not do.
 
-> **Spawning subagents — `CONVENTIONS-orchestration.md`.** This skill spawns agents,
-> so `§C` (cost) and `§R` (progress reporting) apply. **Cost shape:** one run plus
-> per-failure triage, fanned out under a concurrency cap — cost scales with the
-> number of *failures*, not the size of the suite. State it and get a yes before the
-> first dispatch; cap fix rounds at 2; halt on any signal to stop. Announce the
-> **roster** before dispatch and mark each stage as it lands (`§R`).
+> **Spawning subagents — `CONVENTIONS-orchestration.md`.** This skill spawns agents
+> via a `Workflow`-tool pipeline (Step 3), so `§C` (cost) and `§R` (progress
+> reporting) apply. **Cost shape:** one run plus per-failure triage, fanned out
+> under a concurrency cap — cost scales with the number of *failures*, not the
+> size of the suite. State it and get a yes before the first dispatch; cap fix
+> rounds at 2; halt on any signal to stop. Announce the **roster** before dispatch
+> and mark each stage as it lands (`§R`). The run is resumable via
+> `resumeFromRunId` if interrupted (`§M1`) — worth mentioning on failure, not a
+> dedicated section, since a pure-`parallel()` fleet like this one has little
+> sunk cost to preserve on resume.
 
 **This skill writes nothing into the repo.** It runs, reads, aggregates and reports —
 `§T1`'s fence has nothing to fence. The only file it produces is the report artifact,
@@ -108,34 +112,82 @@ correct.
 **A BLOCK from `/e2e-run` is the final answer.** Surface it and stop; never retry
 against a different URL, and never lower the gate to get a result.
 
-## Step 3 — Triage the failures, in parallel (`§T11`)
+## Step 3 — Triage the failures via a Workflow pipeline (`§T11`)
 
 Zero failures → skip triage entirely and report PASS. Do not spend an agent
 confirming nothing is wrong.
 
-Otherwise fan out per failure under a **concurrency cap**, join on a barrier, and
-**schema-validate every result** before aggregating (`§T9`).
+Otherwise, hand this script to the `Workflow` tool. It **spawns the
+`failure-triager` agent's persona** once per failure, in parallel, under the
+concurrency cap recorded at `nj-run init` — replacing what used to be manual
+"spawn N agents" prose with a scripted `parallel()` call. `nj-run spawn`/`join`
+stay exactly as they were: pure bookkeeping calls made from *inside* the script
+around each `agent()` call, not the dispatch mechanism itself — `nj-run`'s
+aggregation (`cmd_aggregate`/`cmd_finish`) reduces over the manifest and has never
+cared how a subagent was actually spawned, so none of its guarantees (quarantine
+forces BLOCK, order-independent reduce, §T11) change with this migration.
 
-Record the fan-out through the harness so the cap, the spawns and the joins land in
-the manifest rather than only in your narration:
+```js
+export const meta = {
+  name: 'e2e-suite-triage',
+  description: 'Per-failure triage in parallel, schema-validated before aggregation',
+  phases: [
+    { title: 'Triage', detail: 'failure-triager per failure, concurrency-capped' },
+  ],
+}
+
+// Inlined from agents/failure-triager.md's core instructions, NOT passed via
+// opts.agentType. failure-triager is a brand-new agent — live-tested and
+// confirmed the Workflow tool's registry does not yet include it
+// (opts.agentType: 'failure-triager' throws "agent type not found"), the exact
+// registry-lag bug security-deep-review's own build hit for security-finder/
+// security-verifier. Inline prompts have no such dependency. Re-verify with
+// opts.agentType once the agent has been installed for a while (see
+// security-deep-review/SKILL.md's note on this being a timing issue, not
+// permanent) rather than assuming this stays inline forever.
+const TRIAGER_PERSONA = `You are a test-failure triager working one failure at a time. Given a single failure's evidence (manifest entry, diff since last green, flake-ledger history for that spec), classify it as exactly one of: real_defect, test_bug, environment, flake, data, or not_determined. A classification without cited evidence is an opinion, not a triage. Never classify flake without ledger history for this specific spec — timing-flavored failure text is not evidence of flakiness, a real race condition looks identical, and without ledger history the flake class is unavailable for this failure. Bias toward real_defect when genuinely uncertain, with a stated low confidence — a defect miscalled a flake is ignored, a flake miscalled a defect costs twenty minutes; prefer the cheap error. Correlate to a suspect commit via the diff since last green if provided, stating why the commit is suspect, not just that it's recent. Read-only: never modify files, never run git push/commit, never update the flake ledger yourself. Return the bare spec filename in the "spec" field (e.g. "checkout.spec.ts"), not a restated summary of the failure.`
+
+const TRIAGE_SCHEMA = { type: 'object', properties: {
+  spec: { type: 'string' },
+  class: { type: 'string', enum: ['real_defect', 'test_bug', 'environment', 'flake', 'data', 'not_determined'] },
+  confidence: { type: 'number' },
+  evidence: { type: 'string' },
+  suspect_commit: { type: 'string' },
+}, required: ['spec', 'class', 'confidence', 'evidence'] }
+
+phase('Triage')
+const results = (await parallel(failures.map(f => () =>
+  agent(
+    `${TRIAGER_PERSONA}\n\n${buildTriagePrompt(f, diffSinceGreen, flakeLedgerFor(f.spec))}`,
+    { label: `triage:${f.spec}`, phase: 'Triage', schema: TRIAGE_SCHEMA }
+  ).then(r => r && { failure: f, ...r })
+))).filter(Boolean)
+
+return { results, attempted: failures.length, completed: results.length }
+```
+
+Record the fan-out through the harness as each result lands — the concurrency cap
+comes from `--concurrency` at `init` (or `NJ_RUN_CONCURRENCY`), so the cap in force
+is recorded with the run instead of being an unwritten decision:
 
 ```bash
-id="$(nj-run spawn failure-triager)"     # per failure — returns its id
-# … triage that failure …
+# for each failure, before/after its agent() call resolves:
+id="$(nj-run spawn failure-triager)"
+# … the Workflow script's agent() call for that failure resolves …
 nj-run join "$id" --status ok|failed --tokens <n> --calls <n>
 ```
 
-The concurrency cap comes from `--concurrency` at `init` (or `NJ_RUN_CONCURRENCY`),
-so the cap in force is recorded with the run instead of being an unwritten decision.
-
-Three rules make the verdict trustworthy:
+Three rules make the verdict trustworthy, all unchanged by this migration since
+they live in `nj-run`, not in how the fan-out is scripted:
 
 - **Aggregation order is deterministic**, independent of completion order. The same
   inputs must produce the same verdict — a gate whose result depends on which
   subagent finished first is not a gate.
-- **A subagent failure is quarantined and reported, never dropped.** Four of five
-  triages completing is not a complete triage, and silently shrinking the result set
-  turns a partial run into a false PASS.
+- **A subagent failure is quarantined and reported, never dropped.** `results.length
+  < attempted` (a `parallel()` call whose `agent()` errored resolves to `null`,
+  filtered above) means fewer triages completed than were dispatched — join that
+  gap as `--status failed` per `§T11`, never silently treat a partial result set as
+  a complete one.
 - **Announce the roster, mark each as it lands** (`§R`), so a stall is attributable
   to a named failure rather than to the suite.
 
