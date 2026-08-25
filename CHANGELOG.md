@@ -12,6 +12,19 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- **The generated reference site now embeds the 3 Nano Banana Workflow-tool
+  pipeline diagrams.** `docs_src/gen_pages.py`'s `PIPELINE_DIAGRAMS` map (which
+  already embedded hand-authored SVGs on 4 skills' pages) now points
+  `/tech-blog` and `/pre-push-review` at their model-generated PNGs instead —
+  these supersede the older SVGs for the two skills that had one, since the PNGs
+  illustrate the actual scripted control-flow shape (retry loops, phase
+  barriers) more accurately than the earlier hand-authored diagrams drawn before
+  the Workflow-tool migration. `/security-deep-review` gets a diagram for the
+  first time. The asset-copy loop was widened from `*.svg` only to also copy
+  `*.png` into the virtual build tree, same never-lands-on-disk discipline as
+  the SVGs. Verified live: built the site, served it locally, confirmed each
+  image serves with the correct byte count and renders in the page's lightbox.
+
 - **`/tech-blog` migrated to the Workflow tool.** Steps 3–6.5 (the sequential
   content chain writer → fact-checker → reviewer → editor, plus the parallel
   finalize checks) now run as a scripted `Workflow` pipeline. The fact-checker's

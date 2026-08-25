@@ -208,11 +208,22 @@ def returns_block(body: str) -> list[str]:
 
 # A pipeline diagram exists for some orchestrating skills; embed it on the pages of
 # the agents that take part, so an agent shows where it sits in the whole run.
+#
+# tech-blog, pre-push-review, and security-deep-review are the three skills built
+# on the Workflow tool (scripted agent()/pipeline()/parallel()/phase()
+# orchestration) — their diagrams are model-generated PNGs illustrating that
+# scripted control-flow shape (retry loops, phase barriers, parallel fan-out),
+# which supersede the older hand-authored SVGs for the two that had one (the SVGs
+# still exist in docs/architecture/ as historical reference, see its README).
 PIPELINE_DIAGRAMS = {
     n: f"pipeline-{n}.svg"
-    for n in ("tech-blog", "pre-push-review", "capture-screenshots",
-              "docs-site", "deps-upgrade", "test-gap-finder")
+    for n in ("capture-screenshots", "docs-site", "deps-upgrade", "test-gap-finder")
 }
+PIPELINE_DIAGRAMS.update({
+    "tech-blog": "pipeline-tech-blog-nano.png",
+    "pre-push-review": "pipeline-pre-push-review-nano.png",
+    "security-deep-review": "pipeline-security-deep-review.png",
+})
 
 # Shown once on the index: how skills and agents relate at all.
 OVERVIEW_DIAGRAM = "agents-overview.svg"
@@ -515,9 +526,14 @@ for name in sorted(agents):
 # ---- architecture diagrams: copied into the VIRTUAL tree at build time, never
 # onto disk. A real copy under docs_src/ would be a second file that can drift from
 # docs/architecture/, which is exactly what this build is meant to prevent.
-for svg in sorted((ROOT / "docs" / "architecture").glob("*.svg")):
-    with mkdocs_gen_files.open(f"assets/{svg.name}", "wb") as f:
-        f.write(svg.read_bytes())
+# Two formats: hand-authored SVG (most diagrams) and model-generated PNG (the
+# Workflow-tool pipeline diagrams, which read better as an infographic than
+# /arch-diagram's component-relationship style — see docs/architecture/README.md).
+for diagram in sorted((ROOT / "docs" / "architecture").glob("*.svg")) + sorted(
+    (ROOT / "docs" / "architecture").glob("*.png")
+):
+    with mkdocs_gen_files.open(f"assets/{diagram.name}", "wb") as f:
+        f.write(diagram.read_bytes())
 
 # ---- assemble the nav: agents first, then skills
 # ---- agents, grouped by the WORKFLOW that orchestrates them
