@@ -209,6 +209,16 @@ does as of this version, rather than how it was built.
 
 ### Fixed
 
+- **`/pre-push-review`'s Workflow script had no `schema` options on its dimension
+  agent calls.** `DIMENSION_SCHEMA`/`REPORT_URL_SCHEMA` were referenced by name in
+  the script but never actually defined — the same class of gap that
+  `/tech-blog`'s migration (built right after this one) proved is a real risk:
+  without a schema, an agent can return free-form prose instead of the
+  verdict/findings shape the script's `results.reduce` aggregation depends on.
+  Defined both schemas concretely, grounded in the 5 dimension agents' own
+  documented "Report" sections, and re-verified live — clean, exact-shape results
+  (`{dimension, findings: [], verdict: "PASS"}`) with no cascading prose.
+
 - **The skill-suggestion hook never fired on most ways of saying "the design is
   wrong".** The design case required the literal string `"the design"`, so **four of one
   session's seven complaints missed** — including *"i dont see the design changes"*,

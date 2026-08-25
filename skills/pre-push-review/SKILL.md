@@ -252,6 +252,27 @@ const AGENT_FOR = {
   style: 'style-reviewer',
 }
 
+// Explicit schemas, not left to the agent's own prose — /tech-blog's migration
+// (a later story, NAV-29) live-tested a schema-less pipeline and found the exact
+// failure mode this guards against: without a schema, an agent's free-form
+// prose (including its own internal reasoning) gets concatenated wholesale into
+// whatever consumes the result next, and a script's plain-JS aggregation logic
+// (the `results.reduce` below) has nothing to key off if `r.verdict` isn't a
+// real, guaranteed field. All 5 dimension agents already document this exact
+// verdict+findings shape in their own SKILL.md "Report" sections (see
+// agents/*.md) — this schema just makes that a guarantee instead of a norm.
+const DIMENSION_SCHEMA = { type: 'object', properties: {
+  verdict: { type: 'string', enum: ['PASS', 'WARN', 'BLOCK', 'SKIP'] },
+  skip_reason: { type: 'string' },
+  findings: { type: 'array', items: { type: 'object', properties: {
+    severity: { type: 'string', enum: ['BLOCKER', 'WARNING', 'NIT'] },
+    location: { type: 'string' }, what: { type: 'string' }, fix: { type: 'string' },
+  } } },
+}, required: ['verdict', 'findings'] }
+const REPORT_URL_SCHEMA = { type: 'object', properties: {
+  url: { type: 'string' },
+}, required: ['url'] }
+
 phase('Review')
 // `dimension` is zipped onto each result INSIDE the per-task `.then()`, before
 // parallel()'s array is ever filtered — an earlier draft attached it afterward by
