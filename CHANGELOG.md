@@ -12,6 +12,24 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- **`bin/nj-agents-e2e` wired into a real CI workflow** (`.github/workflows/e2e-smoke.yml`).
+  The hard part — a headless entry point with the §5 exit-code contract, budget
+  cap, dry-run, custom-agent-cmd support — was already built and never actually
+  invoked from a workflow. nj-agents itself has no web app to E2E-test, so this
+  job is a smoke test proving the wrapper's own plumbing (spawn, JSON parse,
+  verdict → exit code) holds in real CI rather than a per-push gate; runs weekly
+  and on changes to the e2e-suite/e2e-run/test-triage skills or the new
+  `failure-triager` agent. **Authenticates via `CLAUDE_CODE_OAUTH_TOKEN`** (a
+  Claude subscription token from `claude setup-token`), not a metered
+  `ANTHROPIC_API_KEY` — matches this session's own auth (`claude auth status`:
+  `authMethod: claude.ai`, no API key). Found and fixed a related bug in
+  `bin/nj-agents-e2e` itself while wiring this: it always passed
+  `--max-budget-usd` to the underlying `claude -p` call, a flag whose own
+  `--help` text says it tracks "dollar amount to spend on **API** calls" —
+  meaningless under a subscription token with no per-call dollar cost. Now only
+  added when `ANTHROPIC_API_KEY` is actually set. Verified both branches via
+  `--dry-run` (flag correctly included when the key is set, omitted when absent).
+
 - **`/claude-design-pull` migrated to the Workflow tool** — the sixth and final
   skill in the Workflow-migration epic. Step 4's per-page measurement now spawns
   `design-parity-checker` via `parallel()` for multi-page runs, replacing manual

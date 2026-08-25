@@ -5,13 +5,17 @@
 #
 # Author: Navjyot Nishant
 # Created: 2026-08-01
-# Last updated: 2026-08-01
+# Last updated: 2026-08-25
 # Description: Headless runner for the testing class's execution umbrella.
 #
 # Usage:
 #   nj-agents-e2e                       # against NJ_E2E_BASE_URL
 #   nj-agents-e2e --base-url http://localhost:3000
-#   nj-agents-e2e --budget 5.00         # raise the spend cap (default 3.00 USD)
+#   nj-agents-e2e --budget 5.00         # raise the spend cap (default 3.00 USD;
+#                                        #   only applied when ANTHROPIC_API_KEY is
+#                                        #   set — meaningless under a Claude
+#                                        #   subscription token, which has no
+#                                        #   per-call dollar cost to cap)
 #   nj-agents-e2e --dry-run             # print the command that would run, then stop
 #
 # Exit codes (CONVENTIONS.md §5):
@@ -76,7 +80,15 @@ if [ -n "${NJ_AGENT_CMD:-}" ]; then
   set -- "$PROMPT"
   [ -n "$MODEL" ] && echo "nj-agents-e2e: --model ignored — NJ_AGENT_CMD is set, so pass the model in it." >&2
 else
-  set -- "$PROMPT" --output-format json --max-budget-usd "$BUDGET"
+  set -- "$PROMPT" --output-format json
+  # --max-budget-usd tracks spend on METERED API calls (its own --help says so) —
+  # meaningless under a Claude subscription (CLAUDE_CODE_OAUTH_TOKEN), which has
+  # no per-call dollar cost to cap. ANTHROPIC_API_KEY being set is the direct,
+  # reliable signal for "this run is billed per token"; absent it, skip the flag
+  # rather than pass a budget cap the auth mode has no way to honor.
+  if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+    set -- "$@" --max-budget-usd "$BUDGET"
+  fi
   [ -n "$MODEL" ] && set -- "$@" --model "$MODEL"
 fi
 

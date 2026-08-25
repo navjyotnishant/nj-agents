@@ -1,0 +1,73 @@
+name: e2e-smoke
+
+# Wires bin/nj-agents-e2e into real CI — the hard part (a headless entry point
+# with the §5 exit-code contract, a budget cap, dry-run, custom-agent-cmd support)
+# was already built (2026-08-01) and never actually invoked from a workflow.
+#
+# This repo has no web app of its own — nj-agents is a skill toolkit, not a
+# service with a URL — so /e2e-suite always resolves to SKIP here (no E2E runner
+# detected, §U: a successful run of a gate that correctly found nothing to do).
+# That's the point of this job: it proves the WRAPPER's own plumbing (spawns the
+# agent, reads its JSON result, maps the verdict to an exit code, never lets an
+# absent verdict read as a pass) actually works end-to-end in real CI, on a repo
+# where the tool is deliberately exercised rather than skipped by omission.
+#
+# A repo that DOES have a web app wires this same job against a real staging
+# URL (NJ_E2E_BASE_URL) instead — this file is the template for that, not a
+# one-off. See bin/nj-agents-e2e's own header for the full contract.
+#
+# Auth: a Claude subscription token, not a metered API key — no per-token billing
+# dependency. Generate one locally with `claude setup-token` (interactive, needs
+# a Pro/Max/Team/Enterprise login) and store the result as the repo secret
+# CLAUDE_CODE_OAUTH_TOKEN. This still runs on a schedule rather than every push,
+# since --budget is an API-key-only guard (ignored under a subscription token) —
+# runs against a subscription reflect on its own usage limits, not a dollar cap.
+
+on:
+  pull_request:
+    paths:
+      - 'bin/nj-agents-e2e'
+      - 'skills/e2e-suite/**'
+      - 'skills/e2e-run/**'
+      - 'skills/test-triage/**'
+      - 'agents/failure-triager.md'
+  schedule:
+    - cron: '0 7 * * 1' # weekly, Monday — this is a smoke test, not a per-push gate
+
+permissions:
+  contents: read
+
+jobs:
+  e2e-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      # CLAUDE_CODE_OAUTH_TOKEN authenticates via a Claude subscription — the
+      # `claude` CLI reads it directly, same as this session's own auth
+      # (`claude auth status` shows authMethod: claude.ai, no API key). No
+      # --max-budget-usd is passed here: bin/nj-agents-e2e only adds that flag
+      # when ANTHROPIC_API_KEY is set, since the flag tracks metered per-call
+      # spend that a subscription doesn't have.
+      - name: Run nj-agents-e2e (expect SKIP — this repo has no E2E runner)
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          set +e
+          ./bin/nj-agents-e2e
+          code=$?
+          set -e
+          echo "exit code: $code"
+          # This repo genuinely has nothing to run — a non-zero/non-SKIP result
+          # here means the wrapper itself is broken, not that a real suite failed.
+          if [ "$code" -eq 1 ]; then
+            echo "::error::nj-agents-e2e returned BLOCK against a repo with no E2E runner — the wrapper is misreading SKIP as BLOCK."
+            exit 1
+          elif [ "$code" -eq 2 ]; then
+            echo "::error::nj-agents-e2e hit a harness error (code 2) — see the run log above."
+            exit 1
+          fi
+          echo "OK — wrapper's exit-code contract held (0 = PASS/WARN/SKIP)."
