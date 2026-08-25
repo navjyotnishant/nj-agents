@@ -12,6 +12,28 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- **`/tech-blog` migrated to the Workflow tool.** Steps 3–6.5 (the sequential
+  content chain writer → fact-checker → reviewer → editor, plus the parallel
+  finalize checks) now run as a scripted `Workflow` pipeline. The fact-checker's
+  hard gate is modeled as a **bounded retry loop** (max 2 rounds, `§C`'s fix-round
+  cap) rather than a single pipeline stage — a genuinely new shape not yet used
+  elsewhere in the repo's Workflow scripts. Steps 1–2.5 and 7–10 (repo ingest,
+  asset generation via sibling skills, writing outputs, posting, commit, promo)
+  stay outside the script, since none of that is agent orchestration the tool
+  models — `arch-diagram`/`capture-screenshots` are skill invocations, not
+  `agent()` calls, and posting/commit/promo are real side effects requiring
+  explicit opt-in. Live-testing surfaced a real design flaw before it shipped:
+  without explicit `schema` options, `blog-fact-checker` returned free-form prose
+  (its own internal reasoning included) that got concatenated wholesale into the
+  next stage's prompt — the reviewer and editor correctly flagged the input as "not
+  a blog excerpt, it's an internal fact-check/correction transcript," a cascading
+  failure through the whole pipeline. Fixed by adding explicit JSON-Schema `schema`
+  options to all 6 `agent()` calls (matching `security-deep-review`'s established
+  pattern), each grounded in that agent's own documented return format — re-tested
+  live afterward and confirmed clean, parseable results flow through every stage
+  (`factCheckVerdict: "PASS"`, structured claims/notes arrays, coherent final
+  prose with no cascading confusion).
+
 - **`/pre-push-review` migrated to the Workflow tool.** The repo's highest-traffic
   skill's dimension dispatch (Step 4) is now a scripted `Workflow` pipeline instead
   of prose "spawn these agents in parallel" instructions — `parallel()` over the

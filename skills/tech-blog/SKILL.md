@@ -1,7 +1,7 @@
 ---
 name: tech-blog
 description: Use this skill when the user asks to "write a technical blog about this project", "draft a blog post explaining the architecture", "write an engineering article about what we built", or wants an expert-level technical write-up of the project. Runs a multi-agent pipeline (writer → fact-checker → reviewer → editor → optional poster), grounds every claim in the actual repo (the fact-checker BLOCKS on anything it can't verify), embeds architecture diagrams if present, writes the post to docs/blog/, and produces publish-ready Markdown + HTML. Posts via an MCP only if one is connected and you opt in. Works in any git repo; nothing here is project-specific.
-version: 0.1.0
+version: 0.2.0
 class: authoring
 author: navjyotnishant
 ---
@@ -44,10 +44,15 @@ grounding/safety §A6, non-clobber §A7).
 > fail, and say what you did not do.
 
 > **Spawning subagents — `CONVENTIONS-orchestration.md`.** This skill spawns agents,
-> so `§C` (cost) and `§R` (progress reporting) apply. **Cost shape:** a 6-agent pipeline (writer → fact-checker → reviewer → editor → final-polish → platform-lint).
+> so `§C` (cost) and `§R` (progress reporting) apply. **Cost shape:** a 6-agent pipeline (writer → fact-checker → reviewer → editor → final-polish → platform-lint),
+> plus one extra writer+fact-checker round per fact-check retry (capped at 2, `§C`).
 > State it and get a yes before the first dispatch; cap fix rounds at 2; halt on any
 > signal to stop. Announce the **pipeline** up front and each stage as it starts, so a stall is
-> attributable to a named stage (`§R`).
+> attributable to a named stage (`§R`). Steps 3–6.5 (the sequential content chain plus
+> the parallel finalize checks) run as a **`Workflow`-tool pipeline** — everything
+> before it (repo ingest, topic/asset prep) and after it (writing outputs, posting,
+> commit, promo) involves cross-skill invocation, git, or external opt-in and stays
+> outside the script, same split `/pre-push-review` uses.
 
 
 ## Dependencies
@@ -150,67 +155,149 @@ fall back to the documented manual path — ask the user to supply the image, or
 the exact command — rather than stalling. Don't invent a screenshot or a diagram that
 wasn't produced.
 
-## Step 3 — Writer
+## Steps 3–6.5 — Run the Workflow pipeline
 
-Spawn `blog-writer` with the repo model + topic/angle/audience. It produces a draft
-to the **scratchpad** (not the repo). The draft cites where each technical claim
-comes from (file/module) so the fact-checker can verify.
+Once the topic/angle/audience/voice/`style_prefs` are confirmed (Step 2) and the
+visual assets are ready or in flight (Step 2.5), hand this script to the `Workflow`
+tool. It covers the sequential content chain (writer → fact-check-loop → reviewer →
+editor) and the parallel finalize checks — everything before and after this stays
+outside the script (repo ingest, asset generation via sibling skills, writing
+outputs, posting, commit, promo), since none of that is agent orchestration this
+tool models.
 
-## Step 4 — Fact-checker (BLOCKING gate)
+```js
+export const meta = {
+  name: 'tech-blog',
+  description: 'Sequential content chain with a bounded fact-check retry loop, then parallel finalize checks',
+  phases: [
+    { title: 'Draft', detail: 'writer, then fact-check retry loop (max 2 rounds)' },
+    { title: 'Refine', detail: 'reviewer, then editor' },
+    { title: 'Finalize', detail: 'final-polish + platform-lint + cover-gen in parallel' },
+  ],
+}
 
-Spawn `blog-fact-checker` on the draft. It verifies **every technical claim** against
-the actual repo — APIs, features, file paths, behavior, versions. It returns each
-claim marked **verified / unverifiable / wrong**.
+// Every agent() call below carries an explicit schema. Without one, an agent
+// returns free-form prose — and a live test of this exact pipeline (no schemas)
+// showed the failure mode directly: blog-fact-checker's own internal reasoning
+// ("I retract the wrong verdict on that line...") got concatenated into the next
+// stage's prompt as if it were blog content, and every downstream stage correctly
+// flagged the input as garbled rather than producing useful output. A schema
+// forces the agent to return the field the NEXT stage actually needs, not its
+// reasoning trail.
+const DRAFT_SCHEMA = { type: 'object', properties: {
+  markdown: { type: 'string' }, citations: { type: 'array', items: { type: 'string' } },
+}, required: ['markdown'] }
+const FACT_CHECK_SCHEMA = { type: 'object', properties: {
+  verdict: { type: 'string', enum: ['PASS', 'BLOCK'] },
+  claims: { type: 'array', items: { type: 'object', properties: {
+    claim: { type: 'string' }, location: { type: 'string' },
+    status: { type: 'string', enum: ['verified', 'unverifiable', 'wrong'] },
+    evidence: { type: 'string' },
+  } } },
+}, required: ['verdict', 'claims'] }
+const REVIEWER_SCHEMA = { type: 'object', properties: {
+  notes: { type: 'array', items: { type: 'object', properties: {
+    location: { type: 'string' }, issue: { type: 'string' }, suggestion: { type: 'string' },
+    priority: { type: 'string', enum: ['must-fix', 'nice-to-have'] },
+  } } },
+}, required: ['notes'] }
+const EDITOR_SCHEMA = { type: 'object', properties: {
+  markdown: { type: 'string' }, notes: { type: 'string' },
+}, required: ['markdown'] }
+const CHECKLIST_SCHEMA = { type: 'object', properties: {
+  verdict: { type: 'string' },
+  items: { type: 'array', items: { type: 'object', properties: {
+    item: { type: 'string' }, status: { type: 'string' }, detail: { type: 'string' },
+  } } },
+  fixedMarkdown: { type: 'string' },
+}, required: ['verdict', 'items'] }
 
-- **Any `wrong` or `unverifiable` claim → the post cannot finalize.** Send the
-  annotations back to `blog-writer` to fix (correct it) or cut it, then re-check.
-  Loop until the fact-checker reports **no wrong/unverifiable claims remain**. Do not
-  proceed to publish with an unresolved claim (this is a hard gate, §A6).
+const MAX_FACT_CHECK_ROUNDS = 2 // §C's fix-round cap — a draft that still has
+                                 // wrong/unverifiable claims after 2 rounds stops
+                                 // here and hands the unresolved list back to the
+                                 // user rather than looping indefinitely.
 
-## Step 5 — Reviewer
+phase('Draft')
+let draft = await agent(
+  buildWriterPrompt(repoModel, topic, angle, audience, voice),
+  { agentType: 'blog-writer', schema: DRAFT_SCHEMA }
+)
 
-Spawn `blog-reviewer` on the fact-clean draft. It critiques structure, clarity,
-technical depth, narrative flow, and audience fit — returning actionable notes (not a
-rewrite).
+let factCheck = null
+for (let round = 1; round <= MAX_FACT_CHECK_ROUNDS; round++) {
+  log(`fact-check round ${round}/${MAX_FACT_CHECK_ROUNDS}`)
+  factCheck = await agent(
+    buildFactCheckPrompt(draft.markdown),
+    { agentType: 'blog-fact-checker', schema: FACT_CHECK_SCHEMA }
+  )
+  if (factCheck.verdict === 'PASS') break
+  if (round === MAX_FACT_CHECK_ROUNDS) break // exhausted retries, stop looping
+  draft = await agent(
+    buildWriterFixPrompt(draft.markdown, factCheck.claims),
+    { agentType: 'blog-writer', schema: DRAFT_SCHEMA }
+  )
+}
 
-## Step 6 — Editor
+phase('Refine')
+const reviewerNotes = await agent(
+  buildReviewerPrompt(draft.markdown),
+  { agentType: 'blog-reviewer', schema: REVIEWER_SCHEMA }
+)
+const edited = await agent(
+  buildEditorPrompt(draft.markdown, factCheck, reviewerNotes.notes, stylePrefs, diagrams),
+  { agentType: 'blog-editor', schema: EDITOR_SCHEMA }
+)
 
-Spawn `blog-editor` with the draft + fact-checker cuts + reviewer notes + any
-`style_prefs` (Step 2). It produces the **final** polished post: applies the notes,
-ensures every fact-checker correction landed, embeds the architecture diagrams (Step 1)
-at the right points, adds front-matter (title, date, tags, summary), and runs its
-editorial passes — terminology consistency, a **sparing emphasis pass** (bold the
-load-bearing claim per section), the style prefs (e.g. no em-dashes), and
-front-matter↔body consistency.
+phase('Finalize')
+// blog-final-polish and blog-platform-lint both ANALYZE the same finished post —
+// neither writes to it, so running them concurrently is safe. The actual file
+// edits (Step 6.5's original "converge, then apply serially" rule) still happen
+// afterward, outside this script, one at a time, once both sets of findings are
+// in hand — parallelizing the analysis was always safe; it was only the EDITS
+// that needed serializing, and those aren't part of this script.
+const finalizeChecks = [
+  () => agent(buildFinalPolishPrompt(edited.markdown), { agentType: 'blog-final-polish', schema: CHECKLIST_SCHEMA }),
+]
+if (targetIsExternal) {
+  finalizeChecks.push(() => agent(buildPlatformLintPrompt(edited.markdown), { agentType: 'blog-platform-lint', schema: CHECKLIST_SCHEMA }))
+}
+const [finalPolish, platformLint] = await parallel(finalizeChecks)
 
-## Step 6.5 — Finalize checks (parallel analysis, serialized apply)
+return { draft: edited.markdown, factCheck, reviewerNotes: reviewerNotes.notes, finalPolish, platformLint: platformLint ?? null }
+```
 
-Once the editor's post exists, the remaining pre-publish work is **independent** and
-fans out — spawn these **in a single message (parallel)**, the same way
-`pre-push-review` fans out its dimensions. They only need the finished post; none
-depends on another's output:
+The pipeline **spawns `blog-writer`** (Draft phase, and again per fact-check retry),
+**spawns `blog-fact-checker`** (Draft phase, the hard gate), **spawns
+`blog-reviewer`** and **spawns `blog-editor`** (Refine phase), and **spawns
+`blog-final-polish`** plus, when the target is external, **spawns
+`blog-platform-lint`** (Finalize phase, in parallel — analysis only, no file
+writes). Cover generation (`scripts/make-cover.py`) is a script, not an agent, and
+can still run concurrently with the Finalize phase outside this script — **view the
+rendered PNG** to verify before using it.
 
-- `blog-final-polish` — the mechanical gate the editor's prose-eye misses: **single-H1 /
-  accessibility** (a body `# ` duplicates the front-matter title's H1), **ending is a
-  takeaway + CTA** (not a bare link list), **no duplicated/leftover artifacts** (doubled
-  CTA lines, stray `[src:]` markers), **emphasis sanity** (neither zero nor over-bolded).
-- Spawn `blog-platform-lint` (only if the target is external) — platform mechanics:
-  **>4 tags** (Dev.to hard-caps at 4), **SVG/relative images** that won't render,
-  **missing/stale cover**, the draft→publish flow.
-- **Cover generation** (only if `cover_image` is empty) — `scripts/make-cover.py` (a
-  script, not an agent) can run concurrently; **view the rendered PNG** to verify.
+**Any `wrong` or `unverifiable` claim keeps the loop going** (up to
+`MAX_FACT_CHECK_ROUNDS`); a post that still has one after 2 rounds does not
+finalize — report the unresolved claims to the user rather than shipping with a
+gate silently overridden (§A6, unchanged from before this migration). This is a
+bounded retry `while`-style loop, not `pipeline()`'s one-pass-per-item shape,
+because the same draft is re-checked in place rather than moving through distinct
+items.
 
-**Converge, then apply serially.** Because both `blog-final-polish` and
-`blog-platform-lint` may *edit the same post file*, collect all their findings first,
-then apply the edits **one at a time** (never let two agents write the file
-concurrently — that races). Act on anything marked needs-author before publishing.
+**Converge, then apply serially — still true, still outside the script.** Because
+both `blog-final-polish` and `blog-platform-lint` findings may call for *edits to
+the same post file*, collect both sets of findings (the script's return value
+already has them together) before touching the file, then apply the edits **one at
+a time** — never let two edits race on the same file. Act on anything marked
+needs-author before publishing.
 
 > **Dependency graph (what's sequential vs. parallel):** the content chain
-> writer → fact-checker → reviewer → editor is strictly **sequential** (each transforms
-> the prior, and the fact-checker is a hard gate). Everything after the editor —
-> final-polish, platform-lint, cover-gen — is **independent and runs in parallel**, then
-> results converge before Step 8. Publish (Step 8) and promo (Step 10) are sequential
-> again: platform-lint must clear before posting, and promo needs a published URL.
+> writer → fact-check-loop → reviewer → editor is strictly **sequential** (each
+> transforms the prior, and the fact-checker is a hard gate — modeled as a bounded
+> retry loop, not a single pipeline stage). The Finalize phase — final-polish,
+> platform-lint — is **independent and runs in parallel** inside the script (analysis
+> only); the *file edits* those findings call for still converge and apply serially
+> outside it. Publish (Step 8) and promo (Step 10) are sequential again: platform-lint
+> must clear before posting, and promo needs a published URL.
 
 ## Step 7 — Write outputs
 
