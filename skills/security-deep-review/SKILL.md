@@ -139,6 +139,9 @@ spawning a finder with nothing to find.
 
 ## Step 4 — Run the Workflow pipeline
 
+See [`docs/architecture/pipeline-security-deep-review.png`](../../docs/architecture/pipeline-security-deep-review.png)
+for the Find → Verify → Synthesize shape at a glance.
+
 Hand this script to the `Workflow` tool. `LENSES` and `snapshot` are filled from
 Steps 1–3; `N_VERIFIERS` is fixed at 3.
 

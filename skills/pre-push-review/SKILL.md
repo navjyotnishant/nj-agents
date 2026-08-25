@@ -217,6 +217,9 @@ apply the skip rules, and record the fleet size in the report.
 
 ## Step 4 — Run the Workflow pipeline
 
+See [`docs/architecture/pipeline-pre-push-review-nano.png`](../../docs/architecture/pipeline-pre-push-review-nano.png)
+for the gate → parallel-review → aggregate → optional-report shape at a glance.
+
 Once the snapshot is cleared **and the fleet is confirmed** (Step 3.5), hand this
 script to the `Workflow` tool. `DIMENSIONS` is the post-skip list from Step 3.5;
 `snapshot` is the cleared, hygiene-filtered diff; `wantHtml` is `true` only if the

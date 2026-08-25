@@ -157,6 +157,9 @@ wasn't produced.
 
 ## Steps 3–6.5 — Run the Workflow pipeline
 
+See [`docs/architecture/pipeline-tech-blog-nano.png`](../../docs/architecture/pipeline-tech-blog-nano.png)
+for the Draft (with its retry loop) → Refine → Finalize shape at a glance.
+
 Once the topic/angle/audience/voice/`style_prefs` are confirmed (Step 2) and the
 visual assets are ready or in flight (Step 2.5), hand this script to the `Workflow`
 tool. It covers the sequential content chain (writer → fact-check-loop → reviewer →

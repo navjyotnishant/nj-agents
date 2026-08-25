@@ -33,10 +33,26 @@ blocking gate.
 `pipeline-tech-blog.sketch.svg` is the same diagram in the `--sketch` style, kept as
 a reference for what that variant looks like.
 
+## Workflow-tool pipelines (model-generated PNG)
+
+The three skills built on the `Workflow` tool (scripted `agent()`/`pipeline()`/
+`parallel()`/`phase()` orchestration, not the informal "spawn N agents" prose the
+rest of this repo uses) get their own diagrams — generated from a detailed prompt
+via Nano Banana rather than hand-authored SVG, since these illustrate a scripted
+control-flow shape (retry loops, phase barriers, schema-typed data passing between
+stages) that reads more naturally as an infographic than as `/arch-diagram`'s
+component-relationship style.
+
+| Diagram | What it shows |
+|---|---|
+| [`pipeline-security-deep-review.png`](./pipeline-security-deep-review.png) | Find (5 parallel lens finders) → Verify (3 adversarial verifiers per finding, majority-refute kills it) → Synthesize, with the mandatory secret-scan gate before Find |
+| [`pipeline-pre-push-review-nano.png`](./pipeline-pre-push-review-nano.png) | Secret Scan Gate → 5 dimensions in parallel (Dependencies shown SKIPped when no manifest changed) → plain-JS aggregation → optional `review-report-writer` |
+| [`pipeline-tech-blog-nano.png`](./pipeline-tech-blog-nano.png) | Draft (writer + a bounded fact-check retry loop, max 2 rounds) → Refine (reviewer, editor) → Finalize (final-polish + platform-lint in parallel, converging to a serialized apply outside the script) |
+
 ## Editing
 
-These are hand-authored SVG, not generated from a model — edit the SVG directly, then
-**render and look at it** before committing:
+The SVG diagrams above are hand-authored, not generated from a model — edit the SVG
+directly, then **render and look at it** before committing:
 
 ```bash
 rsvg-convert -w 1400 docs/architecture/<name>.svg -o /tmp/<name>.png
@@ -44,6 +60,10 @@ rsvg-convert -w 1400 docs/architecture/<name>.svg -o /tmp/<name>.png
 
 Source review cannot catch a label hidden behind a stroke, an arrowhead removed by a
 filter, or a count that disagrees with the shapes beside it. Only rendering it can.
+
+The three Workflow-tool PNGs are model-generated from a text prompt instead —
+regenerate from an updated prompt rather than hand-editing the PNG if the underlying
+pipeline shape changes.
 
 The full browsable reference lives at
 [navjyotnishant.github.io/nj-agents](https://navjyotnishant.github.io/nj-agents/).
