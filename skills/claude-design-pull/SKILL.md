@@ -86,12 +86,14 @@ This is a **review-class** skill — follow `CONVENTIONS.md` (§5 CI mode and th
 exit-code contract, §6 report artifact, §7 safety rails, §8 cost control). It
 **never edits application code**: it measures, reports, and blocks.
 
-> It spawns subagents, so `§C` (cost) and `§R` (progress reporting) apply.
-> **Cost shape:** one `design-parity-checker` per page, in parallel — 3 pages is
-> 3 agent calls. A single page is measured inline with no agent at all. There is
-> no fix loop: the skill reports and stops, so cost is bounded by page count and
-> cannot escalate. State the roster before dispatch and get a yes past ~10 pages;
-> halt on any signal to stop. Announce the **roster** — every page being checked
+> It spawns subagents via a `Workflow`-tool `parallel()` pipeline (Step 4), so
+> `§C` (cost) and `§R` (progress reporting) apply. **Cost shape:** one
+> `design-parity-checker` per page, in parallel — 3 pages is 3 agent calls. A
+> single page is measured inline with no agent at all, and no Workflow run at
+> all — this carve-out is unchanged by the migration. There is no fix loop: the
+> skill reports and stops, so cost is bounded by page count and cannot escalate.
+> State the roster before dispatch and get a yes past ~10 pages; halt on any
+> signal to stop. Announce the **roster** — every page being checked
 > — then mark each `✓`/`✗` with its verdict as it lands (`§R`).
 
 > **Finding the conventions file.** It lives at the toolkit repo root, two levels
@@ -334,16 +336,51 @@ Without `--pull`, the committed mockups are used as-is. That is the normal path.
 ## Step 4 — Measure
 
 Announce the roster first — the pages being checked and what each agent will do —
-then dispatch. Mark each page `✓ PASS` / `✗ BLOCK` as its verdict lands, so
-progress is attributable to a named page rather than a silent wait (`§R`).
+then dispatch.
 
-**Spawn `design-parity-checker`** once per page, with that page's manifest entry
-and the base URL. One agent per page keeps each verdict independently
-attributable and lets pages run concurrently; the skill aggregates their findings
-into the single verdict below.
+**A single page is measured inline** — no agent, no Workflow run at all. An agent
+round-trip for one comparison is cost with no benefit (§8); this carve-out
+predates the migration below and stays exactly as it was.
 
-For a single page, do the measurement inline rather than spawning — an agent
-round-trip for one comparison is cost with no benefit (§8).
+**Multiple pages** hand this script to the `Workflow` tool. It **spawns
+`design-parity-checker` once per page**, with that page's manifest entry and the
+base URL, via `parallel()` — replacing what used to be manual "spawn N agents in
+parallel" prose. One call per page keeps each verdict independently attributable
+and lets pages run concurrently; the concurrency cap is the Workflow tool's own
+(`min(16, CPUs-2)`), which for a design-review fleet (rarely more than a handful
+of pages) never binds in practice.
+
+```js
+export const meta = {
+  name: 'claude-design-pull',
+  description: 'One design-parity-checker per page, in parallel',
+  phases: [{ title: 'Measure', detail: 'design-parity-checker per page' }],
+}
+
+const VERDICT_SCHEMA = { type: 'object', properties: {
+  verdict: { type: 'string', enum: ['PASS', 'WARN', 'BLOCK'] },
+  deltas: { type: 'array', items: { type: 'object', properties: {
+    class: { type: 'string', enum: ['structure', 'style', 'data-gap', 'content'] },
+    selector: { type: 'string' }, mockup_value: { type: 'string' }, live_value: { type: 'string' },
+  } } },
+  unmeasured_reason: { type: 'string' },
+}, required: ['verdict', 'deltas'] }
+
+phase('Measure')
+const results = await parallel(pages.map(page => () =>
+  agent(
+    buildParityPrompt(page, manifestFor(page), baseUrl),
+    { label: `measure:${page.route}`, agentType: 'design-parity-checker', schema: VERDICT_SCHEMA }
+  ).then(r => r && { page: page.route, ...r })
+))
+
+return { results: results.filter(Boolean) }
+```
+
+Mark each page `✓ PASS` / `✗ BLOCK` as its verdict lands, so progress is
+attributable to a named page rather than a silent wait (`§R`). The skill
+aggregates the returned results into the single verdict below — **any `BLOCK`
+result makes the overall verdict `BLOCK`**, same all-or-nothing rule as Step 5.
 
 Each checker then does the following:
 

@@ -33,7 +33,7 @@ umbrella that runs them all.
 | `/review-tests-build` | Auto-detects and runs the repo's own test/lint/build commands. Never installs tooling. | `tests-build-runner` |
 | `/review-dependencies` | Added/upgraded packages, pinning risk, license changes, typosquatting. Diff-only. | `dependency-reviewer` |
 | `/review-style` | Consistency with surrounding code, commit-message hygiene, leftover debug/TODO. | `style-reviewer` |
-| `/claude-design-pull` | Pulls approved mockups from Claude Design and **BLOCKS** while a page's structure or computed styles differ. Measures only; never edits app code. | `design-parity-checker` |
+| `/claude-design-pull` | Pulls approved mockups from Claude Design and **BLOCKS** while a page's structure or computed styles differ. Multi-page runs fan out via a `Workflow`-tool `parallel()` pipeline; a single page still measures inline, no agent. Measures only; never edits app code. | `design-parity-checker` |
 
 Each runs standalone; the umbrella runs them together. Shared behavior lives in the
 repo's `CONVENTIONS.md`.

@@ -12,6 +12,22 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- **`/claude-design-pull` migrated to the Workflow tool** — the sixth and final
+  skill in the Workflow-migration epic. Step 4's per-page measurement now spawns
+  `design-parity-checker` via `parallel()` for multi-page runs, replacing manual
+  "spawn N agents in parallel" prose. The **single-page inline carve-out is
+  unchanged** — one page still measures with no agent and no Workflow run at all,
+  since an agent round-trip for one comparison is cost with no benefit. Live-tested
+  `opts.agentType: 'design-parity-checker'` (established since August 1) against 2
+  synthetic pages in parallel — resolved correctly, and the agent's own
+  "never judge by eye" discipline held: it flagged that no real mockup/URL existed
+  to actually render rather than fabricating a confident verdict, while still
+  returning the requested synthetic BLOCK/PASS shape correctly.
+  ([Story] Migrate /test-suite-author to the Workflow tool was reassessed and
+  closed instead — none of its three delegated stages (`/test-plan`,
+  `/test-author`, `/test-data`) spawn a subagent at all, so there was no
+  orchestration for the Workflow tool to model.)
+
 - **`/capture-screenshots` migrated to the Workflow tool.** Steps 4-5
   (detect-sensitive-data → redact-with-verify-gate) are now a scripted `Workflow`
   `pipeline()` running independently per image, so a slow image's detect/redact
