@@ -77,7 +77,11 @@ dangling link. Add the class when you add the class.
   repo* for accumulated debt and returns candidates — there is no sensible BLOCK for
   "you have 12 unused exports". `check.sh` holds only gates to the verdict tokens.
 - **Agent frontmatter:** `name`, `description` (may embed `<example>`/`<commentary>`),
-  `tools`, `color`, `author`; optional `memory: project`. **Omitting `model:` inherits
+  `tools`, `color`, `author`; optional `memory: project` — a declaration that the
+  *spawning skill* feeds this agent project-scoped prior-run context and persists its
+  return value back, not a capability the agent has on its own (`CONVENTIONS-orchestration.md
+  §M2` defines the semantics and adoption criteria; no agent currently qualifies).
+  **Omitting `model:` inherits
   the session's model** — so an Opus session gets Opus subagents. Do not pin a model
   unless there is a specific, stated reason: a hardcoded tier silently overrides the
   user's own choice.

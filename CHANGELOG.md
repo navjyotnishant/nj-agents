@@ -12,6 +12,23 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- **`CONVENTIONS-orchestration.md §M` — memory strategy for Workflow-tool skills.**
+  Two mechanisms, previously conflated: **§M1 run-level** documents when a migrated
+  skill should mention `resumeFromRunId` (multi-stage `pipeline()` chains benefit
+  most; pure-`parallel()` and deliberately-paused skills less so) — free, since it's
+  the Workflow tool's own capability, nothing to build. **§M2 agent-level** gives
+  `memory: project` a real, grounded definition for the first time: it was a
+  recognized frontmatter key with no defined runtime semantics anywhere in the repo.
+  Since an agent has no storage of its own (most carry no `Write` tool by design),
+  the key now means the *spawning skill* feeds it project-scoped prior-run context
+  and persists its return value — not a capability the agent has on its own. Also
+  states explicit adoption criteria and two disqualifying patterns (verify-only
+  agents whose independence memory would erode; search agents whose ground shifts
+  every run, making memory stale by construction). `security-finder` and
+  `security-verifier` were evaluated against the criteria as a worked example —
+  **neither qualifies**, matching the two disqualifying patterns exactly; no agent
+  in the repo currently adopts `memory: project`.
+
 - **`evals/evals.json` — behavioral eval schema for `/pm-task`, adopting Anthropic's
   skill-creator schema verbatim** (`skill_name`, `evals[].{id,prompt,expected_output,
   files,expectations}`) rather than inventing a parallel format, so existing

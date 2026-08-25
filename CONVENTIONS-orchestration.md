@@ -223,3 +223,89 @@ unbounded visibly shows its bound (`§C`).
 The glyphs are a detail; the roster-then-drain shape is the requirement. What matters
 is that at any moment the developer can see what was dispatched, what has come back,
 and what is still outstanding.
+
+## §M — Memory (run-level resumability + agent-level persistence)
+
+Two genuinely different mechanisms get called "memory" in this repo, and conflating
+them produces vague guidance neither skill authors nor `check.sh` can act on.
+**Run-level** is the Workflow tool's own resumability, free and already built —
+nothing to design, just adopt where the shape fits. **Agent-level** is a persona
+remembering something *across separate runs*, which nothing in the harness provides
+for free — an agent has no storage of its own, so this only works if the *skill*
+that spawns it explicitly owns a memory file and feeds it in.
+
+### §M1 — Run-level: `resumeFromRunId`
+
+A Workflow-scripted skill gets this for nothing beyond stating it exists: on
+`Workflow({scriptPath, resumeFromRunId})`, the longest unchanged prefix of `agent()`
+calls returns cached results instantly — only the first edited/new call and
+everything after it runs live (see the Workflow tool's own description for the
+mechanics). This matters for exactly one failure mode: **a multi-stage pipeline
+killed or interrupted partway through** — a long `pipeline()` chain (writer →
+fact-checker → reviewer → editor) that dies after stage 2 currently means starting
+over and re-paying for stages 1–2.
+
+**When a migrated skill should document a resume path:**
+- **Multi-stage `pipeline()` skills** (e.g. `/tech-blog`'s writer→fact-checker→
+  reviewer→editor chain) — document the `runId` the tool returns, and tell the user
+  to re-invoke with `resumeFromRunId` if a run is killed or fails partway through.
+  This is a one-paragraph addition to the skill's own "how it runs" section, not new
+  code — the resumability is the tool's, not the skill's.
+- **Single-stage or pure `parallel()` skills** (e.g. `/pre-push-review`'s 4
+  dimensions dispatched together, `/claude-design-pull`'s per-page fan-out) — resume
+  matters less, since a killed run has little sunk cost to preserve; a bare mention
+  that resume works if the user wants it is enough, no dedicated section needed.
+- **Skills the user pauses deliberately** (`/test-suite-author`'s pause-after-every-
+  stage design, §M below is separate from this) — each staged `workflow()`
+  invocation is short enough that resume adds little; not worth documenting per
+  §C's own "don't build ceremony nobody needs" spirit.
+
+Never claim resumability for a skill that isn't Workflow-scripted — prose-orchestrated
+skills have no `runId` to resume from, and saying otherwise would be inventing a
+capability that doesn't exist for them.
+
+### §M2 — Agent-level: what `memory: project` actually means
+
+**As of this writing, `memory: project` is a recognized agent-frontmatter key with
+no defined runtime semantics anywhere in this repo or the platforms it targets** —
+it was documented as valid without ever being given a behavior. This section defines
+one, grounded in what an agent persona can actually do:
+
+An agent (`agents/*.md`) has no storage of its own — it is a system prompt plus a
+tool list, spawned fresh each call. Per the write-discipline convention already in
+`CLAUDE.md` ("23 of the 25 [agents] return content for the *skill* to write" — most
+agents don't carry `Write`), an agent cannot durably persist anything itself even if
+it wanted to. **So `memory: project` means: the *skill* that spawns this agent reads
+a project-scoped memory file and includes its relevant contents in the agent's
+prompt, and the skill writes back whatever the agent's return value says should be
+remembered.** The frontmatter key is a declaration, not a capability grant — it
+tells `check.sh` and a reader "this agent's persona expects prior-run context to be
+fed in via its prompt; verify the spawning skill actually does that," the same
+relationship `tools:` has to what an agent's body claims to do.
+
+**Adoption criteria — when a NEW or existing agent should carry `memory: project`:**
+an agent qualifies only if it repeatedly evaluates *the same kind of thing* across
+separate runs of the same project, AND remembering prior context measurably reduces
+redundant work or improves consistency (not just "might be nice to remember
+something"). Two disqualifying patterns, both common enough to name explicitly:
+
+- **A verify-only agent should not get memory.** `security-verifier`'s whole design
+  is to judge one finding fresh, skeptically, blind to other verifiers' votes — an
+  adversarial-refute pattern that depends on each vote being independent. Feeding it
+  "here's what you decided last time" is a bias vector, not a helpful shortcut; it
+  would erode exactly the independence the majority-vote scheme relies on.
+- **A search agent whose ground shifts every run should not get memory either.**
+  `security-finder` re-reads the actual diff/repo each call; "remembered" prior
+  findings go stale the moment code changes, and a finder that trusts stale memory
+  over what it just read is a finder that can miss a fix or a regression. Its
+  confidence-filter-and-report design already handles repeat runs correctly —
+  nothing here needs remembering.
+
+**Worked example (evaluated, not adopted):** both `security-finder` and
+`security-verifier` were evaluated against these criteria for this section and
+**neither qualifies** — see the two disqualifying patterns above, which are their
+exact shapes. No agent in this repo has yet been identified as a genuine fit; the
+criteria exist so the next candidate (a persona doing repeated, project-scoped
+comparison work where staleness isn't a risk — e.g. something like "has this exact
+finding already been triaged and dismissed by a human") can be evaluated against a
+real bar instead of a guess.
