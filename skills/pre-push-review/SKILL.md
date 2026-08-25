@@ -1,7 +1,7 @@
 ---
 name: pre-push-review
-description: "Use this skill when the user asks to \"review my changes before I push\", \"run the pre-push review\", \"check this diff before committing/pushing\", \"do a thorough review of the current changes\", or wants an AI-assisted quality gate over the current commit or uncommitted work. Runs up to five review dimensions (secrets, correctness, tests/build, dependencies, style) — the secret scan first as a gate, then the rest in parallel — and aggregates one PASS / WARN / BLOCK verdict with a report artifact. Cost-aware: it states the scope and agent count and asks before spawning, skips dimensions with nothing to review, and on a re-run defaults to only the dimensions that still have findings. Supports a non-interactive CI mode with an exit-code contract. Works in any git repo; nothing here is specific to one project, stack, or tool."
-version: 0.4.0
+description: "Use this skill when the user asks to \"review my changes before I push\", \"run the pre-push review\", \"check this diff before committing/pushing\", \"do a thorough review of the current changes\", or wants an AI-assisted quality gate over the current commit or uncommitted work. Runs up to five review dimensions (secrets, correctness, tests/build, dependencies, style) via a Workflow-tool pipeline — the secret scan first as a gate, then the rest in parallel — and aggregates one PASS / WARN / BLOCK verdict with a report artifact. Cost-aware: it states the scope and agent count and asks before spawning, skips dimensions with nothing to review, and on a re-run defaults to only the dimensions that still have findings. Supports a non-interactive CI mode with an exit-code contract. Works in any git repo; nothing here is specific to one project, stack, or tool."
+version: 0.5.0
 class: review
 subclass: gate
 author: navjyotnishant
@@ -25,6 +25,15 @@ bypasses git hooks, and leaves no files in the repo. All shared behavior
 (snapshot scope, diff hygiene, findings format, CI mode, report artifact, safety)
 is defined once in **`CONVENTIONS.md`** — read it; the steps below reference it.
 
+Scope resolution, the secret gate, and the cost/roster confirmation (Steps 1–3.5)
+happen **before** any agent is spawned — these involve git commands, interactive
+prompts, and stateful re-run logic that don't belong inside a script. Once the
+fleet is confirmed, dispatch runs as a **`Workflow`-tool pipeline** (Step 4): the
+confirmed dimensions in parallel, aggregated with plain logic (no LLM needed for a
+mechanical max-severity rollup), then an optional trailing report-writer call —
+gaining the same resumability and progress tree `/security-deep-review` has, on
+the skill users hit most often.
+
 > **Finding `CONVENTIONS.md`.** It lives at the toolkit repo root, two levels
 > above this skill — not beside `SKILL.md`. Skills are usually installed as
 > symlinks into your runner's skills directory, so a plain relative path resolves against
@@ -43,13 +52,16 @@ is defined once in **`CONVENTIONS.md`** — read it; the steps below reference i
 > keep `CHANGELOG.md` current when the change is user-facing, degrade rather than
 > fail, and say what you did not do.
 
-> **Spawning subagents — `CONVENTIONS-orchestration.md`.** This skill spawns agents,
-> so `§C` (cost) and `§R` (progress reporting) apply. **Cost shape:** up to 5 dimension
-> agents in parallel after the secret-scan gate, plus 1 report-writer after
-> aggregation (Step 5.5) — so up to 6. State it and get a yes before the
-> first dispatch; cap fix rounds at 2; halt on any signal to stop. Announce the
-> **roster** before dispatch — every agent and what it will do — then mark each one
-> `✓`/`✗` with its verdict as it lands (`§R`).
+> **Spawning subagents — `CONVENTIONS-orchestration.md`.** This skill spawns agents
+> via a `Workflow`-tool pipeline (Step 4), so `§C` (cost) and `§R` (progress
+> reporting) apply. **Cost shape:** up to 5 dimension agents in parallel after the
+> secret-scan gate, plus 1 report-writer after aggregation (Step 5.5) — so up to 6.
+> State it and get a yes before the first dispatch; cap fix rounds at 2; halt on any
+> signal to stop. Announce the **roster** before dispatch — every agent and what it
+> will do — then mark each one `✓`/`✗` with its verdict as it lands (`§R`). The run
+> is resumable via `resumeFromRunId` if interrupted (`§M1`) — worth mentioning to the
+> user on a failure, not a dedicated section, since a pure-`parallel()` fleet like
+> this one has little sunk cost to preserve on resume.
 
 
 ## Dependencies
@@ -203,26 +215,106 @@ Proceed? [Y/n/pick dimensions]
 In CI mode (`CONVENTIONS.md §5`) there is nobody to ask: skip the prompt, still
 apply the skip rules, and record the fleet size in the report.
 
-## Step 4 — Spawn the confirmed dimensions in parallel
+## Step 4 — Run the Workflow pipeline
 
-Once the snapshot is cleared **and the fleet is confirmed**, spawn the agreed
-dimension agents **in a single message** (parallel), each receiving the cleared,
-hygiene-filtered snapshot:
+Once the snapshot is cleared **and the fleet is confirmed** (Step 3.5), hand this
+script to the `Workflow` tool. `DIMENSIONS` is the post-skip list from Step 3.5;
+`snapshot` is the cleared, hygiene-filtered diff; `wantHtml` is `true` only if the
+caller passed `--html` or this isn't CI mode (Step 5.5's existing rule).
 
-- `correctness-reviewer` — bugs/regressions/edge cases/missing validation
-- `tests-build-runner` — auto-detect and run test/lint/build; report pass/fail
-- `dependency-reviewer` — dependency/version/license changes, supply-chain signals
-- `style-reviewer` — conventions, commit-message hygiene, leftover debug/TODO
-- `secrets-reviewer` — the semantic security pass (secrets *gate* already ran in
-  Step 3; this is the deeper injection/authz/unsafe-pattern review on the cleared
-  diff)
+```js
+export const meta = {
+  name: 'pre-push-review',
+  description: 'Parallel review dimensions, mechanical aggregation, optional HTML report',
+  phases: [
+    { title: 'Review', detail: 'confirmed dimensions in parallel' },
+    { title: 'Report', detail: 'optional HTML render' },
+  ],
+}
 
-Each returns a structured report per `CONVENTIONS.md §4` (findings ≥80 confidence,
-severity-tagged, with a dimension verdict `PASS`/`WARN`/`BLOCK`/`SKIP`).
+// opts.agentType was tried and confirmed live against these five agents (all
+// established since July/August 2026) before this SKILL.md was finalized: two of
+// them (style-reviewer, correctness-reviewer) resolved and ran correctly with no
+// registry error. security-deep-review's own Step 4 documents opts.agentType
+// THROWING for security-finder/security-verifier — that is a genuine, different
+// failure: the registry lags the harness's OWN agent list, so a just-authored
+// agents/*.md file is not guaranteed to be in it yet, regardless of how
+// established the agent later becomes. These five agents were already registered
+// well before this migration, which is why they resolved and security-finder did
+// not at the time of its own build. If a future run throws "agent type not found"
+// for one of these, that is the same class of registry-lag bug, not a reason to
+// doubt this note — fall back to an inline persona for just that dimension.
+const AGENT_FOR = {
+  secrets: 'secrets-reviewer',
+  correctness: 'correctness-reviewer',
+  'tests-build': 'tests-build-runner',
+  dependencies: 'dependency-reviewer',
+  style: 'style-reviewer',
+}
 
-## Step 5 — Aggregate, report, and write the artifact
+phase('Review')
+// `dimension` is zipped onto each result INSIDE the per-task `.then()`, before
+// parallel()'s array is ever filtered — an earlier draft attached it afterward by
+// indexing DIMENSIONS[i] against the post-filter array, which mislabels every
+// result after a dropped one once a falsy/quarantined result compacts the array.
+// A live-test correctness review of this very script caught that draft's bug.
+const results = (await parallel(DIMENSIONS.map(dim => () =>
+  agent(
+    `Review this snapshot for the ${dim} dimension.\n\n${snapshot}`,
+    { label: `review:${dim}`, phase: 'Review', agentType: AGENT_FOR[dim], schema: DIMENSION_SCHEMA }
+  ).then(r => r && { dimension: dim, ...r })
+))).filter(Boolean)
 
-Aggregate per `CONVENTIONS.md §4`. Print a compact table then the recommendation:
+// Aggregation is plain logic, not an agent() call — every dimension already
+// returns a structured PASS/WARN/BLOCK/SKIP verdict + findings per
+// CONVENTIONS.md §4, so rolling up max-severity and building the table is
+// arithmetic, not judgment. Spending an LLM call on it would be paying for an
+// agent to do what a five-line reduce already does correctly.
+//
+// SKIP ranks equal to PASS (both dimensions that need no action), so `overall`
+// alone can't distinguish "everything passed" from "everything was skipped" — an
+// all-SKIP fleet would silently roll up to a bare PASS with no signal in the
+// returned object. hasSkips carries that distinction explicitly rather than
+// depending on Step 5's prose to notice it after the fact.
+const SEVERITY_RANK = { PASS: 0, SKIP: 0, WARN: 1, BLOCK: 2 }
+const overall = results.reduce(
+  (worst, r) => (SEVERITY_RANK[r.verdict] > SEVERITY_RANK[worst] ? r.verdict : worst),
+  'PASS'
+)
+const hasSkips = results.some(r => r.verdict === 'SKIP')
+const aggregated = { results, overall, hasSkips, scope: scopeMeta }
+
+let reportUrl = null
+if (wantHtml) {
+  phase('Report')
+  const rendered = await agent(buildReportPrompt(aggregated), { agentType: 'review-report-writer', schema: REPORT_URL_SCHEMA })
+  reportUrl = rendered?.url ?? null
+}
+
+return { ...aggregated, reportUrl }
+```
+
+The Workflow pipeline's Review phase **spawns `secrets-reviewer`, `correctness-reviewer`,
+`tests-build-runner`, `dependency-reviewer`, and `style-reviewer`** — one per confirmed
+dimension, via `opts.agentType` (verified against the live registry per the comment
+above `AGENT_FOR`) — and, when `wantHtml`, the Report phase **spawns
+`review-report-writer`**.
+
+`buildReportPrompt` (constructed in Step 5.5's prose, unchanged from before this
+migration) hands `review-report-writer` the same payload it always received: the
+verdict and recommendation, per-dimension verdicts (and each `SKIP`'s reason),
+every finding with its severity / `file:line` / claim / failure scenario / fix, the
+scope and exclusion metadata, the scanner name and version, the fleet size, and the
+output directory. It renders; it does not re-review, re-scan, or re-run anything.
+
+Review→Report has no barrier to wait on between them by construction — Report only
+runs once Review's `parallel()` has already fully resolved, since aggregation (and
+therefore `buildReportPrompt`'s input) needs every dimension's result. This is
+identical in shape to `/security-deep-review`'s Verify→Synthesize barrier.
+
+## Step 5 — Print the results, write the artifact
+
+Print the compact table then the recommendation, from the script's return value:
 
 ```
 Dimension       Verdict   Top findings
@@ -247,46 +339,45 @@ To re-check after fixing: /pre-push-review — will re-run correctness + style o
 ```
 
 Write the **report artifact** per `CONVENTIONS.md §6` (timestamped, outside the repo
-tree or under a gitignored dir, no unmasked secrets). If any dimension was `SKIP` or
-the review was partial, say so beside the verdict — PASS-with-gaps ≠ PASS.
+tree or under a gitignored dir, no unmasked secrets) from the script's `results`. If
+the script's `hasSkips` is `true` or the review was partial, say so beside the
+verdict — PASS-with-gaps ≠ PASS. `hasSkips` is why this is checkable from the
+script's return value alone rather than re-deriving it from `results` by hand.
 
 **Exit-code contract** (when run for a hook/CI, `CONVENTIONS.md §5`): PASS/WARN → 0,
 BLOCK → non-zero. The suite still advises only — it never runs `git push`.
 
-## Step 5.5 — Render the HTML report (spawn `review-report-writer`)
+## Step 5.5 — The HTML report's conditions
 
 The `§6` markdown artifact stays exactly as it is — it is what CI greps and what a
-`diff` between two runs reads cleanly. This step adds a **sibling `.html`** for the
-human, because a terminal table scrolls away the moment the next command runs and a
-finding with a five-line fix is unreadable in it.
+`diff` between two runs reads cleanly. The script's optional Report phase (Step 4)
+adds a **sibling `.html`** for the human, because a terminal table scrolls away the
+moment the next command runs and a finding with a five-line fix is unreadable in it.
 
-Spawn **`review-report-writer`** with the aggregated result: the verdict and
-recommendation, per-dimension verdicts (and each `SKIP`'s reason), every finding with
-its severity / `file:line` / claim / failure scenario / fix, the scope and exclusion
-metadata, the scanner name and version, the fleet size, and the output directory. It
-renders; it does not re-review, re-scan, or re-run anything.
-
-Then **print the `file://` URL** on its own line, so it is clickable in the terminal:
+If `reportUrl` came back from the script, **print the `file://` URL** on its own
+line, so it is clickable in the terminal:
 
 ```
 Report: file:///Users/you/.nj-agents-reports/review-20260804T174233Z-e6307dc.html
         (markdown sibling: review-20260804T174233Z-e6307dc.md)
 ```
 
-Three conditions on this step:
+Three conditions on `wantHtml`, resolved **before** the script runs (Step 4):
 
-- **Skip it entirely when there is nothing to review.** The empty-diff PASS in Step 1
-  exits before any agent is spawned; do not spawn one to render "nothing happened".
-- **Skip it in CI mode by default** (`CONVENTIONS.md §5`) — a pipeline consumes the
-  exit code and the markdown, and nobody opens a browser mid-build. Render it only if
+- **`false` when there is nothing to review.** The empty-diff PASS in Step 1 exits
+  before any agent is spawned; do not run a Workflow at all to render "nothing
+  happened".
+- **`false` in CI mode by default** (`CONVENTIONS.md §5`) — a pipeline consumes the
+  exit code and the markdown, and nobody opens a browser mid-build. `true` only if
   the caller asks (`--html`), e.g. to attach to a build artifact.
-- **A failure here never changes the verdict.** If the agent errors or the directory
-  is unwritable, say so and fall back to the markdown artifact. The review's result is
-  the review's result; a rendering problem is not a finding.
+- **A failure in the Report phase never changes `overall`.** If `review-report-writer`
+  errors or the directory is unwritable, `reportUrl` stays `null`; say so and fall
+  back to the markdown artifact. The review's result is the review's result; a
+  rendering problem is not a finding.
 
-This is the one agent that runs *after* aggregation rather than in parallel with the
-dimensions, so it costs one extra call on top of the fleet stated in Step 3.5 —
-mention it there when stating the cost.
+This is the one agent that runs *after* Review's `parallel()` fully resolves rather
+than alongside the dimensions, so it costs one extra call on top of the fleet stated
+in Step 3.5 — mention it there when stating the cost.
 
 ## Step 6 — Optional: offer to gate on git push (propose, never silently add)
 

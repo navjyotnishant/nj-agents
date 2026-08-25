@@ -217,7 +217,12 @@ file yet, even right after `./install.sh`; `opts.agentType: 'security-finder'`
 throws `agent type 'security-finder' not found` until that registry catches up.
 Inline prompts have no such dependency and always work — spawn both agents this way,
 and keep the `agents/*.md` files as the source of truth for what gets inlined, not
-as a registry reference.
+as a registry reference. This is a **timing** issue, not a permanent property of
+these two agents — `opts.agentType` may well resolve for `security-finder`/
+`security-verifier` today, now that they've been installed for a while (see
+`/pre-push-review`'s migration, where `opts.agentType` was tried and confirmed
+live for five agents established since July/August 2026). Re-verify before
+switching this skill over, rather than assuming either direction.
 
 `buildSynthesisPrompt` must handle the **zero-findings case explicitly** — when
 `surviving.length === 0`, do not hand the synthesis agent a vague "summarize"

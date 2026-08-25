@@ -12,6 +12,26 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- **`/pre-push-review` migrated to the Workflow tool.** The repo's highest-traffic
+  skill's dimension dispatch (Step 4) is now a scripted `Workflow` pipeline instead
+  of prose "spawn these agents in parallel" instructions — `parallel()` over the
+  confirmed dimensions, then plain-JS aggregation (a mechanical max-severity rollup
+  needs no LLM judgment), then an optional trailing `review-report-writer` call
+  gated on `wantHtml`. Uses `opts.agentType` directly for all five dimension
+  agents — live-tested and confirmed to resolve correctly, unlike
+  `/security-deep-review`'s brand-new agents at the time of that build, which hit a
+  registry-timing bug; `security-deep-review/SKILL.md` now notes this is a timing
+  issue, not a permanent property, so a future re-check isn't discouraged. Scope
+  resolution, the secret gate, and cost/roster confirmation (Steps 1–3.5) stay
+  outside the script since they involve git commands, interactive prompts, and
+  stateful re-run logic. Live-testing this migration surfaced and fixed a real bug
+  before it shipped: an initial draft zipped `dimension` names onto results *after*
+  `parallel()`'s array was filtered, which would mislabel every result following a
+  dropped (quarantined/timed-out) one once the array compacted — fixed by zipping
+  inside each task's own `.then()`, before filtering. Also added `hasSkips` to the
+  aggregated result, since `SKIP` and `PASS` rank equal in the severity rollup and
+  an all-`SKIP` fleet would otherwise roll up to an indistinguishable bare `PASS`.
+
 - **`CONVENTIONS-orchestration.md §M` — memory strategy for Workflow-tool skills.**
   Two mechanisms, previously conflated: **§M1 run-level** documents when a migrated
   skill should mention `resumeFromRunId` (multi-stage `pipeline()` chains benefit

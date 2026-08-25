@@ -39,7 +39,7 @@ skill + agent pair, plus one umbrella that runs them all.
 
 | Skill | What it does | Agent it uses |
 |---|---|---|
-| `/pre-push-review` | **Umbrella.** Prints the warning banner, runs the secret scan as a gate, then spawns the other dimensions in parallel and aggregates one PASS / WARN / BLOCK verdict + a report artifact. | (orchestrates the below) |
+| `/pre-push-review` | **Umbrella.** Prints the warning banner, runs the secret scan as a gate, then runs the other dimensions in parallel via a `Workflow`-tool pipeline and aggregates one PASS / WARN / BLOCK verdict + a report artifact. | (orchestrates the below) |
 | `/review-secrets` | Secret scan over the diff **first** (hard gate — shares nothing if a key is found), using a **required** dedicated scanner (gitleaks/trufflehog/detect-secrets — BLOCKs with install steps if none is present). Then a semantic security pass. | `secrets-reviewer` |
 | `/review-correctness` | Bugs, regressions, edge cases, missing validation in the changed lines and their blast radius. | `correctness-reviewer` |
 | `/review-tests-build` | Auto-detects and runs the repo's own test/lint/build commands as a gate. Never installs tooling. | `tests-build-runner` |

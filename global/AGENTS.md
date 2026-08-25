@@ -26,7 +26,7 @@ umbrella that runs them all.
 
 | Skill | What it does | Agent |
 |---|---|---|
-| `/pre-push-review` | **Umbrella.** Secret scan as a gate, then the rest in parallel; aggregates one PASS / WARN / BLOCK verdict, then renders an HTML report and prints its `file://` URL. | orchestrates the below + `review-report-writer` |
+| `/pre-push-review` | **Umbrella.** Secret scan as a gate, then a `Workflow`-tool pipeline runs the rest in parallel; aggregates one PASS / WARN / BLOCK verdict, then renders an HTML report and prints its `file://` URL. | orchestrates the below + `review-report-writer` |
 | `/review-secrets` | Scanner over the diff **first** as a hard gate, then a semantic security pass. | `secrets-reviewer` |
 | `/security-deep-review` | **Escalation over `/review-secrets`.** Same mandatory scanner gate first, then a Workflow-tool pipeline: parallel multi-lens finders (injection/authz, SSRF/deserialization/path-traversal, supply-chain, crypto/authn, cloud/infra) → adversarial verify (majority-refute kills a finding) → synthesis. Diff-scoped by default, `--full` for the whole repo. Deliberately invoked, not in the default umbrella fleet. | `security-finder`, `security-verifier` |
 | `/review-correctness` | Bugs, regressions, edge cases, missing validation in changed lines + blast radius. | `correctness-reviewer` |
