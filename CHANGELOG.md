@@ -12,6 +12,16 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- **`/pm-plan --spec-check`** — an optional pre-implementation security pass.
+  Reuses the existing `security-finder` persona (`agents/security-finder.md`,
+  proven in `/security-deep-review`) against each decomposed Story's *description
+  and acceptance criteria* — text only, never a diff or the filesystem, since no
+  code exists yet — and annotates any finding (≥80 confidence, same discipline as
+  the diff-scoped version) onto the tree **before** the preview is shown. Fully
+  opt-in: without the flag, behavior and cost are unchanged. Catches a design flaw
+  ("this implies storing a secret in plaintext") at plan time instead of later in
+  `/pre-push-review`.
+
 - **`/capture-intent` — a new workflow-class skill.** Captures a raw idea, in the
   user's own words, as one committed file: `docs/intent/<slug>.md` with a fixed
   shape (Intent / Why now / optional Rough shape marked "unrefined" / Captured+Author

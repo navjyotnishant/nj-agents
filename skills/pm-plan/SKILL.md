@@ -1,6 +1,6 @@
 ---
 name: pm-plan
-description: Use this skill when the user asks to "plan out this feature", "break this epic into stories and tasks", "set up the whole initiative in Linear/Jira", or wants a feature-sized ask turned into a created Epic→Stories→Tasks tree. It decomposes the initiative (via the pm-decomposer agent), previews the WHOLE tree for one approval, then creates it in the connected PM tracker SEQUENTIALLY, parent-first — Epic, then Stories under it, then Tasks under each — wiring parent links as it goes. Stops and reports on any partial failure; never bulk-creates without preview + opt-in; else hands you the whole tree as markdown. Works with any connected tracker; nothing here is project-specific.
+description: Use this skill when the user asks to "plan out this feature", "break this epic into stories and tasks", "set up the whole initiative in Linear/Jira", or wants a feature-sized ask turned into a created Epic→Stories→Tasks tree. It decomposes the initiative (via the pm-decomposer agent), previews the WHOLE tree for one approval, then creates it in the connected PM tracker SEQUENTIALLY, parent-first — Epic, then Stories under it, then Tasks under each — wiring parent links as it goes. Stops and reports on any partial failure; never bulk-creates without preview + opt-in; else hands you the whole tree as markdown. An optional --spec-check flag runs each story's description through a security-finder pass before the tree preview, catching a design flaw before any code is written — fully opt-in, adds no dispatch when omitted. Works with any connected tracker; nothing here is project-specific.
 version: 0.1.0
 class: pm
 author: navjyotnishant
@@ -37,10 +37,13 @@ to bottom.
 > fail, and say what you did not do.
 
 > **Spawning subagents — `CONVENTIONS-orchestration.md`.** This skill spawns agents,
-> so `§C` (cost) and `§R` (progress reporting) apply. **Cost shape:** 1 decomposer agent, then N sequential tracker creates.
+> so `§C` (cost) and `§R` (progress reporting) apply. **Cost shape:** 1 decomposer agent, then N sequential tracker creates —
+> **plus, only with `--spec-check`, one additional `security-finder` call per story** (Step 2.5).
 > State it and get a yes before the first dispatch; cap fix rounds at 2; halt on any
 > signal to stop. Announce the **pipeline** up front and each stage as it starts, so a stall is
-> attributable to a named stage (`§R`).
+> attributable to a named stage (`§R`). With `--spec-check`, state the added story count
+> as part of that same up-front cost announcement — not as a surprise once decomposition
+> finishes.
 
 It reuses the leaf skills' concerns (`/pm-epic`, `/pm-story`, `/pm-task`) — same neutral
 model, same tracker mapping — but is the only PM skill that creates **many** items in
@@ -85,6 +88,43 @@ If it returns **open questions** that block responsible planning, surface them a
 resolve with the user **before** creating anything — don't create a tree built on
 guesses.
 
+## Step 2.5 — `--spec-check` (opt-in): pre-implementation security pass
+
+Only when the user passed `--spec-check`. Skipped entirely otherwise — no extra
+dispatch, no behavior change, nothing to state (this is the whole point of the
+flag being opt-in).
+
+Reuses the existing `security-finder` persona from `security-deep-review`
+(`agents/security-finder.md`) **against text, not code**: no diff exists yet, since
+nothing has been implemented. For each Story in the decomposed tree, spawn one
+`security-finder` call with a lens brief adapted to a design-review context —
+the agent reasons about the *described approach* only:
+
+```
+Lens: pre-implementation design review (not a diff, not a filesystem — no code
+exists yet for this story). Read the Story description and acceptance criteria
+below as the ONLY input. Do not attempt to read files or run commands; there is
+nothing to read. Flag any security-relevant design implication in the described
+approach — e.g. an implied plaintext-secret store, a described auth check that's
+missing, an implied trust boundary violation — using the same confidence-≥80,
+file:line-style discipline, substituting the story's own identifier for a
+location. Return an empty findings list if nothing clears the bar.
+
+Story: <title>
+Description: <description>
+Acceptance criteria: <criteria>
+```
+
+State the added cost as part of the up-front cost announcement (§C) — "N stories,
+so --spec-check adds N calls" — before Step 2 dispatches, not after.
+
+Findings attach to their Story as an annotation; they do not block tree creation
+on their own and do not run before the tree preview. **Annotate every Story that
+gets at least one finding ≥80 confidence; a Story with no findings needs no
+annotation.** This never touches a diff or the filesystem (per the acceptance
+scenario) — it is a text-only design review of the story description, since no
+code exists yet to review.
+
 ## Step 3 — Search before create (§P4)
 
 Before proposing creates, search the destination project for anything matching this
@@ -106,6 +146,21 @@ Epic:  <title>
 Open questions resolved: <…>
 Will create: <N> items in <project> on <tracker>.  Nothing yet created.
 ```
+
+With `--spec-check`, a Story carrying a finding gets a `⚠ spec-check` marker inline
+in this same tree, with the finding(s) listed directly beneath it — **before** the
+tree is shown to the user, never as a follow-up after approval:
+
+```
+  ├─ Story: <title>  [new]  (3 acceptance criteria)  (sonnet)  ⚠ spec-check
+  │     └─ WARNING: description implies storing the API key in plaintext config —
+  │        recommend a secret-store reference instead of a literal value.
+```
+
+A `--spec-check` finding is advisory, same as any other reviewer output in this
+toolkit — it does not block the create, it surfaces the concern at plan time so the
+user can revise the Story's description (or accept the risk) before implementation
+starts, rather than catching it later in `/pre-push-review`.
 
 Mark `[assumption]` items clearly so the user can cut them. Show each item's
 `recommended_model` tier inline; if the item is Opus/Haiku-tier, add its one-line
@@ -167,3 +222,7 @@ tree, not just the item that closed.
 - **Ground the tree in intent** — `assumption`-flag anything inferred; resolve open
   questions before creating; no invented scope (§P7). No secrets in items (§P7).
 - **MCP detected, never required** (§P6); the markdown fallback always works.
+- **`--spec-check` is fully opt-in** — omitted, it changes nothing about the default
+  flow; passed, it reuses the existing `security-finder` persona against story text
+  only, never a diff or the filesystem (no code exists yet), and its findings are
+  advisory annotations shown before the tree preview, never a block on creation.

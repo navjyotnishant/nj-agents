@@ -115,7 +115,7 @@ field set per type.
 | `/pm-epic` | Drafts one **Epic** to the **SAFe epic-hypothesis** standard (goal/outcome, problem, success measure, scope/out-of-scope) + a **suggested** story breakdown; on opt-in creates the epic only. Use `/pm-plan` to build the whole tree. | (no dedicated agent) |
 | `/pm-story` | Drafts one **INVEST user story** ("As a … I want … so that …") + **Gherkin (Given/When/Then) acceptance criteria** per the Scrum Guide; on opt-in creates it in the connected tracker, else paste-ready markdown. Optional parent Epic. | (no dedicated agent) |
 | `/pm-task` | Drafts one scoped, actionable **Task** with an explicit **done-when (Scrum Definition of Done)** exit condition (optionally under a Story/Epic); on opt-in creates it, else markdown. | (no dedicated agent) |
-| `/pm-plan` | **Orchestrator.** Decomposes a feature-sized ask into an Epic→Stories→Tasks tree (via `pm-decomposer`), previews the **whole tree** for one approval, then creates it **sequentially, parent-first**, wiring links. Stops-and-reports on any partial failure; reconciles a re-run so it never double-creates. | `pm-decomposer` |
+| `/pm-plan` | **Orchestrator.** Decomposes a feature-sized ask into an Epic→Stories→Tasks tree (via `pm-decomposer`), previews the **whole tree** for one approval, then creates it **sequentially, parent-first**, wiring links. Stops-and-reports on any partial failure; reconciles a re-run so it never double-creates. Optional `--spec-check`: runs each Story's description through the `security-finder` persona (text only, no diff/filesystem) and annotates findings on the tree **before** the preview — fully opt-in, adds nothing when omitted. | `pm-decomposer` |
 
 ## Testing suite — writes test source AND executes it
 
