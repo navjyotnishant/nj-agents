@@ -1,6 +1,6 @@
 ---
 name: pr-describe
-description: Use this skill when the user asks to "describe this PR", "write the PR description", "draft a pull request", "summarize this branch for a PR", or wants a clear PR title and body for the current branch. Reads the branch's whole delta versus its base (the PR view) plus its commit messages, and drafts a structured title + body (summary, what changed, why, test plan, related issues). Opens a DRAFT PR only if the user opts in and `gh` is present — otherwise it hands you the text. Never pushes, never opens a non-draft PR on its own. Works in any git repo; nothing here is project-specific.
+description: Use this skill when the user asks to "describe this PR", "write the PR description", "draft a pull request", "summarize this branch for a PR", or wants a clear PR title and body for the current branch. Reads the branch's whole delta versus its base (the PR view) plus its commit messages, and drafts a structured title + body (summary, what changed, why, test plan, related issues). If a plan-mode plan file matches the branch's work, offers a condensed Context+Approach excerpt as a collapsed details block — opt-in, no change in behavior without a match. Opens a DRAFT PR only if the user opts in and `gh` is present — otherwise it hands you the text. Never pushes, never opens a non-draft PR on its own. Works in any git repo; nothing here is project-specific.
 version: 0.1.0
 class: workflow
 author: navjyotnishant
@@ -126,6 +126,30 @@ Just enough to describe accurately and match the repo's conventions:
   convention (`Closes #123`) only when the change actually resolves the issue — never
   assert a close you can't support (§A6).
 
+## Step 3.5 — Look for a matching plan-mode plan (optional)
+
+Plan-mode sessions write a plan file to `~/.claude/plans/<slug>.md`. Nothing links
+one to a branch explicitly, so **match by evidence, don't guess**:
+
+```bash
+ls -t ~/.claude/plans/*.md 2>/dev/null
+```
+
+A plan is a candidate match only when its content clearly corresponds to this
+branch's actual work — its title/approach names the same files, feature, or
+change the diff from Step 1 shows. If several plans exist, prefer the most
+recently modified one that still matches; if none clearly matches, **there is no
+plan to embed** — proceed exactly as today (no change in behavior, per the
+second acceptance scenario). Don't force a match on a stale or unrelated plan
+just because one exists.
+
+When a match is found, condense it down to its **Context** and **Approach**
+sections only — never the full file, and never its verification/testing detail,
+which is planning-time detail a PR reviewer doesn't need to scan past. Offer it
+to the user as a collapsed block (shown in Step 5); this is an offer, not an
+automatic inclusion — the user can decline and get today's body with nothing
+added.
+
 ## Step 4 — Spawn the pr-describer agent
 
 Spawn `pr-describer` with the branch delta from Step 1 (commits + diff), the repo
@@ -158,7 +182,19 @@ delta supports; drop empty ones rather than emitting `N/A` filler:
 
 ## Related
 Closes #<n>   ·   Refs #<n>
+
+<details>
+<summary>Approach (from the approved plan)</summary>
+
+<the matched plan's Context + Approach sections, condensed — only present when
+Step 3.5 found a match AND the user opted to include it>
+
+</details>
 ```
+
+The `<details>` block is **only added when Step 3.5 found a matching plan and the
+user opted to include it** — omit the block entirely otherwise, don't emit an
+empty `<details>` shell.
 
 **Grounding rules (§A6):**
 - Every bullet traces to a real commit or diff hunk. No invented features, no
@@ -169,6 +205,11 @@ Closes #<n>   ·   Refs #<n>
   change, not the commit-by-commit history.
 
 ## Step 5 — Present, then offer the draft PR (opt-in)
+
+If Step 3.5 found a matching plan, **offer the condensed block first** — show the
+Context + Approach excerpt and ask whether to include it. Only fold it into the
+body (as the `<details>` block above) on a yes; a no or no response means the body
+is drafted exactly as it would be without a plan match.
 
 Show the title and body in full for review. Then resolve the action by capability
 (§A5), always defaulting to the safe path:
@@ -212,3 +253,6 @@ Related: <issue keys found, and which are proposed as "Closes">
 - **Respect the repo's own PR template** over this skill's default when one exists.
 - **`gh` detected, never required** (§A5); the print-and-paste path always works.
 - Keep the diff snapshot out of the repo tree (scratchpad/temp only).
+- **A plan-mode plan is embedded only on a real content match and an explicit
+  opt-in** — no matching plan (or a match declined) leaves the body identical to
+  today's default; never force-fit an unrelated plan just because one exists.

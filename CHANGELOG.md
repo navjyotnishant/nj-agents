@@ -12,6 +12,14 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- **`/pr-describe` can now offer to embed a condensed plan-mode plan.** When a
+  plan file at `~/.claude/plans/<slug>.md` clearly matches the branch's actual
+  work (matched by content, not filename), the skill offers its Context +
+  Approach sections — condensed, never the full file or its verification detail
+  — as a collapsed `<details>` block in the PR body, so a reviewer can see the
+  approved approach alongside the diff. Opt-in per PR; no matching plan (or a
+  declined offer) leaves the body exactly as it is today.
+
 - **`/pm-plan --spec-check`** — an optional pre-implementation security pass.
   Reuses the existing `security-finder` persona (`agents/security-finder.md`,
   proven in `/security-deep-review`) against each decomposed Story's *description
