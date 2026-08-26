@@ -93,9 +93,10 @@ is a **PR, not a repo file**).
 
 | Skill | What it does | Agent it uses |
 |---|---|---|
-| `/pr-describe` | Drafts a **PR title + body** from the branch's whole delta versus its base (the PR view), grounded in the real commits and diff — every line traces to a change, nothing invented. Fills the repo's own `PULL_REQUEST_TEMPLATE.md` when present, else a sensible default (Summary / Changes / Why / Test plan / Related). Opens a **draft** PR only if you opt in and `gh` is present; otherwise hands you the text to paste. **Never pushes, never opens a non-draft PR, never merges.** | `pr-describer` |
+| `/pr-describe` | Drafts a **PR title + body** from the branch's whole delta versus its base (the PR view), grounded in the real commits and diff — every line traces to a change, nothing invented. Fills the repo's own `PULL_REQUEST_TEMPLATE.md` when present, else a sensible default (Summary / Changes / Why / Test plan / Related). If a matching plan-mode plan file exists (`~/.claude/plans/<slug>.md`, matched by content), **offers** its condensed Context+Approach as a collapsed `<details>` block in the body — opt-in, no change without a match. Opens a **draft** PR only if you opt in and `gh` is present; otherwise hands you the text to paste. **Never pushes, never opens a non-draft PR, never merges.** | `pr-describer` |
 | `/commit-assistant` | Drafts **Conventional Commits** message(s) from the working-tree changes and prints the exact `git add` + `git commit` block to run. When the tree holds unrelated changes it proposes **splitting them into separate commits**, one message each; respects changes you've already staged as your stated intent. Matches the repo's own commit style (including a `no Co-Authored-By` rule). Grounded in the diff — no `fix bug` filler. Then **offers to run each commit**, asking one at a time and showing the exact paths it would stage — approving a set of files, not just a sentence. **Never pushes, never tags, never `--no-verify`**, and in CI it prints only. | (no dedicated agent) |
 | `/release-notes` | Turns a version's changes into a **draft GitHub Release** — the release object on the Releases page, the one release artifact `/changelog` doesn't produce. Prefers the existing `CHANGELOG.md` section as the notes body (composes with `/changelog`, doesn't duplicate it), else summarizes the commit delta since the last tag. Drafts `gh release create --draft`; falls back to printing the notes + tag commands when `gh` is absent. **Never publishes a release, never pushes a tag.** | (no dedicated agent) |
+| `/capture-intent` | Captures a raw idea, in your own words, as one committed file — `docs/intent/<slug>.md` (Intent / Why now / optional Rough shape marked "unrefined" / Captured+Author footer). Records only what was actually said, no invented scope; proposes the exact commit and never runs git itself. Becomes the seed `/pm-plan`/`/pm-story` can point at later. | (no dedicated agent) |
 
 `gh` is detected, never required (§A5); the print-and-paste path always works.
 
@@ -117,8 +118,8 @@ PMP / CSM / PSM-trained team would recognize.
 |---|---|---|
 | `/pm-epic` | Drafts one **Epic** to the **industry-standard SAFe epic-hypothesis** format (goal/outcome, problem, success measure, scope / out-of-scope) plus a **suggested** decomposition into candidate stories (a list — it does not create them). On opt-in creates the epic only. To build the whole tree, use `/pm-plan`. | (no dedicated agent) |
 | `/pm-story` | Drafts one **INVEST user story** ("As a … I want … so that …") with **Gherkin (Given/When/Then) acceptance criteria** per the **Scrum Guide** and an estimate hint; on opt-in creates it in the connected tracker (optional parent Epic), else hands you paste-ready markdown. Grounded in your intent — no invented scope. | (no dedicated agent) |
-| `/pm-task` | Drafts one scoped, actionable **Task** with an explicit **done-when (Scrum Definition of Done)** exit condition (optionally under a parent Story/Epic); on opt-in creates it, else markdown. Keeps it small and single-purpose. | (no dedicated agent) |
-| `/pm-plan` | **Orchestrator.** Decomposes a feature-sized ask into an **Epic→Stories→Tasks** tree (via `pm-decomposer`), previews the **whole tree** for one approval, then creates it in the connected tracker **sequentially, parent-first** — Epic, then Stories under it, then Tasks under each — wiring parent links as it goes. **Stops and reports on any partial failure**; searches + reconciles first so a re-run never double-creates. No MCP → the whole tree as markdown. | `pm-decomposer` |
+| `/pm-task` | Drafts one scoped, actionable **Task** with an explicit **done-when (Scrum Definition of Done)** exit condition (optionally under a parent Story/Epic); on opt-in creates it, else markdown. Keeps it small and single-purpose. A **bug-shaped title** (fix/resolve/defect reference) gets an advisory nudge toward `/test-plan` for the failing-behavior case first — never blocking. | (no dedicated agent) |
+| `/pm-plan` | **Orchestrator.** Decomposes a feature-sized ask into an **Epic→Stories→Tasks** tree (via `pm-decomposer`), previews the **whole tree** for one approval, then creates it in the connected tracker **sequentially, parent-first** — Epic, then Stories under it, then Tasks under each — wiring parent links as it goes. **Stops and reports on any partial failure**; searches + reconciles first so a re-run never double-creates. No MCP → the whole tree as markdown. Optional **`--spec-check`**: runs each Story's description through the `security-finder` persona (text only, no diff/filesystem — no code exists yet) and annotates any finding on the tree **before** the preview. Fully opt-in, adds nothing when omitted. | `pm-decomposer` |
 
 ## ⚠️ What it does with your code — read this
 
@@ -319,6 +320,32 @@ suite proposes it, never installs silently):
   matching `Bash(git push*)`, to gate pushes made *through Claude*.
 
 Run `/pre-push-review` and it will offer to set one up.
+
+## Optional: block edits to a protected path
+
+`hooks/protect-paths.sh` is a `PreToolUse` hook (`Edit`/`Write`) that blocks an edit
+to any path matching a glob in a project's own `.nj-agents/protected-paths.txt` (one
+pattern per line, `#` comments — same convention as `.gitignore`). A skill declining
+to touch a path is advisory; this is the deterministic layer behind it, for a frozen
+package, a generated tree, or a legacy directory nobody should hand-edit. No config
+file means no blocking, ever — `./install.sh --with-hooks` registers it in
+`settings.json` alongside the skill-suggestion hook, but it stays a no-op until you
+add the config.
+
+## CI: two optional, opt-in GitHub Actions workflows
+
+Both live in `.github/workflows/`, both authenticate via a `CLAUDE_CODE_OAUTH_TOKEN`
+repo secret (a Claude **subscription** token from `claude setup-token` — not a
+metered API key), and neither is required for the toolkit to work locally:
+
+- **`e2e-smoke.yml`** — a weekly + path-triggered smoke test proving
+  `bin/nj-agents-e2e`'s own wrapper plumbing (spawn → JSON parse → verdict → exit
+  code) holds in real CI.
+- **`eval-gate.yml`** — PR-triggered on `CLAUDE.md`/`skills/**`/`agents/**`/`hooks/**`;
+  re-runs only the `evals/evals.json` files whose owning skill was actually touched
+  in the diff (`bin/nj-agents-eval-gate`), so a config edit that silently degrades a
+  skill's behavior is caught before it merges. A changed skill with no `evals.json`
+  yet is a SKIP, never a failure.
 
 ## Layout
 

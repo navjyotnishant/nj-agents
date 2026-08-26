@@ -9,7 +9,7 @@
 -->
 
 A personal toolkit of Claude Code **skills and agents** covering the software
-development lifecycle is installed globally on this machine — **38 skills, 29
+development lifecycle is installed globally on this machine — **39 skills, 30
 agents**. It is **project-agnostic**: every skill works in any git repo, any stack,
 any language, and discovers per-repo details at runtime rather than assuming a
 stack, path, port, or tool.
@@ -79,7 +79,7 @@ can't verify against the repo, and `/arch-diagram` runs a mandatory
 
 | Skill | What it does | Agent |
 |---|---|---|
-| `/pr-describe` | Drafts a PR **title + body** from the branch's delta vs its base (the PR view). Fills the repo's own PR template when present; grounds every line in a real commit/hunk. Opens a **draft** PR only if you opt in and `gh` is present; else hands you the text. **Never pushes, never opens a non-draft PR, never merges.** | `pr-describer` |
+| `/pr-describe` | Drafts a PR **title + body** from the branch's delta vs its base (the PR view). Fills the repo's own PR template when present; grounds every line in a real commit/hunk. If a plan-mode plan file matches the branch's work (matched by content), **offers** a condensed Context+Approach excerpt as a collapsed `<details>` block — opt-in, no change without a match. Opens a **draft** PR only if you opt in and `gh` is present; else hands you the text. **Never pushes, never opens a non-draft PR, never merges.** | `pr-describer` |
 | `/commit-assistant` | Drafts Conventional Commits message(s) from the working-tree changes and prints the `git add` + `git commit` block. Splits unrelated changes into separate commits; respects existing staging. Then **offers to run each one**, asking per commit and showing exactly what it would stage. **Never pushes or tags**; CI mode prints only. | (no dedicated agent) |
 | `/release-notes` | Turns a version's changes into a **draft GitHub Release** — reuses the `CHANGELOG.md` section as the body (composes with `/changelog`), else summarizes the commit delta. Drafts `gh release create --draft`; **never publishes, never pushes a tag.** | (no dedicated agent) |
 | `/capture-intent` | Captures a raw idea, in your own words, as one committed file — `docs/intent/<slug>.md` (Intent / Why now / Rough shape / Captured+Author). The seed `/pm-plan`/`/pm-story` can point at later. **Never invents scope**, proposes the commit, never runs git. | (no dedicated agent) |
@@ -114,7 +114,7 @@ field set per type.
 |---|---|---|
 | `/pm-epic` | Drafts one **Epic** to the **SAFe epic-hypothesis** standard (goal/outcome, problem, success measure, scope/out-of-scope) + a **suggested** story breakdown; on opt-in creates the epic only. Use `/pm-plan` to build the whole tree. | (no dedicated agent) |
 | `/pm-story` | Drafts one **INVEST user story** ("As a … I want … so that …") + **Gherkin (Given/When/Then) acceptance criteria** per the Scrum Guide; on opt-in creates it in the connected tracker, else paste-ready markdown. Optional parent Epic. | (no dedicated agent) |
-| `/pm-task` | Drafts one scoped, actionable **Task** with an explicit **done-when (Scrum Definition of Done)** exit condition (optionally under a Story/Epic); on opt-in creates it, else markdown. | (no dedicated agent) |
+| `/pm-task` | Drafts one scoped, actionable **Task** with an explicit **done-when (Scrum Definition of Done)** exit condition (optionally under a Story/Epic); on opt-in creates it, else markdown. A **bug-shaped title** (fix/resolve/defect reference) gets an advisory nudge toward `/test-plan` first — never blocking. | (no dedicated agent) |
 | `/pm-plan` | **Orchestrator.** Decomposes a feature-sized ask into an Epic→Stories→Tasks tree (via `pm-decomposer`), previews the **whole tree** for one approval, then creates it **sequentially, parent-first**, wiring links. Stops-and-reports on any partial failure; reconciles a re-run so it never double-creates. Optional `--spec-check`: runs each Story's description through the `security-finder` persona (text only, no diff/filesystem) and annotates findings on the tree **before** the preview — fully opt-in, adds nothing when omitted. | `pm-decomposer` |
 
 ## Testing suite — writes test source AND executes it
