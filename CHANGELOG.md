@@ -70,6 +70,22 @@ does as of this version, rather than how it was built.
   prompt: asked to redact a nonexistent file, it correctly returned `BLOCK`
   rather than fabricating a `PASS`.
 
+- **`hooks/protect-paths.sh` — a deterministic protected-path denylist.** A
+  `PreToolUse` hook (matcher `Edit|Write`) that blocks an edit to a path matching
+  a glob in a project's own `.nj-agents/protected-paths.txt` (one pattern per
+  line, `#` comments — same convention as `.gitignore`). A skill declining to
+  touch a path is advisory; this is the deterministic layer behind it, for a
+  frozen package, a generated tree, or a legacy directory nobody should hand-edit.
+  Detect-never-require (§A5): no config file means no blocking, ever. Wired into
+  the existing `./install.sh --with-hooks` flag alongside the suggestion hook —
+  `register_hook()` now handles both `UserPromptSubmit` and `PreToolUse`
+  registrations through one shared, idempotent `settings.json` editor. Path
+  comparison resolves both sides through their nearest existing ancestor
+  directory before matching, since a naive prefix-strip silently fails when the
+  repo root and the tool's own `file_path` disagree on a symlinked ancestor
+  (macOS's `/tmp` → `/private/tmp` being the common case) — live-tested across 6
+  cases including a brand-new file inside a not-yet-created nested directory.
+
 - **`/e2e-suite` migrated to the Workflow tool; `agents/failure-triager.md` built
   for real.** `/e2e-suite`'s Step 3 (per-failure triage) is now a scripted
   `Workflow` `parallel()` pipeline instead of manual "spawn N agents" prose.

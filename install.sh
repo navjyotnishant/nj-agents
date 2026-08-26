@@ -10,7 +10,10 @@
 #   ./install.sh --uninstall     # remove symlinks this installer created (global)
 #   ./install.sh --project DIR --uninstall
 #   ./install.sh --check-only    # only check global/AGENTS.md is in sync; install nothing
-#   ./install.sh --with-hooks    # ALSO register the skill-suggestion hook in settings.json
+#   ./install.sh --with-hooks    # ALSO register the skill-suggestion hook AND the
+#                                # PreToolUse protected-path hook (hooks/protect-paths.sh)
+#                                # in settings.json — the latter only blocks an edit if
+#                                # the target repo has .nj-agents/protected-paths.txt
 #   ./install.sh --git-hooks     # install .git/hooks into THIS clone (per-clone, not committed)
 #   ./install.sh --git-hooks --project DIR   # install the E2E push gate into another repo
 #   ./install.sh --review-gate --project DIR # ALSO gate pushes to main/PRD on the LLM review
@@ -158,27 +161,40 @@ link_one() {
   ln -sfn "$src" "$dst"
 }
 
-# Wiring the suggestion hook means editing settings.json — the user's file, not
-# ours. Idempotent: if an entry already points at this script, do nothing rather
-# than adding a second one. Needs jq to edit JSON safely; without it, print the
-# snippet and let the user paste it.
-register_hook() {
-  local hook="$HOOKS_DST/suggest-skills.sh"
-  local snippet='{"UserPromptSubmit":[{"hooks":[{"type":"command","command":"'"$hook"'","timeout":10}]}]}'
+# Wiring a hook means editing settings.json — the user's file, not ours.
+# Idempotent: if an entry already points at this script, do nothing rather than
+# adding a second one. Needs jq to edit JSON safely; without it, print the
+# snippet and let the user paste it. Shared by both --with-hooks registrations
+# (UserPromptSubmit suggestion hook, PreToolUse protected-paths hook) — same
+# mechanism, different event key and script. `matcher` is optional and only
+# meaningful for a per-tool event like PreToolUse (fires for every tool
+# otherwise); UserPromptSubmit has no such concept, so it's passed empty there.
+register_hook_event() {
+  local event="$1" hook="$2" label="$3" matcher="${4:-}"
+  local entry_jq='{hooks:[{type:"command",command:$h,timeout:10}]}'
+  [ -n "$matcher" ] && entry_jq='{matcher:$m,hooks:[{type:"command",command:$h,timeout:10}]}'
+  local snippet_matcher=""; [ -n "$matcher" ] && snippet_matcher='"matcher":"'"$matcher"'",'
+  local snippet='{"'"$event"'":[{'"$snippet_matcher"'"hooks":[{"type":"command","command":"'"$hook"'","timeout":10}]}]}'
   if ! command -v jq >/dev/null 2>&1; then
     echo "  ! jq not found — add this to $SETTINGS by hand under \"hooks\":" >&2
     echo "      $snippet" >&2
     return 0
   fi
   [ -f "$SETTINGS" ] || echo '{}' > "$SETTINGS"
-  if jq -e --arg h "$hook" '.hooks.UserPromptSubmit // [] | any(.hooks[]?.command == $h)' "$SETTINGS" >/dev/null 2>&1; then
-    echo "  suggestion hook already registered"
+  if jq -e --arg h "$hook" --arg e "$event" '.hooks[$e] // [] | any(.hooks[]?.command == $h)' "$SETTINGS" >/dev/null 2>&1; then
+    echo "  $label hook already registered"
     return 0
   fi
   local tmp; tmp="$(mktemp)"
-  jq --arg h "$hook" '.hooks.UserPromptSubmit = ((.hooks.UserPromptSubmit // []) + [{hooks:[{type:"command",command:$h,timeout:10}]}])' \
+  jq --arg h "$hook" --arg e "$event" --arg m "$matcher" \
+    '.hooks[$e] = ((.hooks[$e] // []) + ['"$entry_jq"'])' \
     "$SETTINGS" > "$tmp" && mv "$tmp" "$SETTINGS"
-  echo "  registered the suggestion hook in ${SETTINGS/#$HOME/~}"
+  echo "  registered the $label hook in ${SETTINGS/#$HOME/~}"
+}
+
+register_hook() {
+  register_hook_event "UserPromptSubmit" "$HOOKS_DST/suggest-skills.sh" "suggestion"
+  register_hook_event "PreToolUse" "$HOOKS_DST/protect-paths.sh" "protected-path" "Edit|Write"
 }
 
 # Validation lives in check.sh (it globs, so it covers new skills automatically).
