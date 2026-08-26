@@ -34,6 +34,10 @@ case "$prompt" in
   *changelog*|*"release notes"*|*"cut a release"*|*"release "*)
     add "/changelog and /release-notes" ;;
 esac
+case "$prompt" in
+  *"capture this idea"*|*"capture the intent"*|*"write down the intent"*|*"before we plan"*)
+    add "/capture-intent (record the raw idea as docs/intent/<slug>.md)" ;;
+esac
 # docs / explaining the system
 case "$prompt" in
   *document*|*documentation*|*docs*|*readme*|*guide*|*"write up"*)

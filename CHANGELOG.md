@@ -12,6 +12,16 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- **`/capture-intent` — a new workflow-class skill.** Captures a raw idea, in the
+  user's own words, as one committed file: `docs/intent/<slug>.md` with a fixed
+  shape (Intent / Why now / optional Rough shape marked "unrefined" / Captured+Author
+  footer). Records only what was actually said — no invented scope, no filled-in
+  gaps (§A6) — and proposes the exact `git add`/`git commit` block per
+  `CONVENTIONS-authoring.md` §A3, never running git itself. Becomes the seed
+  `/pm-plan`/`/pm-story` can point at as grounding context for the same piece of
+  work, so the reasoning behind a Story or Epic survives past the moment it's
+  tracked.
+
 - **Per-project review excludes** (`.nj-agents/review-excludes.txt`,
   `CONVENTIONS.md §2`). `/pre-push-review` (and any dimension sharing its diff-hygiene
   step) now reads this file when present, adding project-specific glob-pattern
