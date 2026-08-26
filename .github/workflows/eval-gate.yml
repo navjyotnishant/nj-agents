@@ -1,0 +1,57 @@
+name: eval-gate
+
+# Re-runs a skill's evals/evals.json when a PR touches its own files or
+# CLAUDE.md, so a config edit that silently degrades a skill's behavior is
+# caught before it merges rather than discovered later in normal use (NAV-45).
+#
+# Distinct from e2e-smoke.yml (NAV-37): that proves the E2E wrapper's own
+# plumbing holds; this regression-tests agent CONFIGURATION itself — CLAUDE.md,
+# a SKILL.md, an agent, a hook — against the behavioral cases in evals.json.
+#
+# Path-scoped, not a full-corpus run every time (§C: real spend per eval case —
+# one executor call + one grader call each): bin/nj-agents-eval-gate only runs
+# the evals.json files whose owning skill directory (or CLAUDE.md) actually
+# changed in the diff. A changed skill with no evals.json yet is a SKIP, not a
+# failure — this stays additive, never a new hard requirement for every skill.
+#
+# Auth: the same CLAUDE_CODE_OAUTH_TOKEN subscription secret as e2e-smoke.yml —
+# no separate metered API key needed.
+
+on:
+  pull_request:
+    paths:
+      - 'CLAUDE.md'
+      - 'skills/**'
+      - 'agents/**'
+      - 'hooks/**'
+
+permissions:
+  contents: read
+
+jobs:
+  eval-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # need the PR's merge-base to diff against, not just the tip
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Run affected evals
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          set +e
+          ./bin/nj-agents-eval-gate --base "origin/${{ github.event.pull_request.base.ref }}"
+          code=$?
+          set -e
+          if [ "$code" -eq 1 ]; then
+            echo "::error::an affected skill's evals.json failed its expectations — see the log above for which case and why."
+            exit 1
+          elif [ "$code" -eq 2 ]; then
+            echo "::error::nj-agents-eval-gate hit a harness error (code 2) — see the run log above."
+            exit 1
+          fi
+          echo "OK — PASS or SKIP (no affected skill has an evals.json, or all affected evals passed)."

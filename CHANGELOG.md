@@ -12,6 +12,25 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- **`bin/nj-agents-eval-gate` + `.github/workflows/eval-gate.yml`** — CI-gates a
+  skill/agent/hook config change against its own `evals/evals.json` so a
+  behavior regression is caught before it merges, not discovered later in
+  normal use. Path-scoped, not the whole evals corpus: only `evals.json` files
+  whose owning skill directory (or `CLAUDE.md`) actually changed in the PR's
+  diff are re-run — a changed skill with no `evals.json` yet is a SKIP, never a
+  failure, so this stays additive rather than a new hard requirement. Each case
+  runs an executor call (drives the skill fresh from its prompt) and a grader
+  call (checks the output against the case's `expectations[]`, `--tools ""` so
+  the grader is a pure text judgment with no repo access) — a BLOCK on any
+  unmet expectation. Same `CLAUDE_CODE_OAUTH_TOKEN` subscription auth as
+  `e2e-smoke.yml`, no metered API key. Found and fixed two real bugs while
+  building it: the repo-root resolution used the *script's own* location
+  instead of the invoking working directory, so it silently diffed the wrong
+  clone from inside a worktree/CI checkout; and the grader occasionally echoed
+  the executor's own output back verbatim instead of grading it when run with
+  full tool access — fixed with `--tools ""` plus one bounded retry on a
+  malformed verdict, live-tested to a stable 8/8 correct result.
+
 - **`/pm-task` bug-shaped nudge toward test-first.** A task title matching a
   bug-fix shape ("fix", "resolve", a defect reference) now gets an advisory
   suggestion to run `/test-plan` first for the failing-behavior case, plus a

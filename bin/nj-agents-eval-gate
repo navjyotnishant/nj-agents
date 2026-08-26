@@ -1,0 +1,211 @@
+#!/usr/bin/env bash
+#
+# nj-agents-eval-gate — re-run a skill's evals/evals.json when a PR touches its
+# files, so a CLAUDE.md/skill/agent/hook edit that silently degrades behavior is
+# caught before it merges.
+#
+# Author: Navjyot Nishant
+# Created: 2026-08-26
+# Description: Headless, PR-diff-scoped runner for evals/evals.json (NAV-45).
+#
+# Usage:
+#   nj-agents-eval-gate --base origin/main         # diff base..HEAD, run affected evals
+#   nj-agents-eval-gate --dry-run                  # print what would run, then stop
+#
+# Scope (this is the whole point of the story): only evals.json files whose
+# owning skill directory was actually touched in the diff are run — never the
+# whole evals corpus on every change (§C: real API/subscription spend per case,
+# executor + grader). A changed skill with no evals.json yet is not a failure —
+# this stays additive, never a new hard requirement (§A5 detect-never-require).
+#
+# Exit codes (CONVENTIONS.md §5, matching bin/nj-agents-e2e):
+#   0  PASS or SKIP (no evals.json affected) — the PR check may proceed
+#   1  BLOCK — at least one eval's expectations were not met
+#   2  harness error — no verdict was reached; never treated as a pass
+#
+# Runner: `claude -p` by default, same as bin/nj-agents-e2e. Override with
+# NJ_AGENT_CMD to drive another agent CLI.
+#
+# Cost: 2 agent calls per eval case (one executor, one grader) — for whatever
+# evals.json files the diff actually touches. Not a fixed number; it scales with
+# how many skills have adopted the pattern and how many cases each has.
+
+set -euo pipefail
+
+# Resolve the repo from the CURRENT WORKING DIRECTORY, not from where this
+# script file happens to live. This script is a symlink installed elsewhere
+# (or invoked from a CI checkout of a DIFFERENT clone), so deriving the repo
+# from ${BASH_SOURCE[0]} would operate on the wrong tree — always resolve from
+# cwd, same as hooks/protect-paths.sh does for the same reason.
+REPO_DIR="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+  echo "nj-agents-eval-gate: not inside a git repository (cwd: $(pwd))." >&2
+  exit 2
+}
+BASE="${NJ_EVAL_GATE_BASE:-}"
+DRY_RUN=0
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --base) BASE="$2"; shift 2 ;;
+    --dry-run) DRY_RUN=1; shift ;;
+    -h|--help) grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) echo "Unknown arg: $1" >&2; exit 2 ;;
+  esac
+done
+
+AGENT_CMD="${NJ_AGENT_CMD:-claude -p}"
+# shellcheck disable=SC2206
+AGENT=( $AGENT_CMD )
+AGENT_BIN="${AGENT[0]}"
+
+command -v "$AGENT_BIN" >/dev/null 2>&1 || {
+  echo "nj-agents-eval-gate: '$AGENT_BIN' is not on PATH — cannot run evals." >&2
+  exit 2
+}
+command -v jq >/dev/null 2>&1 || {
+  echo "nj-agents-eval-gate: jq is required to parse evals.json." >&2
+  exit 2
+}
+git -C "$REPO_DIR" rev-parse --git-dir >/dev/null 2>&1 || {
+  echo "nj-agents-eval-gate: not a git repository." >&2
+  exit 2
+}
+
+if [ -z "$BASE" ]; then
+  BASE="$(git -C "$REPO_DIR" symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')"
+  BASE="origin/${BASE:-main}"
+fi
+
+CHANGED="$(git -C "$REPO_DIR" diff --name-only "$BASE"...HEAD 2>/dev/null || true)"
+if [ -z "$CHANGED" ]; then
+  echo "nj-agents-eval-gate: SKIP — no changes vs $BASE" >&2
+  exit 0
+fi
+
+# Only evals.json files whose OWNING skill directory appears in the diff. A
+# skill's evals.json path is skills/<name>/evals/evals.json, so "the skill was
+# touched" means any changed path starts with skills/<name>/ (its own files) —
+# or CLAUDE.md changed (repo-wide config all skills read).
+declare -a TO_RUN=()
+CLAUDE_MD_CHANGED=0
+printf '%s\n' "$CHANGED" | grep -qx 'CLAUDE.md' && CLAUDE_MD_CHANGED=1
+
+while IFS= read -r evals_file; do
+  [ -f "$evals_file" ] || continue
+  # find returns paths rooted at $REPO_DIR/skills, but `git diff --name-only`
+  # returns repo-relative paths — compare like with like, or the prefix match
+  # below silently never fires.
+  rel_evals_file="${evals_file#"$REPO_DIR"/}"
+  skill_dir="$(dirname "$(dirname "$rel_evals_file")")"    # skills/<name>
+  skill_name="$(basename "$skill_dir")"
+  if [ "$CLAUDE_MD_CHANGED" = "1" ] || printf '%s\n' "$CHANGED" | grep -q "^${skill_dir}/"; then
+    TO_RUN+=("$evals_file")
+  fi
+done < <(find "$REPO_DIR/skills" -path '*/evals/evals.json' 2>/dev/null | sort)
+
+if [ "${#TO_RUN[@]}" -eq 0 ]; then
+  echo "nj-agents-eval-gate: SKIP — diff vs $BASE touches no skill with an evals.json" >&2
+  exit 0
+fi
+
+echo "nj-agents-eval-gate: will run ${#TO_RUN[@]} evals.json file(s):" >&2
+printf '  %s\n' "${TO_RUN[@]}" >&2
+
+if [ "$DRY_RUN" = "1" ]; then
+  exit 0
+fi
+
+# Minimal inline grader prompt — deliberately not a dependency on the
+# skill-creator plugin's own agents/grader.md, which may not be installed on a
+# CI runner (§A5 detect-never-require: this must work with only `claude`+`jq`
+# on PATH). Same idea: given the eval's own expected_output/expectations[], grade
+# the executor's actual output and return a single machine-readable verdict line.
+grade_one() {
+  local prompt="$1" expected="$2" expectations_json="$3"
+
+  local exec_out
+  exec_out="$(NJ_AGENTS_CI=1 "${AGENT[@]}" "$prompt" --output-format json 2>&1)" || {
+    echo "HARNESS_ERROR: executor failed to run" >&2
+    return 2
+  }
+  local exec_is_err exec_result
+  exec_is_err="$(printf '%s' "$exec_out" | jq -r '.is_error // empty' 2>/dev/null || true)"
+  exec_result="$(printf '%s' "$exec_out" | jq -r '.result // empty' 2>/dev/null || true)"
+  if [ "$exec_is_err" = "true" ] || [ -z "$exec_result" ]; then
+    echo "HARNESS_ERROR: executor produced no usable result" >&2
+    printf '%s\n' "$exec_out" | head -c 2000 >&2
+    return 2
+  fi
+
+  local grader_prompt
+  grader_prompt="$(jq -n --arg out "$exec_result" --arg exp "$expected" --argjson checks "$expectations_json" '
+    "You are a strict grader. Judge ONLY against the literal text of the ACTUAL OUTPUT below — do not assume the output did the right thing, do not be lenient, do not infer intent that is not literally present. A vague or off-topic output FAILS every expectation it does not literally satisfy.\n\nEXPECTED SHAPE (background context only, not a pass condition by itself):\n" + $exp + "\n\nEXPECTATIONS — check each one independently against the actual output text:\n" + ($checks | to_entries | map("\(.key + 1). " + .value) | join("\n")) + "\n\nACTUAL OUTPUT:\n---\n" + $out + "\n---\n\nFirst, on separate lines, write \"1: met\" or \"1: NOT MET\" (etc.) for every numbered expectation, citing the exact word/phrase from ACTUAL OUTPUT that satisfies it, or \"absent\" if nothing in the output satisfies it. Then on the FINAL line write exactly PASS (only if every expectation was met) or FAIL: <which expectation numbers were not met and why>."
+  ')"
+
+  # The grader is a pure text-judgment task over the piped prompt/output — it
+  # must never have tool access. Without --tools "", it inherits the full
+  # default toolset and can wander off into reading/using whatever happens to
+  # be in the CI working directory instead of grading the text it was given —
+  # observed directly: it echoed back the executor's own output ("banana")
+  # instead of a verdict, intermittently, when run with tools enabled. --tools ""
+  # cut the rate sharply but not to zero (a very short/degenerate answer like a
+  # single word can still occasionally make the model parrot it back instead of
+  # following the grading instructions) — one bounded retry on a malformed
+  # verdict absorbs that residual flakiness rather than reporting a harness
+  # error for what is really a one-off bad response, not a systemic failure.
+  local grade_out grade_is_err grade_result verdict_line attempt
+  for attempt in 1 2; do
+    grade_out="$(NJ_AGENTS_CI=1 "${AGENT[@]}" "$grader_prompt" --output-format json --tools "" 2>&1)" || {
+      echo "HARNESS_ERROR: grader failed to run (attempt $attempt)" >&2
+      continue
+    }
+    grade_is_err="$(printf '%s' "$grade_out" | jq -r '.is_error // empty' 2>/dev/null || true)"
+    grade_result="$(printf '%s' "$grade_out" | jq -r '.result // empty' 2>/dev/null || true)"
+    if [ "$grade_is_err" = "true" ] || [ -z "$grade_result" ]; then
+      echo "HARNESS_ERROR: grader produced no usable result (attempt $attempt)" >&2
+      continue
+    fi
+    # The grader reasons per-expectation on earlier lines, so the verdict is
+    # the LAST non-empty line, not the first line of the whole response.
+    verdict_line="$(printf '%s\n' "$grade_result" | awk 'NF{line=$0} END{print line}')"
+    case "$verdict_line" in
+      PASS*) echo "PASS"; return 0 ;;
+      FAIL*) echo "$verdict_line"; return 1 ;;
+      *) echo "HARNESS_ERROR: grader returned no PASS/FAIL verdict on its final line (attempt $attempt): $verdict_line" >&2 ;;
+    esac
+  done
+  echo "HARNESS_ERROR: grader did not return a usable verdict after 2 attempts" >&2
+  return 2
+}
+
+OVERALL=0
+for evals_file in "${TO_RUN[@]}"; do
+  skill_name="$(basename "$(dirname "$(dirname "$evals_file")")")"
+  n_cases="$(jq '.evals | length' "$evals_file")"
+  echo "== $skill_name ($n_cases case(s)) ==" >&2
+
+  for i in $(seq 0 $((n_cases - 1))); do
+    case_id="$(jq -r ".evals[$i].id" "$evals_file")"
+    case_prompt="$(jq -r ".evals[$i].prompt" "$evals_file")"
+    case_expected="$(jq -r ".evals[$i].expected_output" "$evals_file")"
+    case_expectations="$(jq -c ".evals[$i].expectations" "$evals_file")"
+
+    set +e
+    verdict="$(grade_one "$case_prompt" "$case_expected" "$case_expectations")"
+    rc=$?
+    set -e
+
+    case "$rc" in
+      0) echo "  [$skill_name#$case_id] PASS" >&2 ;;
+      1) echo "  [$skill_name#$case_id] FAIL — $verdict" >&2; OVERALL=1 ;;
+      2) echo "  [$skill_name#$case_id] ERROR — $verdict" >&2
+         [ "$OVERALL" -eq 0 ] && OVERALL=2 ;;
+    esac
+  done
+done
+
+case "$OVERALL" in
+  0) echo "nj-agents-eval-gate: PASS — all affected evals met their expectations" >&2; exit 0 ;;
+  1) echo "nj-agents-eval-gate: BLOCK — at least one eval failed its expectations" >&2; exit 1 ;;
+  *) echo "nj-agents-eval-gate: harness error — at least one eval could not be graded" >&2; exit 2 ;;
+esac
