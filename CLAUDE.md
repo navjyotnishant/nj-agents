@@ -191,6 +191,14 @@ own text, so a new skill is bound the moment it says "spawn".
 - **Secret scanning is mandatory** — `/review-secrets` (and the `/pre-push-review` gate)
   require a real scanner (`gitleaks`/`trufflehog`/`detect-secrets`) and BLOCK if none is
   installed. `gitleaks` is installed on the primary dev machine.
+- **Plan mode by default for non-trivial work.** For any change touching more than one
+  file, adding a new pattern, or migrating a skill (e.g. onto the Workflow tool),
+  start in plan mode — propose the approach, get explicit approval, then implement.
+  A trivial single-file fix or a one-line doc tweak doesn't need it (§C's "cheap path
+  first" applies here too — don't build ceremony a change doesn't need). This wasn't
+  previously written down anywhere despite being the pattern this repo's own sessions
+  already follow consistently; it's stated here so it's a citable norm, not an
+  implicit habit that erodes the first time someone's in a hurry.
 
 ## Diagram subsystem (`/arch-diagram`) — read before touching diagrams
 
