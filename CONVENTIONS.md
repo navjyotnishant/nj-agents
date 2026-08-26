@@ -67,6 +67,19 @@ Note them as "excluded from review (N files: lockfiles, binaries, generated)" so
 the user knows they weren't silently ignored — but **still run the secret scan over
 everything**, because a secret can hide in any added line, generated or not.
 
+**Per-project exclusions — `.nj-agents/review-excludes.txt`.** The auto-detected
+categories above cover the common cases, but a project can have its own generated
+or vendored paths the pattern-detection above doesn't recognize (a codegen client
+under a project-specific name, a legacy directory nobody touches by hand). If
+`.nj-agents/review-excludes.txt` exists at the repo root, read it (one glob pattern
+per line, `#` for comments) and add matching files to the excluded set — **same
+semantic-review exclusion, same secret-scan exception**: excluded files are never
+analyzed for style/correctness/dependency findings, but they are always
+secret-scanned regardless of this file. Detect-never-require (§A5) — no file means
+no change from today's behavior. State what the config excluded in the same
+"excluded from review" line as the auto-detected categories, so a project-specific
+exclusion is visible, not silent.
+
 **Cap very large diffs.** If the reviewable (non-excluded) diff is very large
 (rule of thumb: > ~1500 changed lines or > ~40 files), don't try to review it all
 at once:

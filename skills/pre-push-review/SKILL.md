@@ -140,7 +140,9 @@ pre-push hook then blocks a clean push (`§U`).
 
 Assemble the snapshot per `CONVENTIONS.md §1`, then apply diff hygiene per §2:
 exclude lockfiles/binaries/generated/vendored files from the *semantic* review
-(they're still secret-scanned), and if the reviewable diff is very large, plan a
+(they're still secret-scanned), read `.nj-agents/review-excludes.txt` if present
+for any project-specific exclusions (same rule: excluded from semantic review,
+never from the secret scan), and if the reviewable diff is very large, plan a
 partial top-N review and say so. Keep everything in the scratchpad/temp dir — never
 write into the repo. Do **not** hand anything to a subagent yet.
 

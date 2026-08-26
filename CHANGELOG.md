@@ -12,6 +12,16 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- **Per-project review excludes** (`.nj-agents/review-excludes.txt`,
+  `CONVENTIONS.md §2`). `/pre-push-review` (and any dimension sharing its diff-hygiene
+  step) now reads this file when present, adding project-specific glob-pattern
+  exclusions to the semantic review beyond the auto-detected
+  lockfile/binary/generated categories — a vendored dir or a project-named codegen
+  client the pattern-detection doesn't recognize. Same rule as the auto-detected
+  exclusions: never exempt from the secret scan, only the semantic review; stated
+  in the report so an exclusion is visible, not silent. Detect-never-require (§A5) —
+  no config file, no change in behavior.
+
 - **`bin/nj-agents-e2e` wired into a real CI workflow** (`.github/workflows/e2e-smoke.yml`).
   The hard part — a headless entry point with the §5 exit-code contract, budget
   cap, dry-run, custom-agent-cmd support — was already built and never actually
