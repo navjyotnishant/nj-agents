@@ -12,6 +12,14 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- **`/pm-task` bug-shaped nudge toward test-first.** A task title matching a
+  bug-fix shape ("fix", "resolve", a defect reference) now gets an advisory
+  suggestion to run `/test-plan` first for the failing-behavior case, plus a
+  test-first-order note added to the task's description. A non-bug-shaped title
+  is unaffected. Never blocks task creation — the user can ignore it and the task
+  still drafts and creates as normal. Doesn't write a test itself; that mechanism
+  stays with the testing class (`/test-plan`, `/test-repair`).
+
 - **`/pr-describe` can now offer to embed a condensed plan-mode plan.** When a
   plan file at `~/.claude/plans/<slug>.md` clearly matches the branch's actual
   work (matched by content, not filename), the skill offers its Context +

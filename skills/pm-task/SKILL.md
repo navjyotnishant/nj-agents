@@ -1,6 +1,6 @@
 ---
 name: pm-task
-description: Use this skill when the user asks to "create a task", "add a task/sub-task in Linear/Jira", "break this into a task", or wants a single well-formed Task issue. Drafts one scoped, actionable Task with an explicit done-when (Scrum Definition of Done) exit condition (optionally under a parent Story/Epic), then — on opt-in — creates it in whatever PM tracker is connected via MCP (Linear/Jira/Notion/GitHub Issues), else hands you paste-ready markdown. Never bulk-creates; grounds the task in your intent, never invents. Works with any connected tracker; nothing here is project-specific.
+description: Use this skill when the user asks to "create a task", "add a task/sub-task in Linear/Jira", "break this into a task", or wants a single well-formed Task issue. Drafts one scoped, actionable Task with an explicit done-when (Scrum Definition of Done) exit condition (optionally under a parent Story/Epic), then — on opt-in — creates it in whatever PM tracker is connected via MCP (Linear/Jira/Notion/GitHub Issues), else hands you paste-ready markdown. A bug-shaped title (fix/resolve/defect reference) gets an advisory nudge toward /test-plan and a test-first note — never blocking. Never bulk-creates; grounds the task in your intent, never invents. Works with any connected tracker; nothing here is project-specific.
 version: 0.1.0
 class: pm
 author: navjyotnishant
@@ -81,6 +81,22 @@ the item is standard-complete (mark a genuinely unknown field `TBD`, never drop 
 
 Keep it **small and single-purpose**. If it sprawls into several actions, propose
 splitting into multiple tasks rather than one vague one.
+
+## Step 2.5 — Bug-shaped nudge toward test-first (advisory, never blocking)
+
+If the task's title matches a bug-fix shape — "fix", "resolve", "bug", a defect
+reference (`BUG-123`, "regression"), or similar wording implying broken behavior
+rather than new work — suggest running `/test-plan` first for the failing-behavior
+case, and add one line to the task's **description** noting that implementation
+should follow test-first order (write the test that reproduces the bug, watch it
+fail, then fix).
+
+This is advisory only: state the suggestion once, then continue drafting and
+proposing the task regardless of whether the user acts on it. A non-bug-shaped
+title gets no nudge and no added line — behavior is otherwise unchanged. This
+does not write a test itself, and does not gate task creation on one existing —
+that mechanism belongs to the testing class (`/test-plan`, `/test-repair`), not
+to this skill.
 
 ## Step 3 — Resolve the tracker + destination (§P2/§P6)
 
