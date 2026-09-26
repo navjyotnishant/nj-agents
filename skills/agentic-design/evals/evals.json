@@ -1,0 +1,42 @@
+{
+  "skill_name": "agentic-design",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Use /agentic-design to design this system and write the section to docs/design/agentic-design.md: a log-triage assistant that reads a failing service's recent logs, calls a search tool over our runbooks and a tool that opens a ticket, and keeps investigating until it can name a likely cause. It uses Claude.",
+      "expected_output": "An '## Agentic design' section written to docs/design/agentic-design.md, covering Loop, Tools and steps, State and graph, Eval plan (with a parseable JSON block), Harness and Open questions, followed by a proposed git add/commit block that is not run.",
+      "files": [],
+      "expectations": [
+        "The loop has explicit bounds (max steps, retries, time or cost) expressed as named config values, not numbers inside a prompt",
+        "Each of the two tools (runbook search, open ticket) has a contract row, and the ticket tool is identified as having a side effect with retries made safe or forbidden",
+        "The Eval plan contains a fenced json block with gate.pass_rate, gate.min_cases, harness.command, harness.replays_against and a cases array",
+        "Every eval case has a non-empty 'discriminates' field naming a plausible wrong behaviour, and at least one case uses must_not_contain",
+        "No orchestration framework is chosen as settled; the framework choice appears under Open questions",
+        "The skill printed a git add/commit block and did not run git"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Use /agentic-design on this system: a REST service that stores customer addresses and validates postcodes against a lookup table.",
+      "expected_output": "A one-line report that the system is not agent-shaped, naming the signal looked for, and no file written.",
+      "files": [],
+      "expectations": [
+        "No '## Agentic design' section was written anywhere",
+        "The report states the system is not agent-shaped and why (no model deciding what to do next, no tool calling, no loop)",
+        "No loop bound, tool contract or eval plan was invented"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Use /agentic-design and write its section into specs/001-support-bot/spec.md, creating that file if it does not exist. The system: a support bot that answers customer questions from our docs and can escalate to a human. The intent does not say which model or framework to use.",
+      "expected_output": "The '## Agentic design' section written into specs/001-support-bot/spec.md (created if absent), not docs/design/, with model and framework under Open questions and harness.command set to TBD if no entrypoint is known.",
+      "files": [],
+      "expectations": [
+        "The section was written into specs/001-support-bot/spec.md, not docs/design/agentic-design.md, and the skill did not stop to ask whether the file exists",
+        "Both the model and the orchestration framework are listed under Open questions rather than chosen",
+        "If the agent's entrypoint is unknown, harness.command is \"TBD\" with a matching Open question, not an invented command",
+        "Escalation to a human is treated as a tool or step with a stated failure mode"
+      ]
+    }
+  ]
+}

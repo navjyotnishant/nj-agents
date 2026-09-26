@@ -12,6 +12,17 @@ does as of this version, rather than how it was built.
 
 ### Added
 
+- **`/agentic-design`** — a new authoring skill for systems whose core is an LLM
+  agent. It writes the section a general spec pass leaves out: loop bounds as
+  named config rather than numbers buried in a prompt, a contract per tool
+  (including which have side effects and whether retries are safe), the state
+  carried between steps, a discriminating eval plan — every case names the
+  plausible wrong answer it catches — and the harness the evals replay against.
+  The eval plan is a JSON block in a fixed shape, so a pipeline can scaffold real
+  `evals/cases/` from it. Framework, model and hosting choices the intent did not
+  name become Open Questions, and a system that is not agent-shaped gets nothing
+  written at all.
+
 - **`bin/nj-agents-eval-gate` + `.github/workflows/eval-gate.yml`** — CI-gates a
   skill/agent/hook config change against its own `evals/evals.json` so a
   behavior regression is caught before it merges, not discovered later in

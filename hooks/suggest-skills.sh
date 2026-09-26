@@ -101,6 +101,9 @@ esac
 case "$prompt" in
   *"new repo"*|*scaffold*|*bootstrap*) add "/scaffold-project" ;;
 esac
+case "$prompt" in
+  *"agentic"*|*"agent loop"*|*"design an agent"*|*"design the agent"*|*"agent eval"*|*"tool calling"*) add "/agentic-design (loop bounds, tool contracts, eval plan)" ;;
+esac
 # The individual review dimensions, for when the whole umbrella is more than asked.
 case "$prompt" in
   *secret*|*credential*|*token*|*"api key"*) add "/review-secrets (scanner gate, then a semantic pass)" ;;
