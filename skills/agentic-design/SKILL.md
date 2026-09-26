@@ -22,8 +22,9 @@ This is an **authoring-class** skill — follow `CONVENTIONS-authoring.md` **§A
 (read the repo and the intent first), **§A3** (show the diff, print the exact
 `git add`/`git commit` block, never run git), **§A4** (the section lands at a named
 place, below), **§A6** (every element traces to the intent or spec; a gap is marked,
-not filled) and **§A7** (re-running updates the section in place, never appends a
-second one).
+not filled), **§A7** (re-running updates the section in place, never appends a
+second one) and **§A8** (a refused write degrades to printing the section, never
+to a stall).
 
 > **Finding the conventions file.** It lives at the toolkit repo root, two levels
 > above this skill — not beside `SKILL.md`. Skills are usually installed as
@@ -82,6 +83,13 @@ Write it to the first of these that applies (§A4):
 1. **A file the caller names** — when a pipeline stage invokes this skill for its own
    spec or plan, the section goes into that file.
 2. **`docs/design/agentic-design.md`** — standalone use.
+
+**If the write is refused or unavailable (§A8)** — a permission prompt nobody will
+answer, a sandbox, a read-only checkout — do not stop and do not end on a request
+for permission. Print the **complete section exactly as it would have been
+written**, name the file it belongs in, and carry on to Step 3. A headless caller
+(a pipeline stage, a CI eval) cannot grant permission, and a design that was never
+shown is a design nobody can use.
 
 The section is headed `## Agentic design` and has exactly these parts. If one is
 already there, replace it in place (§A7).
@@ -163,7 +171,8 @@ authority — an obvious default is still a default nobody agreed to.
 
 ## Step 3 — Propose the commit (§A3), never run git
 
-Show `git status` and the diff of the section, then print the block for the human:
+Show `git status` and the diff of the section — or, when the write was refused, the
+full section you printed in Step 2 — then print the block for the human:
 
 ```bash
 git add <the file from Step 2>
@@ -188,6 +197,8 @@ agent-shaped, the report is that one line and nothing else.
 - **Never writes placeholder eval cases** that pass by construction; every case names
   what it discriminates.
 - **Proposes the commit, never runs git** (§A3).
+- **A refused write is not the end of the run** — print the section in full and
+  keep going (§A8); never finish on a request for permission.
 - **Degrade, don't fail** — no external tool is needed; with no intent file, work from
   the conversation and say so (§A5).
 - **Ground everything in the actual repo** — no invented APIs, paths, or results.
