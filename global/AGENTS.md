@@ -9,7 +9,7 @@
 -->
 
 A personal toolkit of Claude Code **skills and agents** covering the software
-development lifecycle is installed globally on this machine — **39 skills, 30
+development lifecycle is installed globally on this machine — **40 skills, 30
 agents**. It is **project-agnostic**: every skill works in any git repo, any stack,
 any language, and discovers per-repo details at runtime rather than assuming a
 stack, path, port, or tool.
@@ -65,6 +65,7 @@ whole manifest by definition.
 | `/docs-site` | **Generated multi-page site by default** (tree nav, one page per entity, diagrams embedded, rebuilt from source so it cannot drift); `--single` for one self-contained page; `--docusaurus` for a branded Docusaurus 3 site (regenerated, not virtual — weaker anti-drift than the default). Reads docs, code, an outline, or SKILL.md/OpenAPI/JSON-Schema. Auto-derives the menu; flags gaps rather than inventing. | `docs-architect`, `docs-designer` |
 | `/tech-blog` | writer → fact-checker (bounded retry loop) → reviewer → editor run as a `Workflow`-tool pipeline, then final-polish/platform-lint in parallel; optional poster. Generates its own diagrams/screenshots, then embeds them. | `blog-writer`, `blog-fact-checker`, `blog-reviewer`, `blog-editor`, `blog-final-polish`, `blog-platform-lint`, `blog-poster` |
 | `/scaffold-project` | Lay out a **new** repo to the OpenSSF OSPS Baseline (Level 1 default), delegating stack layout to the ecosystem generator (`cargo new`/`uv init`/…). Cites each file by control ID; verifies before reporting done. | (no dedicated agent) |
+| `/agentic-design` | Designs the parts of an **agent-shaped** system a general spec pass leaves out: loop bounds as named config, tool contracts, state/graph, a **discriminating eval plan** (a parseable JSON block a pipeline can scaffold `evals/cases/` from), and the harness. Unauthorized framework/model choices become Open Questions; writes **nothing** for a system that isn't agent-shaped. | (no dedicated agent) |
 | `/social-post` | LinkedIn / X copy for a **published** URL — short / medium / builder-story, hook-first, clean hashtags. Never writes to the repo, never auto-posts. | `social-post` |
 
 Shared behavior lives in the repo's `CONVENTIONS-authoring.md` (§A1 repo-ingest,
