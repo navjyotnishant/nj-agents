@@ -3,7 +3,7 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Design the agent for this: a log-triage assistant that reads a failing service's recent logs, calls a search tool over our runbooks and a tool that opens a ticket, and keeps investigating until it can name a likely cause. It uses Claude.",
+      "prompt": "Use /agentic-design to design this system and write the section to docs/design/agentic-design.md: a log-triage assistant that reads a failing service's recent logs, calls a search tool over our runbooks and a tool that opens a ticket, and keeps investigating until it can name a likely cause. It uses Claude.",
       "expected_output": "An '## Agentic design' section written to docs/design/agentic-design.md, covering Loop, Tools and steps, State and graph, Eval plan (with a parseable JSON block), Harness and Open questions, followed by a proposed git add/commit block that is not run.",
       "files": [],
       "expectations": [
@@ -17,7 +17,7 @@
     },
     {
       "id": 2,
-      "prompt": "Design the agentic parts for this: a REST service that stores customer addresses and validates postcodes against a lookup table.",
+      "prompt": "Use /agentic-design on this system: a REST service that stores customer addresses and validates postcodes against a lookup table.",
       "expected_output": "A one-line report that the system is not agent-shaped, naming the signal looked for, and no file written.",
       "files": [],
       "expectations": [
@@ -28,11 +28,11 @@
     },
     {
       "id": 3,
-      "prompt": "Add the agent loop, tools and evals to the spec at specs/001-support-bot/spec.md. The bot answers customer questions from our docs and can escalate to a human. The intent does not say which model or framework to use.",
-      "expected_output": "The '## Agentic design' section added to specs/001-support-bot/spec.md itself, not to docs/design/, with model and framework under Open questions and harness.command set to TBD if no entrypoint is known.",
+      "prompt": "Use /agentic-design and write its section into specs/001-support-bot/spec.md, creating that file if it does not exist. The system: a support bot that answers customer questions from our docs and can escalate to a human. The intent does not say which model or framework to use.",
+      "expected_output": "The '## Agentic design' section written into specs/001-support-bot/spec.md (created if absent), not docs/design/, with model and framework under Open questions and harness.command set to TBD if no entrypoint is known.",
       "files": [],
       "expectations": [
-        "The section was written into the named spec file, not docs/design/agentic-design.md",
+        "The section was written into specs/001-support-bot/spec.md, not docs/design/agentic-design.md, and the skill did not stop to ask whether the file exists",
         "Both the model and the orchestration framework are listed under Open questions rather than chosen",
         "If the agent's entrypoint is unknown, harness.command is \"TBD\" with a matching Open question, not an invented command",
         "Escalation to a human is treated as a tool or step with a stated failure mode"
